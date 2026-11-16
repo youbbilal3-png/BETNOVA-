@@ -37,6 +37,8 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [loadingMatches, setLoadingMatches] = useState(true)
+  const [matchLoadError, setMatchLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!supabase) return
@@ -49,58 +51,107 @@ export default function App() {
 
   useEffect(() => {
     let active = true
+
     async function loadFixtures() {
-      if (!supabase) return
-      const { data, error } = await supabase
-        .from('fixtures')
-        .select(`
-          id, starts_at, status,
-          competitions(name, country),
-          home_team:teams!fixtures_home_team_id_fkey(name, short_name),
-          away_team:teams!fixtures_away_team_id_fkey(name, short_name),
-          markets(market_type, status, market_selections(name, odds, status))
-        `)
-        .or(`status.eq.live,starts_at.gte.${new Date().toISOString()}`)
-        .order('starts_at', { ascending: true })
-        .limit(30)
+      setLoadingMatches(true)
+      setMatchLoadError(null)
 
-      if (!active || error || !data?.length) return
+      if (!supabase) {
+        if (active) {
+          setMatches(sport === 'Football' ? demoMatches : [])
+          setUsingDemoData(sport === 'Football')
+          setLoadingMatches(false)
+        }
+        return
+      }
 
-      const mapped: Match[] = data.map((row: any) => {
-        const competition = Array.isArray(row.competitions) ? row.competitions[0] : row.competitions
-        const home = Array.isArray(row.home_team) ? row.home_team[0] : row.home_team
-        const away = Array.isArray(row.away_team) ? row.away_team[0] : row.away_team
-        const allSelections = (row.markets ?? [])
-          .filter((market: any) => market.status === 'open')
-          .flatMap((market: any) => market.market_selections ?? [])
-          .filter((selection: any) => selection.status === 'active')
-        const findOdd = (names: string[]) => {
-          const selection = allSelections.find((item: any) =>
-            names.includes(String(item.name).trim().toLowerCase())
-          )
-          return selection ? String(selection.odds) : '—'
+      try {
+        const sportSlug = sport.toLowerCase().replaceAll(' ', '-')
+        const { data: sportRow, error: sportError } = await supabase
+          .from('sports')
+          .select('id')
+          .eq('slug', sportSlug)
+          .eq('is_active', true)
+          .maybeSingle()
+
+        if (sportError) throw sportError
+        if (!sportRow) {
+          if (active) {
+            setMatches([])
+            setUsingDemoData(false)
+          }
+          return
         }
-        const startsAt = new Date(row.starts_at)
-        return {
-          id: row.id,
-          league: competition?.name ?? 'Competition',
-          country: competition?.country ?? '',
-          time: startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          home: home?.name ?? 'Home team',
-          away: away?.name ?? 'Away team',
-          homeMark: home?.short_name ?? String(home?.name ?? 'H').slice(0, 2).toUpperCase(),
-          awayMark: away?.short_name ?? String(away?.name ?? 'A').slice(0, 2).toUpperCase(),
-          odds: [findOdd(['home', '1']), findOdd(['draw', 'x']), findOdd(['away', '2'])],
+
+        const { data, error } = await supabase
+          .from('fixtures')
+          .select(`
+            id, starts_at, status,
+            competitions!inner(name, country, sport_id),
+            home_team:teams!fixtures_home_team_id_fkey(name, short_name),
+            away_team:teams!fixtures_away_team_id_fkey(name, short_name),
+            markets(market_type, status, market_selections(name, odds, status))
+          `)
+          .eq('competitions.sport_id', sportRow.id)
+          .or('status.eq.live,starts_at.gte.' + new Date().toISOString())
+          .order('starts_at', { ascending: true })
+          .limit(30)
+
+        if (error) throw error
+        if (!active) return
+
+        const mapped: Match[] = (data ?? []).map((row: any) => {
+          const competition = Array.isArray(row.competitions) ? row.competitions[0] : row.competitions
+          const home = Array.isArray(row.home_team) ? row.home_team[0] : row.home_team
+          const away = Array.isArray(row.away_team) ? row.away_team[0] : row.away_team
+          const allSelections = (row.markets ?? [])
+            .filter((market: any) => market.status === 'open')
+            .flatMap((market: any) => market.market_selections ?? [])
+            .filter((selection: any) => selection.status === 'active')
+          const findOdd = (names: string[]) => {
+            const selection = allSelections.find((item: any) =>
+              names.includes(String(item.name).trim().toLowerCase())
+            )
+            return selection ? String(selection.odds) : '—'
+          }
+          const startsAt = new Date(row.starts_at)
+          return {
+            id: row.id,
+            league: competition?.name ?? 'Competition',
+            country: competition?.country ?? '',
+            time: startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            home: home?.name ?? 'Home team',
+            away: away?.name ?? 'Away team',
+            homeMark: home?.short_name ?? String(home?.name ?? 'H').slice(0, 2).toUpperCase(),
+            awayMark: away?.short_name ?? String(away?.name ?? 'A').slice(0, 2).toUpperCase(),
+            odds: [findOdd(['home', '1']), findOdd(['draw', 'x']), findOdd(['away', '2'])],
+          }
+        })
+
+        if (mapped.length) {
+          setMatches(mapped)
+          setUsingDemoData(false)
+        } else if (!userEmail && sport === 'Football') {
+          setMatches(demoMatches)
+          setUsingDemoData(true)
+        } else {
+          setMatches([])
+          setUsingDemoData(false)
         }
-      })
-      if (active && mapped.length) {
-        setMatches(mapped)
-        setUsingDemoData(false)
+      } catch (caught) {
+        if (active) {
+          setMatches([])
+          setUsingDemoData(false)
+          setMatchLoadError(caught instanceof Error ? caught.message : 'Could not load sports data.')
+        }
+      } finally {
+        if (active) setLoadingMatches(false)
       }
     }
+
     void loadFixtures()
     return () => { active = false }
-  }, [userEmail])
+  }, [sport, userEmail])
 
   const visibleMatches = useMemo(() => matches.filter(m =>
     (league === 'All matches' || league === 'Popular' || m.country === league) &&
@@ -152,14 +203,14 @@ export default function App() {
 
           <section className="events-section" id="events">
             <div className="section-heading"><div><div className="eyebrow dark"><span/> YOUR DAILY LINEUP</div><h2>Featured events <span className="heading-star">✳</span></h2><p>Find the moments worth watching.</p></div><button className="view-all">View calendar <ArrowRight size={15}/></button></div>
-            <div className="sports-tabs">{sports.slice(0,4).map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒'][i]}</span>{s}</button>)}</div>
+            <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>
             <div className="filter-row"><div className="league-filters">{leagues.map(l=><button key={l} onClick={()=>setLeague(l)} className={league===l?'filter active-filter':'filter'}>{l}</button>)}</div><label className="search-field"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a team or league"/></label></div>
             <div className="match-list">
-              {visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
+              {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
                 <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time"><Clock3 size={13}/>{match.time}</span></div>
                 <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div><div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>addSelection(match,i)} className={isPicked(match,i)?'odd picked':'odd'}><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div></div>
                 <div className="match-footer"><span><Star size={13}/> Add to favourites</span><button>All markets <ArrowRight size={13}/></button></div>
-              </article>) : <div className="empty-state">No events match your search. Try another team or league.</div>}
+              </article>) : <div className="empty-state">{query ? 'No events match your search. Try another team or league.' : sport === 'Football' ? 'No upcoming football events are available right now.' : 'No verified ' + sport.toLowerCase() + ' events are available yet.'}</div>}
             </div>
             <div className="demo-note"><ShieldCheck size={15}/><span>{usingDemoData ? 'Preview mode: sample fixtures and prices are illustrative only. No bets or payments can be placed.' : 'Fixtures are loaded from your BETNOVA database. Prices appear only when active market selections are supplied.'}</span></div>
           </section>
