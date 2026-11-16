@@ -66,7 +66,7 @@ export default function App() {
       }
 
       try {
-        const sportSlug = sport.toLowerCase().replaceAll(' ', '-')
+        const sportSlug = sport.toLowerCase().replace(/\s+/g, '-')
         const { data: sportRow, error: sportError } = await supabase
           .from('sports')
           .select('id')
