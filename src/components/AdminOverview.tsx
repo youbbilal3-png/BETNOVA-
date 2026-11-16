@@ -53,7 +53,7 @@ export default function AdminOverview({ onClose }: Props) {
       {checking ? <p className="admin-message">Verifying your administrator access…</p> :
         error ? <p className="admin-message error">{error}</p> :
         !isAdmin ? <p className="admin-message">This account does not have administrator permissions.</p> :
-        <><p className="admin-intro">Read-only system overview. Management actions remain disabled until server-side administrator policies are configured.</p>
+        <><p className="admin-intro">Read-only system overview. Database write permissions are now protected by administrator-only policies; management controls will be enabled here after the workflows are completed and tested.</p>
           <div className="admin-count-grid">
             <div><Activity size={17}/><b>{counts?.sports ?? '—'}</b><span>Sports</span></div>
             <div><Trophy size={17}/><b>{counts?.competitions ?? '—'}</b><span>Competitions</span></div>
