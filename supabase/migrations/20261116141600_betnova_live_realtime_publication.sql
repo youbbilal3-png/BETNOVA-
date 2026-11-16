@@ -5,3 +5,7 @@ alter publication supabase_realtime add table public.fixtures;
 alter publication supabase_realtime add table public.markets;
 alter publication supabase_realtime add table public.market_selections;
 alter publication supabase_realtime add table public.fixture_events;
+
+alter publication supabase_realtime add table public.bets;
+alter publication supabase_realtime add table public.bet_legs;
+alter publication supabase_realtime add table public.wallet_accounts;
