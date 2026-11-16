@@ -232,3 +232,7 @@
 .match-event-row>b{color:#20845f;font-size:9px}
 .match-event-row>span:last-child{overflow-wrap:anywhere}
 .event-dot{font-size:11px;text-align:center}
+
+
+.wallet-form input[type="file"]{padding:8px;font-size:9px;color:#7a9184;background:#fbfdfb}
+.wallet-file-name{font-size:8px;color:#18835f;overflow-wrap:anywhere}
