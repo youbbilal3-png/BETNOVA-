@@ -15,7 +15,7 @@ Do not put this value in the browser, GitHub, or a public repository. The functi
 Send a `POST` request to:
 
 ```text
-https://<project-ref>.supabase.co/functions/v1/live-event-ingest
+https://lvhuipkfsdughearjsvy.supabase.co/functions/v1/live-event-ingest
 ```
 
 Include `Content-Type: application/json` and `x-betnova-feed-secret: <your secret>`.
