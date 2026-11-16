@@ -208,11 +208,13 @@ export default function App() {
 
   function addMarketSelection(selection: { selectionId: string; marketId: string; marketLabel: string; selectionLabel: string; odds: string }) {
     if (!detailMatch) return
-    setSelected(current => {
-      if (current.some(item => item.selectionId === selection.selectionId)) return current.filter(item => item.selectionId !== selection.selectionId)
-      if (current.length >= 20) { setBetMessage('A bet slip can contain up to 20 selections.'); return current }
-      return [...current.filter(item => item.marketId !== selection.marketId), { match: detailMatch, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId }]
-    })
+    if (selected.length >= 20 && !selected.some(item => item.selectionId === selection.selectionId)) {
+      setBetMessage('A bet slip can contain up to 20 selections.')
+      return
+    }
+    setSelected(current => current.some(item => item.selectionId === selection.selectionId)
+      ? current.filter(item => item.selectionId !== selection.selectionId)
+      : [...current.filter(item => item.marketId !== selection.marketId), { match: detailMatch, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId }])
     setBetMessage('')
   }
 
