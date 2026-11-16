@@ -58,7 +58,7 @@ export default function App() {
           competitions(name, country),
           home_team:teams!fixtures_home_team_id_fkey(name, short_name),
           away_team:teams!fixtures_away_team_id_fkey(name, short_name),
-          markets(market_type, market_selections(name, odds, status))
+          markets(market_type, status, market_selections(name, odds, status))
         `)
         .or(`status.eq.live,starts_at.gte.${new Date().toISOString()}`)
         .order('starts_at', { ascending: true })
@@ -105,7 +105,7 @@ export default function App() {
   const visibleMatches = useMemo(() => matches.filter(m =>
     (league === 'All matches' || league === 'Popular' || m.country === league) &&
     (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase())
-  ), [league, query])
+  ), [matches, league, query])
 
   function addSelection(match: Match, index: number) {
     if (match.odds[index] === '—') return
