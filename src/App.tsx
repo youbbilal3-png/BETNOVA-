@@ -4,7 +4,7 @@ import AuthPanel from './components/AuthPanel'
 import { supabase } from './lib/supabase'
 
 type Match = {
-  id: number
+  id: string | number
   league: string
   country: string
   time: string
@@ -16,7 +16,7 @@ type Match = {
   featured?: boolean
 }
 
-const matches: Match[] = [
+const demoMatches: Match[] = [
   { id: 1, league: 'Premier League', country: 'England', time: '18:30', home: 'Arsenal', away: 'Chelsea', homeMark: '🔴', awayMark: '🔵', odds: ['1.82', '3.70', '4.20'], featured: true },
   { id: 2, league: 'La Liga', country: 'Spain', time: '19:00', home: 'Real Madrid', away: 'Sevilla', homeMark: '⚪', awayMark: '🔴', odds: ['1.45', '4.60', '6.80'] },
   { id: 3, league: 'Serie A', country: 'Italy', time: '20:45', home: 'Inter', away: 'Napoli', homeMark: '🔵', awayMark: '🔷', odds: ['2.10', '3.25', '3.40'] },
@@ -28,6 +28,8 @@ const leagues = ['All matches', 'Popular', 'England', 'Spain', 'Italy', 'Germany
 
 export default function App() {
   const [sport, setSport] = useState('Football')
+  const [matches, setMatches] = useState<Match[]>(demoMatches)
+  const [usingDemoData, setUsingDemoData] = useState(true)
   const [league, setLeague] = useState('All matches')
   const [selected, setSelected] = useState<{ match: Match; label: string; odd: string }[]>([])
   const [mobileSlip, setMobileSlip] = useState(false)
@@ -45,12 +47,68 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    let active = true
+    async function loadFixtures() {
+      if (!supabase) return
+      const { data, error } = await supabase
+        .from('fixtures')
+        .select(`
+          id, starts_at, status,
+          competitions(name, country),
+          home_team:teams!fixtures_home_team_id_fkey(name, short_name),
+          away_team:teams!fixtures_away_team_id_fkey(name, short_name),
+          markets(market_type, market_selections(name, odds, status))
+        `)
+        .or(`status.eq.live,starts_at.gte.${new Date().toISOString()}`)
+        .order('starts_at', { ascending: true })
+        .limit(30)
+
+      if (!active || error || !data?.length) return
+
+      const mapped: Match[] = data.map((row: any) => {
+        const competition = Array.isArray(row.competitions) ? row.competitions[0] : row.competitions
+        const home = Array.isArray(row.home_team) ? row.home_team[0] : row.home_team
+        const away = Array.isArray(row.away_team) ? row.away_team[0] : row.away_team
+        const allSelections = (row.markets ?? [])
+          .filter((market: any) => market.status === 'open')
+          .flatMap((market: any) => market.market_selections ?? [])
+          .filter((selection: any) => selection.status === 'active')
+        const findOdd = (names: string[]) => {
+          const selection = allSelections.find((item: any) =>
+            names.includes(String(item.name).trim().toLowerCase())
+          )
+          return selection ? String(selection.odds) : '—'
+        }
+        const startsAt = new Date(row.starts_at)
+        return {
+          id: row.id,
+          league: competition?.name ?? 'Competition',
+          country: competition?.country ?? '',
+          time: startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          home: home?.name ?? 'Home team',
+          away: away?.name ?? 'Away team',
+          homeMark: home?.short_name ?? String(home?.name ?? 'H').slice(0, 2).toUpperCase(),
+          awayMark: away?.short_name ?? String(away?.name ?? 'A').slice(0, 2).toUpperCase(),
+          odds: [findOdd(['home', '1']), findOdd(['draw', 'x']), findOdd(['away', '2'])],
+        }
+      })
+      if (active && mapped.length) {
+        setMatches(mapped)
+        setUsingDemoData(false)
+      }
+    }
+    void loadFixtures()
+    return () => { active = false }
+  }, [userEmail])
+
   const visibleMatches = useMemo(() => matches.filter(m =>
     (league === 'All matches' || league === 'Popular' || m.country === league) &&
     (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase())
   ), [league, query])
 
   function addSelection(match: Match, index: number) {
+    if (match.odds[index] === '—') return
     const labels = ['Home', 'Draw', 'Away']
     const exists = selected.some(s => s.match.id === match.id && s.label === labels[index])
     setSelected(exists
@@ -99,11 +157,11 @@ export default function App() {
             <div className="match-list">
               {visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
                 <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time"><Clock3 size={13}/>{match.time}</span></div>
-                <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div><div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} onClick={()=>addSelection(match,i)} className={isPicked(match,i)?'odd picked':'odd'}><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div></div>
+                <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div><div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>addSelection(match,i)} className={isPicked(match,i)?'odd picked':'odd'}><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div></div>
                 <div className="match-footer"><span><Star size={13}/> Add to favourites</span><button>All markets <ArrowRight size={13}/></button></div>
               </article>) : <div className="empty-state">No events match your search. Try another team or league.</div>}
             </div>
-            <div className="demo-note"><ShieldCheck size={15}/><span>Preview mode: fixtures and prices shown are illustrative only. No bets or payments can be placed.</span></div>
+            <div className="demo-note"><ShieldCheck size={15}/><span>{usingDemoData ? 'Preview mode: sample fixtures and prices are illustrative only. No bets or payments can be placed.' : 'Fixtures are loaded from your BETNOVA database. Prices appear only when active market selections are supplied.'}</span></div>
           </section>
         </section>
 
