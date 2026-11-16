@@ -1,0 +1,112 @@
+import { useMemo, useState } from 'react'
+import { Activity, ArrowDownUp, ArrowRight, Bell, ChevronDown, CircleHelp, Clock3, Flame, Globe2, Menu, Search, ShieldCheck, Sparkles, Star, Trophy, Wallet, X } from 'lucide-react'
+
+type Match = {
+  id: number
+  league: string
+  country: string
+  time: string
+  home: string
+  away: string
+  homeMark: string
+  awayMark: string
+  odds: string[]
+  featured?: boolean
+}
+
+const matches: Match[] = [
+  { id: 1, league: 'Premier League', country: 'England', time: '18:30', home: 'Arsenal', away: 'Chelsea', homeMark: '🔴', awayMark: '🔵', odds: ['1.82', '3.70', '4.20'], featured: true },
+  { id: 2, league: 'La Liga', country: 'Spain', time: '19:00', home: 'Real Madrid', away: 'Sevilla', homeMark: '⚪', awayMark: '🔴', odds: ['1.45', '4.60', '6.80'] },
+  { id: 3, league: 'Serie A', country: 'Italy', time: '20:45', home: 'Inter', away: 'Napoli', homeMark: '🔵', awayMark: '🔷', odds: ['2.10', '3.25', '3.40'] },
+  { id: 4, league: 'Bundesliga', country: 'Germany', time: '21:00', home: 'Dortmund', away: 'Leverkusen', homeMark: '🟡', awayMark: '🔴', odds: ['2.65', '3.50', '2.40'] },
+]
+
+const sports = ['Football', 'Basketball', 'Tennis', 'Ice Hockey', 'Volleyball']
+const leagues = ['All matches', 'Popular', 'England', 'Spain', 'Italy', 'Germany']
+
+export default function App() {
+  const [sport, setSport] = useState('Football')
+  const [league, setLeague] = useState('All matches')
+  const [selected, setSelected] = useState<{ match: Match; label: string; odd: string }[]>([])
+  const [mobileSlip, setMobileSlip] = useState(false)
+  const [query, setQuery] = useState('')
+
+  const visibleMatches = useMemo(() => matches.filter(m =>
+    (league === 'All matches' || league === 'Popular' || m.country === league) &&
+    (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase())
+  ), [league, query])
+
+  function addSelection(match: Match, index: number) {
+    const labels = ['Home', 'Draw', 'Away']
+    const exists = selected.some(s => s.match.id === match.id && s.label === labels[index])
+    setSelected(exists
+      ? selected.filter(s => !(s.match.id === match.id && s.label === labels[index]))
+      : [...selected.filter(s => s.match.id !== match.id), { match, label: labels[index], odd: match.odds[index] }])
+  }
+
+  const isPicked = (match: Match, index: number) => selected.some(s => s.match.id === match.id && s.label === ['Home', 'Draw', 'Away'][index])
+
+  return (
+    <div className="app-shell">
+      <div className="ambient ambient-one" /><div className="ambient ambient-two" />
+      <header className="topbar">
+        <a className="brand" href="#"><span className="brand-symbol"><Activity size={22} strokeWidth={2.8}/></span><span>BET<span className="brand-accent">NOVA</span><small>A NEW WORLD OF SPORTS</small></span></a>
+        <nav className="desktop-nav"><a className="active" href="#">Sports</a><a href="#live">Live</a><a href="#promos">Promotions</a><a href="#results">Results</a></nav>
+        <div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18}/></button><button className="icon-btn" aria-label="Notifications"><Bell size={18}/></button><button className="login-btn">Log in</button><button className="join-btn">Join now <ArrowRight size={16}/></button><button className="menu-btn"><Menu/></button></div>
+      </header>
+
+      <div className="ticker"><span className="live-dot"/><strong>SPORTS CENTER</strong><span className="ticker-divider"/><span>Explore today's top events</span><span className="ticker-right"><ShieldCheck size={14}/> Secure experience <span>·</span> Demo interface</span></div>
+
+      <main className="layout">
+        <aside className="left-rail">
+          <div className="rail-heading">DISCOVER <span>•••</span></div>
+          <button className="rail-item selected"><Trophy size={18}/> Sports <span className="rail-count">24</span></button>
+          <button className="rail-item"><Flame size={18}/> Live events <span className="live-count">LIVE</span></button>
+          <button className="rail-item"><Star size={18}/> Favourites</button>
+          <div className="rail-separator"/>
+          <div className="rail-heading">SPORTS</div>
+          {sports.map((s, i) => <button key={s} onClick={() => setSport(s)} className={sport === s ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
+          <div className="rail-promo"><div className="promo-orb"><Sparkles size={20}/></div><b>A new way to play</b><p>Your sports experience, reimagined.</p><span>Discover BETNOVA <ArrowRight size={13}/></span></div>
+        </aside>
+
+        <section className="main-content">
+          <section className="hero">
+            <div className="hero-copy"><div className="eyebrow"><span/> THE GAME STARTS HERE</div><h1>Feel every<br/><em>moment.</em></h1><p>All your favourite sports. One extraordinary destination.</p><div className="hero-actions"><button onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}>Explore events <ArrowRight size={16}/></button><span><ShieldCheck size={15}/> Built around a safer experience</span></div></div>
+            <div className="hero-art"><div className="orbit orbit-a"/><div className="orbit orbit-b"/><div className="hero-ball">⚽</div><div className="art-tag tag-top"><span className="live-dot"/> MATCH DAY</div><div className="art-tag tag-bottom"><Trophy size={14}/> BIG MOMENTS AHEAD</div><div className="art-spark">✦</div></div>
+            <div className="hero-index">01 <span>/</span> 04</div>
+          </section>
+
+          <div className="quick-stats"><div><span className="stat-icon"><Activity size={17}/></span><span><b>Live energy</b><small>Follow the action</small></span></div><div><span className="stat-icon teal"><Globe2 size={17}/></span><span><b>Global sports</b><small>From every corner</small></span></div><div><span className="stat-icon lime"><ShieldCheck size={17}/></span><span><b>Player first</b><small>Safety by design</small></span></div></div>
+
+          <section className="events-section" id="events">
+            <div className="section-heading"><div><div className="eyebrow dark"><span/> YOUR DAILY LINEUP</div><h2>Featured events <span className="heading-star">✳</span></h2><p>Find the moments worth watching.</p></div><button className="view-all">View calendar <ArrowRight size={15}/></button></div>
+            <div className="sports-tabs">{sports.slice(0,4).map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒'][i]}</span>{s}</button>)}</div>
+            <div className="filter-row"><div className="league-filters">{leagues.map(l=><button key={l} onClick={()=>setLeague(l)} className={league===l?'filter active-filter':'filter'}>{l}</button>)}</div><label className="search-field"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a team or league"/></label></div>
+            <div className="match-list">
+              {visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
+                <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time"><Clock3 size={13}/>{match.time}</span></div>
+                <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div><div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} onClick={()=>addSelection(match,i)} className={isPicked(match,i)?'odd picked':'odd'}><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div></div>
+                <div className="match-footer"><span><Star size={13}/> Add to favourites</span><button>All markets <ArrowRight size={13}/></button></div>
+              </article>) : <div className="empty-state">No events match your search. Try another team or league.</div>}
+            </div>
+            <div className="demo-note"><ShieldCheck size={15}/><span>Preview mode: fixtures and prices shown are illustrative only. No bets or payments can be placed.</span></div>
+          </section>
+        </section>
+
+        <aside className="right-rail">
+          <div className="slip-card"><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><button className="slip-clear" onClick={()=>setSelected([])}>Clear</button></div>
+            {selected.length ? <div className="slip-selections">{selected.map(s=><div className="slip-selection" key={s.match.id}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button onClick={()=>setSelected(selected.filter(x=>x.match.id!==s.match.id))}><X size={14}/></button></div>)}</div> : <div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}
+            <div className="slip-demo"><ShieldCheck size={14}/> Demo only — no transactions</div>
+            <button className="slip-cta" onClick={()=>setMobileSlip(false)} disabled={!selected.length}>Review selections <ArrowRight size={15}/></button>
+          </div>
+          <div className="help-card"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><a href="#help">Get support <ArrowRight size={13}/></a></div></div>
+          <div className="responsible-card"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
+        </aside>
+      </main>
+
+      <nav className="mobile-nav"><button className="mobile-active"><Trophy size={19}/>Sports</button><button><Activity size={19}/>Live</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>Slip {selected.length>0&&<i>{selected.length}</i>}</button><button><Star size={19}/>Saved</button><button><Menu size={19}/>More</button></nav>
+      {mobileSlip && <div className="mobile-sheet-backdrop" onClick={()=>setMobileSlip(false)}><div className="mobile-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-handle"/><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><button className="icon-btn" onClick={()=>setMobileSlip(false)}><X/></button></div>{selected.length?selected.map(s=><div className="slip-selection" key={s.match.id}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong></div>):<div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}<div className="slip-demo"><ShieldCheck size={14}/> Demo only — no transactions</div></div></div>}
+      <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
+    </div>
+  )
+}
