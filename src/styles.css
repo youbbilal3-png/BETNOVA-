@@ -211,3 +211,12 @@
 @media(max-width:760px){.bets-panel{width:100%;padding:25px 18px 35px}.my-bets-open-btn{height:33px;padding:0 8px;font-size:9px}}
 
 .bet-slip-stake select{width:100%;border:1px solid #e0eae0;border-radius:9px;background:#fff;padding:9px;color:#345d49;font-size:9px;outline:none}
+
+
+.language-picker{height:32px;display:flex;align-items:center;gap:5px;border:1px solid #e3ece3;background:#fff;color:#648171;border-radius:9px;padding:0 7px}
+.language-picker svg{flex:none;color:#16845f}
+.language-picker select{max-width:105px;border:0;outline:0;background:transparent;color:#426553;font-size:9px;font-weight:800;cursor:pointer}
+[dir="rtl"] .app-shell{text-align:inherit}
+[dir="rtl"] .wallet-panel,[dir="rtl"] .bets-panel{direction:rtl}
+[dir="rtl"] .detail-panel{direction:rtl}
+@media(max-width:760px){.language-picker{height:30px;padding:0 5px}.language-picker select{max-width:75px;font-size:8px}.top-actions{gap:6px}}
