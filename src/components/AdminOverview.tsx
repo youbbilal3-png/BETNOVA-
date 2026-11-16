@@ -112,6 +112,11 @@ export default function AdminOverview({ onClose }: Props) {
 
   async function togglePaymentMethod(method: PaymentMethod) {
     if (!supabase) return
+    const hasInstructions = Object.values(method.instructions ?? {}).some(value => typeof value === 'string' && value.trim().length > 0)
+    if (!method.is_enabled && !hasInstructions) {
+      setError('Add and save the receiving account details before enabling this payment method.')
+      return
+    }
     setBusyId(method.id); setError(''); setNotice('')
     try {
       const { error: updateError } = await supabase.from('payment_methods').update({ is_enabled: !method.is_enabled }).eq('id', method.id)
