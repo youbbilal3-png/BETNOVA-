@@ -121,6 +121,23 @@ Deno.serve(async (req: Request) => {
   }
 
   let settledMarkets = 0;
+  if (eventType === "goal" && payload.event_data && typeof payload.event_data === "object" &&
+      (payload.event_data as Record<string, unknown>).confirmed !== true) {
+    // Allow the provider's VAR/cancellation update to arrive before crediting a goal market.
+    await new Promise(resolve => setTimeout(resolve, 25000));
+    const { data: recentCancellations, error: cancellationError } = await supabase
+      .from("fixture_events").select("id,event_data")
+      .eq("fixture_id", fixtureId).eq("event_type", "goal_cancelled")
+      .gte("received_at", new Date(Date.now() - 60000).toISOString());
+    if (cancellationError) return json({ error: "Could not verify goal status" }, 500);
+    const overturned = (recentCancellations ?? []).some(row => {
+      const details = row.event_data as Record<string, unknown>;
+      return details?.cancels_provider_event_id === providerEventId ||
+        details?.cancelled_provider_event_id === providerEventId ||
+        details?.related_event_id === providerEventId;
+    });
+    if (overturned) return json({ ok: true, event_id: event.id, goal_overturned: true, settled_markets: 0 });
+  }
   if (["goal", "full_time", "corner", "yellow_card", "red_card", "penalty_awarded"].includes(eventType)) {
     const { data, error: settleError } = await supabase.rpc("betnova_process_live_event", { p_event_id: event.id });
     if (settleError) return json({ error: "Event stored but automatic settlement failed", details: settleError.message }, 500);
