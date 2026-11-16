@@ -43,6 +43,7 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
               display_name: displayName.trim(),
               country_code: 'DZ',
             },
+            emailRedirectTo: window.location.origin,
           },
         })
         if (signUpError) throw signUpError
