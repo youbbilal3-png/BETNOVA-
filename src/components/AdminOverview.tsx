@@ -14,19 +14,20 @@ export default function AdminOverview({ onClose }: Props) {
   useEffect(() => {
     let active = true
     async function load() {
-      if (!supabase) { if (active) { setError('Supabase is not configured.'); setChecking(false) }; return }
+      const client = supabase
+      if (!client) { if (active) { setError('Supabase is not configured.'); setChecking(false) }; return }
       try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        const { data: { user }, error: userError } = await client.auth.getUser()
         if (userError) throw userError
         if (!user) { if (active) { setIsAdmin(false); setChecking(false) }; return }
-        const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+        const { data: profile, error: profileError } = await client.from('profiles').select('role').eq('id', user.id).maybeSingle()
         if (profileError) throw profileError
         if (!active) return
         const allowed = profile?.role === 'admin'
         setIsAdmin(allowed)
         if (!allowed) { setChecking(false); return }
         const names = ['sports', 'competitions', 'teams', 'fixtures', 'markets'] as const
-        const results = await Promise.all(names.map(name => supabase.from(name).select('id', { count: 'exact', head: true })))
+        const results = await Promise.all(names.map(name => client.from(name).select('id', { count: 'exact', head: true })))
         const failed = results.find(result => result.error)
         if (failed?.error) throw failed.error
         if (active) setCounts({
