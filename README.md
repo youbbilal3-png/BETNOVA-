@@ -23,7 +23,7 @@ cp .env.example .env
 npm run dev
 ```
 
-The example environment file contains the BETNOVA project URL and its browser-safe publishable key. The publishable key is designed for frontend use and is protected by database Row Level Security. Never add a Supabase secret/service-role key or payment credentials to frontend code or this repository.
+The example environment file contains the BETNOVA project URL and its browser-safe publishable key. The publishable key is designed for frontend use and is protected by database Row Level Security. In Supabase Authentication → URL Configuration, allow `http://localhost:5173` for local testing and add the final deployed domain when one is chosen. Never add a Supabase secret/service-role key or payment credentials to frontend code or this repository.
 
 ## Build
 
