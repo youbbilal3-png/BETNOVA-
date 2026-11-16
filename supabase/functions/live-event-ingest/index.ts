@@ -121,8 +121,7 @@ Deno.serve(async (req: Request) => {
   }
 
   let settledMarkets = 0;
-  if (eventType === "goal" && payload.event_data && typeof payload.event_data === "object" &&
-      (payload.event_data as Record<string, unknown>).confirmed !== true) {
+  if (eventType === "goal" && (payload.event_data as Record<string, unknown> | null)?.confirmed !== true) {
     // Allow the provider's VAR/cancellation update to arrive before crediting a goal market.
     await new Promise(resolve => setTimeout(resolve, 25000));
     const { data: recentCancellations, error: cancellationError } = await supabase
