@@ -201,7 +201,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-symbol"><Activity size={22} strokeWidth={2.8}/></span><span>BET<span className="brand-accent">NOVA</span><small>A NEW WORLD OF SPORTS</small></span></a>
         <nav className="desktop-nav"><a className="active" href="#events">Sports</a><button onClick={() => openEventView('live')}>Live</button><a href="#responsible">Responsible play</a><button onClick={() => openEventView('results')}>Results</button></nav>
-        <div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18}/></button><button className="icon-btn" aria-label="Notifications"><Bell size={18}/></button>{userEmail ? <span className="signed-in-label">Signed in</span> : <button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>Log in</button>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? 'Sign out' : 'Join now'} <ArrowRight size={16}/></button><button className="menu-btn"><Menu/></button></div>
+        <div className="top-actions"><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label="Notifications"><Bell size={18}/></button>{userEmail ? <span className="signed-in-label">Signed in</span> : <button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>Log in</button>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? 'Sign out' : 'Join now'} <ArrowRight size={16}/></button><button className="menu-btn"><Menu/></button></div>
       </header>
 
       <div className="ticker"><span className="live-dot"/><strong>SPORTS CENTER</strong><span className="ticker-divider"/><span>Explore today's top events</span><span className="ticker-right"><ShieldCheck size={14}/> Secure experience <span>·</span> Demo interface</span></div>
@@ -209,8 +209,8 @@ export default function App() {
       <main className="layout">
         <aside className="left-rail">
           <div className="rail-heading">DISCOVER <span>•••</span></div>
-          <button className="rail-item selected"><Trophy size={18}/> Sports <span className="rail-count">24</span></button>
-          <button className="rail-item"><Flame size={18}/> Live events <span className="live-count">LIVE</span></button>
+          <button className="rail-item selected" onClick={() => openEventView('upcoming')}><Trophy size={18}/> Sports <span className="rail-count">24</span></button>
+          <button className="rail-item" onClick={() => openEventView('live')}><Flame size={18}/> Live events <span className="live-count">LIVE</span></button>
           <button className={showFavorites ? 'rail-item selected' : 'rail-item'} onClick={() => { setShowFavorites(!showFavorites); setEventView('upcoming') }}><Star size={18}/> Favourites <span className="rail-count">{favoriteIds.length}</span></button>
           <div className="rail-separator"/>
           <div className="rail-heading">SPORTS</div>
@@ -235,7 +235,7 @@ export default function App() {
               <button className={eventView === 'results' ? 'event-view active' : 'event-view'} onClick={() => setEventView('results')}>Results</button>
             </div>
             <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>
-            <div className="filter-row"><div className="league-filters">{leagues.map(l=><button key={l} onClick={()=>setLeague(l)} className={league===l?'filter active-filter':'filter'}>{l}</button>)}</div><label className="search-field"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a team or league"/></label></div>
+            <div className="filter-row"><div className="league-filters">{leagues.map(l=><button key={l} onClick={()=>setLeague(l)} className={league===l?'filter active-filter':'filter'}>{l}</button>)}</div><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a team or league"/></label></div>
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
                 <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? 'Score unavailable'}</> : <><Clock3 size={13}/>{match.time}</>}</span></div>
