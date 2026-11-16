@@ -14,6 +14,8 @@ type Match = {
   awayMark: string
   odds: string[]
   featured?: boolean
+  status?: string
+  score?: string
 }
 
 const demoMatches: Match[] = [
@@ -28,6 +30,7 @@ const leagues = ['All matches', 'Popular', 'England', 'Spain', 'Italy', 'Germany
 
 export default function App() {
   const [sport, setSport] = useState('Football')
+  const [eventView, setEventView] = useState<'upcoming' | 'live' | 'results'>('upcoming')
   const [matches, setMatches] = useState<Match[]>(demoMatches)
   const [usingDemoData, setUsingDemoData] = useState(true)
   const [league, setLeague] = useState('All matches')
@@ -83,18 +86,25 @@ export default function App() {
           return
         }
 
-        const { data, error } = await supabase
+        let fixtureQuery = supabase
           .from('fixtures')
           .select(`
-            id, starts_at, status,
+            id, starts_at, status, home_score, away_score,
             competitions!inner(name, country, sport_id),
             home_team:teams!fixtures_home_team_id_fkey(name, short_name),
             away_team:teams!fixtures_away_team_id_fkey(name, short_name),
             markets(market_type, status, market_selections(name, odds, status))
           `)
           .eq('competitions.sport_id', sportRow.id)
-          .or('status.eq.live,starts_at.gte.' + new Date().toISOString())
-          .order('starts_at', { ascending: true })
+        if (eventView === 'live') {
+          fixtureQuery = fixtureQuery.eq('status', 'live')
+        } else if (eventView === 'results') {
+          fixtureQuery = fixtureQuery.eq('status', 'finished')
+        } else {
+          fixtureQuery = fixtureQuery.eq('status', 'scheduled').gte('starts_at', new Date().toISOString())
+        }
+        const { data, error } = await fixtureQuery
+          .order('starts_at', { ascending: eventView !== 'results' })
           .limit(30)
 
         if (error) throw error
@@ -125,13 +135,15 @@ export default function App() {
             homeMark: home?.short_name ?? String(home?.name ?? 'H').slice(0, 2).toUpperCase(),
             awayMark: away?.short_name ?? String(away?.name ?? 'A').slice(0, 2).toUpperCase(),
             odds: [findOdd(['home', '1']), findOdd(['draw', 'x']), findOdd(['away', '2'])],
+            status: row.status,
+            score: row.home_score !== null && row.away_score !== null ? `${row.home_score} – ${row.away_score}` : undefined,
           }
         })
 
         if (mapped.length) {
           setMatches(mapped)
           setUsingDemoData(false)
-        } else if (!userEmail && sport === 'Football') {
+        } else if (!userEmail && sport === 'Football' && eventView === 'upcoming') {
           setMatches(demoMatches)
           setUsingDemoData(true)
         } else {
@@ -151,7 +163,7 @@ export default function App() {
 
     void loadFixtures()
     return () => { active = false }
-  }, [sport, userEmail])
+  }, [sport, userEmail, eventView])
 
   const visibleMatches = useMemo(() => matches.filter(m =>
     (league === 'All matches' || league === 'Popular' || m.country === league) &&
@@ -203,16 +215,21 @@ export default function App() {
 
           <section className="events-section" id="events">
             <div className="section-heading"><div><div className="eyebrow dark"><span/> YOUR DAILY LINEUP</div><h2>Featured events <span className="heading-star">✳</span></h2><p>Find the moments worth watching.</p></div><button className="view-all">View calendar <ArrowRight size={15}/></button></div>
+            <div className="event-view-tabs" role="tablist" aria-label="Event type">
+              <button className={eventView === 'upcoming' ? 'event-view active' : 'event-view'} onClick={() => setEventView('upcoming')}>Upcoming</button>
+              <button className={eventView === 'live' ? 'event-view active' : 'event-view'} onClick={() => setEventView('live')}>Live <span className="live-dot"/></button>
+              <button className={eventView === 'results' ? 'event-view active' : 'event-view'} onClick={() => setEventView('results')}>Results</button>
+            </div>
             <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>
             <div className="filter-row"><div className="league-filters">{leagues.map(l=><button key={l} onClick={()=>setLeague(l)} className={league===l?'filter active-filter':'filter'}>{l}</button>)}</div><label className="search-field"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a team or league"/></label></div>
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
-                <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time"><Clock3 size={13}/>{match.time}</span></div>
-                <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div><div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>addSelection(match,i)} className={isPicked(match,i)?'odd picked':'odd'}><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div></div>
-                <div className="match-footer"><span><Star size={13}/> Add to favourites</span><button>All markets <ArrowRight size={13}/></button></div>
-              </article>) : <div className="empty-state">{query ? 'No events match your search. Try another team or league.' : sport === 'Football' ? 'No upcoming football events are available right now.' : 'No verified ' + sport.toLowerCase() + ' events are available yet.'}</div>}
+                <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? 'Score unavailable'}</> : <><Clock3 size={13}/>{match.time}</>}</span></div>
+                <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>addSelection(match,i)} className={isPicked(match,i)?'odd picked':'odd'}><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div>}</div>
+                <div className="match-footer"><span><Star size={13}/> Add to favourites</span>{eventView !== 'results' && <button disabled={usingDemoData}>All markets <ArrowRight size={13}/></button>}</div>
+              </article>) : <div className="empty-state">{query ? 'No events match your search. Try another team or league.' : sport === 'Football' ? eventView === 'live' ? 'No live ' + sport.toLowerCase() + ' events are available right now.' : eventView === 'results' ? 'No completed ' + sport.toLowerCase() + ' results are available yet.' : 'No upcoming football events are available right now.' : 'No verified ' + sport.toLowerCase() + ' events are available yet.'}</div>}
             </div>
-            <div className="demo-note"><ShieldCheck size={15}/><span>{usingDemoData ? 'Preview mode: sample fixtures and prices are illustrative only. No bets or payments can be placed.' : 'Fixtures are loaded from your BETNOVA database. Prices appear only when active market selections are supplied.'}</span></div>
+            <div className="demo-note"><ShieldCheck size={15}/><span>{usingDemoData ? 'Preview mode: sample fixtures and prices are illustrative only. No bets or payments can be placed.' : eventView === 'results' ? 'Final scores are loaded from completed fixtures in the BETNOVA database.' : 'Fixtures are loaded from your BETNOVA database. Prices appear only when active market selections are supplied.'}</span></div>
           </section>
         </section>
 
