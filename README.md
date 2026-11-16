@@ -11,7 +11,7 @@ BETNOVA is an independent, mobile-first sports platform prototype built with Rea
 - Email/password registration and login connected to Supabase Auth
 - Automatic customer profile creation after signup
 - Server-controlled profile roles with Row Level Security
-- Fixtures and market selections load from Supabase when available, with clearly labelled demo samples as a fallback
+- Sport-specific fixtures load from Supabase with explicit loading, empty, and error states; unauthenticated football visitors may see clearly labelled sample fixtures
 - Initial sports catalogue seeded: football, basketball, tennis, ice hockey and volleyball
 - Local demo bet-slip interactions only
 
@@ -39,7 +39,7 @@ npm run build
 - Project URL: `https://lvhuipkfsdughearjsvy.supabase.co`
 - Database migrations: `supabase/migrations/`
 
-The database currently contains profiles, sports, competitions, teams, fixtures, markets and market selections. All seven public tables have RLS enabled. Five sports are seeded; fixtures and markets remain empty until a permitted data provider is connected. The interface reads those tables when available and otherwise displays labelled sample fixtures. New profiles are created by a trusted Auth trigger; clients cannot insert profiles or change their role.
+The database currently contains profiles, five sports, 362 football competition/season entries, 3,423 teams and 5,474 fixtures (including 3,693 historical fixtures with complete team links). The imported fixtures are read-only reference data. Markets and market selections are still empty, so no odds are published and no real bets can be placed. All seven public tables have RLS enabled. New profiles are created by a trusted Auth trigger; clients cannot insert profiles or change their role. Source-provider identifiers and unique indexes support repeatable imports without duplicate teams or competitions.
 
 ## Architecture roadmap
 
