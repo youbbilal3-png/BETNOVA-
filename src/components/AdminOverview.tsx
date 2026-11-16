@@ -71,6 +71,20 @@ export default function AdminOverview({ onClose }: Props) {
     return () => { active = false }
   }, [loadFinance])
 
+  async function openDepositProof(path: string) {
+    if (!supabase) return
+    const tab = window.open('about:blank', '_blank')
+    if (tab) tab.opener = null
+    const { data, error: signedError } = await supabase.storage.from('deposit-proofs').createSignedUrl(path, 300)
+    if (signedError || !data?.signedUrl) {
+      if (tab) tab.close()
+      setError('Could not open the payment proof.')
+      return
+    }
+    if (tab) tab.location.href = data.signedUrl
+    else window.location.href = data.signedUrl
+  }
+
   async function reviewDeposit(id: string, approve: boolean) {
     if (!supabase) return
     setBusyId(id); setError(''); setNotice('')
@@ -171,8 +185,8 @@ export default function AdminOverview({ onClose }: Props) {
               <div className="admin-finance-top"><b>{money(Number(item.amount), item.currency)}</b><span><Clock3 size={12}/> {new Date(item.created_at).toLocaleString()}</span></div>
               <p>{item.payment_method.toUpperCase()} · User {item.user_id.slice(0, 8)}…</p>
               {item.sender_reference && <small>Reference: {item.sender_reference}</small>}
-              {item.proof_path && <small>Proof: {item.proof_path}</small>}
-              <div className="admin-finance-actions"><button disabled={busyId === item.id} onClick={() => void reviewDeposit(item.id, true)}><CheckCircle2 size={14}/> Confirm received</button><button className="reject" disabled={busyId === item.id} onClick={() => void reviewDeposit(item.id, false)}><XCircle size={14}/> Reject</button></div>
+              {item.proof_path && <small>Payment proof uploaded</small>}
+              <div className="admin-finance-actions">{item.proof_path && <button onClick={() => void openDepositProof(item.proof_path!)}>View proof</button>}<button disabled={busyId === item.id} onClick={() => void reviewDeposit(item.id, true)}><CheckCircle2 size={14}/> Confirm received</button><button className="reject" disabled={busyId === item.id} onClick={() => void reviewDeposit(item.id, false)}><XCircle size={14}/> Reject</button></div>
             </article>)}
           </div>}
           {tab === 'withdrawals' && <div className="admin-finance-list">
