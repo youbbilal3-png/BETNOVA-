@@ -143,3 +143,5 @@
 .wallet-empty{font-size:10px;color:#899b90;text-align:center;padding:20px}
 .wallet-refresh{justify-self:start;display:flex;align-items:center;gap:6px;border:0;background:transparent;color:#18835f;font-size:9px;font-weight:800;padding:8px}
 @media(max-width:760px){.wallet-panel{width:100%;padding:25px 18px 35px}.wallet-open-btn{height:33px;padding:0 8px;font-size:9px}.wallet-balance-card strong{font-size:26px}}
+
+.admin-instructions-editor{width:100%;resize:vertical;border:1px solid #e0eae0;border-radius:8px;background:#fff;color:#496656;padding:9px;font:9px/1.5 ui-monospace,monospace;margin-top:7px;outline:none}.admin-instructions-editor:focus{border-color:#70bf96;box-shadow:0 0 0 3px #27a87618}
