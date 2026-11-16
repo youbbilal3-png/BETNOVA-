@@ -20,7 +20,8 @@ export default function AdminOverview({ onClose }: Props) {
   const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'payments'>('deposits')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')\n  const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({})
+  const [notice, setNotice] = useState('')
+  const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({})
 
   const loadFinance = useCallback(async () => {
     if (!supabase) return
