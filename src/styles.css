@@ -31,3 +31,5 @@
 @media(max-width:480px){.auth-panel{padding:29px 22px 22px;border-radius:21px}.auth-panel h2{font-size:24px}}
 
 .odd:disabled{opacity:.48;cursor:not-allowed;box-shadow:none}
+
+.signed-in-label{font-size:10px;font-weight:800;color:#16845f;padding:0 8px;white-space:nowrap}
