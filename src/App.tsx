@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
-import { Activity, ArrowDownUp, ArrowRight, Bell, ChevronDown, CircleHelp, Clock3, Flame, Globe2, Menu, Search, ShieldCheck, Sparkles, Star, Trophy, Wallet, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Menu, Search, ShieldCheck, Sparkles, Star, Trophy, Wallet, X } from 'lucide-react'
+import AuthPanel from './components/AuthPanel'
+import { supabase } from './lib/supabase'
 
 type Match = {
   id: number
@@ -30,6 +32,18 @@ export default function App() {
   const [selected, setSelected] = useState<{ match: Match; label: string; odd: string }[]>([])
   const [mobileSlip, setMobileSlip] = useState(false)
   const [query, setQuery] = useState('')
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user.email ?? null))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user.email ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   const visibleMatches = useMemo(() => matches.filter(m =>
     (league === 'All matches' || league === 'Popular' || m.country === league) &&
@@ -52,7 +66,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-symbol"><Activity size={22} strokeWidth={2.8}/></span><span>BET<span className="brand-accent">NOVA</span><small>A NEW WORLD OF SPORTS</small></span></a>
         <nav className="desktop-nav"><a className="active" href="#">Sports</a><a href="#live">Live</a><a href="#promos">Promotions</a><a href="#results">Results</a></nav>
-        <div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18}/></button><button className="icon-btn" aria-label="Notifications"><Bell size={18}/></button><button className="login-btn">Log in</button><button className="join-btn">Join now <ArrowRight size={16}/></button><button className="menu-btn"><Menu/></button></div>
+        <div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18}/></button><button className="icon-btn" aria-label="Notifications"><Bell size={18}/></button><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{userEmail ? 'Account' : 'Log in'}</button><button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? 'Sign out' : 'Join now'} <ArrowRight size={16}/></button><button className="menu-btn"><Menu/></button></div>
       </header>
 
       <div className="ticker"><span className="live-dot"/><strong>SPORTS CENTER</strong><span className="ticker-divider"/><span>Explore today's top events</span><span className="ticker-right"><ShieldCheck size={14}/> Secure experience <span>·</span> Demo interface</span></div>
@@ -106,6 +120,7 @@ export default function App() {
 
       <nav className="mobile-nav"><button className="mobile-active"><Trophy size={19}/>Sports</button><button><Activity size={19}/>Live</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>Slip {selected.length>0&&<i>{selected.length}</i>}</button><button><Star size={19}/>Saved</button><button><Menu size={19}/>More</button></nav>
       {mobileSlip && <div className="mobile-sheet-backdrop" onClick={()=>setMobileSlip(false)}><div className="mobile-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-handle"/><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><button className="icon-btn" onClick={()=>setMobileSlip(false)}><X/></button></div>{selected.length?selected.map(s=><div className="slip-selection" key={s.match.id}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong></div>):<div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}<div className="slip-demo"><ShieldCheck size={14}/> Demo only — no transactions</div></div></div>}
+      <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
       <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
     </div>
   )
