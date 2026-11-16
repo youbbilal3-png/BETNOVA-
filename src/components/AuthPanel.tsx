@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { ArrowRight, Eye, EyeOff, ShieldCheck, X } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { useLanguage } from '../i18n'
 
 type AuthPanelProps = {
   open: boolean
@@ -10,6 +11,7 @@ type AuthPanelProps = {
 }
 
 export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPanelProps) {
+  const { t } = useLanguage()
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,11 +27,11 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
     setError('')
     setNotice('')
     if (!supabase || !isSupabaseConfigured) {
-      setError('Authentication is not configured yet. Add the Supabase environment variables and try again.')
+      setError(t('auth_not_configured'))
       return
     }
     if (password.length < 8) {
-      setError('Use a password with at least 8 characters.')
+      setError(t('password_too_short'))
       return
     }
     setBusy(true)
@@ -50,7 +52,7 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
         if (data.session) {
           onClose()
         } else {
-          setNotice('Your account request is ready. Check your email for the confirmation link, then come back to log in.')
+          setNotice(t('check_email'))
         }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -61,7 +63,7 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
         onClose()
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.')
+      setError(caught instanceof Error ? caught.message : t('something_wrong'))
     } finally {
       setBusy(false)
     }
@@ -70,21 +72,21 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
   return (
     <div className="auth-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
       <section className="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-        <button className="auth-close" onClick={onClose} aria-label="Close"><X size={19}/></button>
+        <button className="auth-close" onClick={onClose} aria-label={t('close')}><X size={19}/></button>
         <div className="auth-brand-mark"><ShieldCheck size={23}/></div>
-        <div className="auth-kicker">WELCOME TO BETNOVA</div>
-        <h2 id="auth-title">{mode === 'signup' ? 'Create your account' : 'Welcome back'}</h2>
-        <p className="auth-subtitle">{mode === 'signup' ? 'Join the sports experience built around you.' : 'Sign in to continue to your BETNOVA account.'}</p>
+        <div className="auth-kicker">{t('welcome')}</div>
+        <h2 id="auth-title">{mode === 'signup' ? t('create_account') : t('welcome_back')}</h2>
+        <p className="auth-subtitle">{mode === 'signup' ? t('join_experience') : t('sign_in_continue')}</p>
         <form onSubmit={handleSubmit} className="auth-form">
-          {mode === 'signup' && <label>Your name<input autoComplete="name" value={displayName} onChange={event => setDisplayName(event.target.value)} placeholder="How should we call you?" required maxLength={60}/></label>}
-          <label>Email address<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" required/></label>
-          <label>Password<span className="password-wrap"><input type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={event => setPassword(event.target.value)} placeholder="At least 8 characters" minLength={8} required/><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></span></label>
+          {mode === 'signup' && <label>{t('your_name')}<input autoComplete="name" value={displayName} onChange={event => setDisplayName(event.target.value)} placeholder={t('name_prompt')} required maxLength={60}/></label>}
+          <label>{t('email_address')}<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" required/></label>
+          <label>{t('password')}<span className="password-wrap"><input type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={event => setPassword(event.target.value)} placeholder={t('password_minimum')} minLength={8} required/><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t('hide_password') : t('show_password')}>{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></span></label>
           {error && <div className="auth-message error" role="alert">{error}</div>}
           {notice && <div className="auth-message success" role="status">{notice}</div>}
-          <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Log in'} <ArrowRight size={16}/></button>
+          <button className="auth-submit" type="submit" disabled={busy}>{busy ? t('please_wait') : mode === 'signup' ? t('create_account') : t('login')} <ArrowRight size={16}/></button>
         </form>
-        <div className="auth-switch">{mode === 'signup' ? 'Already have an account?' : 'New to BETNOVA?'} <button onClick={() => { setError(''); setNotice(''); onModeChange(mode === 'signup' ? 'login' : 'signup') }}>{mode === 'signup' ? 'Log in' : 'Create account'}</button></div>
-        <div className="auth-footnote"><ShieldCheck size={14}/> Your account details are protected by Supabase authentication.</div>
+        <div className="auth-switch">{mode === 'signup' ? t('already_account') : t('new_to_betnova')} <button onClick={() => { setError(''); setNotice(''); onModeChange(mode === 'signup' ? 'login' : 'signup') }}>{mode === 'signup' ? t('login') : t('create_account')}</button></div>
+        <div className="auth-footnote"><ShieldCheck size={14}/> {t('account_protected')}</div>
       </section>
     </div>
   )
