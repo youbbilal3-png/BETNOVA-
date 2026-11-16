@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Menu, Search, ShieldCheck, Sparkles, Star, Trophy, Wallet, X } from 'lucide-react'
 import AuthPanel from './components/AuthPanel'
 import AdminOverview from './components/AdminOverview'
+import WalletPanel from './components/WalletPanel'
 import { supabase } from './lib/supabase'
 
 type Match = {
@@ -49,6 +50,7 @@ export default function App() {
   const [matchLoadError, setMatchLoadError] = useState<string | null>(null)
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
   const [adminOpen, setAdminOpen] = useState(false)
+  const [walletOpen, setWalletOpen] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -208,7 +210,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-symbol"><Activity size={22} strokeWidth={2.8}/></span><span>BET<span className="brand-accent">NOVA</span><small>A NEW WORLD OF SPORTS</small></span></a>
         <nav className="desktop-nav"><a className="active" href="#events">Sports</a><button onClick={() => openEventView('live')}>Live</button><a href="#responsible">Responsible play</a><button onClick={() => openEventView('results')}>Results</button></nav>
-        <div className="top-actions"><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label="Notifications"><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>Admin</button></> : <button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>Log in</button>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? 'Sign out' : 'Join now'} <ArrowRight size={16}/></button><button className="menu-btn"><Menu/></button></div>
+        <div className="top-actions"><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label="Notifications"><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="wallet-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> Wallet</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>Admin</button></> : <button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>Log in</button>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? 'Sign out' : 'Join now'} <ArrowRight size={16}/></button><button className="menu-btn"><Menu/></button></div>
       </header>
 
       <div className="ticker"><span className="live-dot"/><strong>SPORTS CENTER</strong><span className="ticker-divider"/><span>Explore today's top events</span><span className="ticker-right"><ShieldCheck size={14}/> Secure experience <span>·</span> Demo interface</span></div>
@@ -269,6 +271,7 @@ export default function App() {
       {mobileSlip && <div className="mobile-sheet-backdrop" onClick={()=>setMobileSlip(false)}><div className="mobile-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-handle"/><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><button className="icon-btn" onClick={()=>setMobileSlip(false)}><X/></button></div>{selected.length?selected.map(s=><div className="slip-selection" key={s.match.id}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong></div>):<div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}<div className="slip-demo"><ShieldCheck size={14}/> Demo only — no transactions</div></div></div>}
       {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailMatch(null) }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => setDetailMatch(null)} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">Match details</h2><div className="detail-teams"><div><span className="detail-mark">{detailMatch.homeMark}</span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark">{detailMatch.awayMark}</span><b>{detailMatch.away}</b></div></div><div className="detail-info-grid"><div><small>{detailMatch.status === 'finished' ? 'MATCH STATUS' : detailMatch.status === 'live' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? 'Live now' : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div><p className="detail-note">Only verified information currently stored in BETNOVA is shown here. Additional statistics will appear when reliable match data is connected.</p></section></div>}
       {adminOpen && <AdminOverview onClose={() => setAdminOpen(false)} />}
+      {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} />}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
       <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
     </div>
