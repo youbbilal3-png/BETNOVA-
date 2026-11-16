@@ -63,8 +63,8 @@ export default function App() {
 
       if (!supabase) {
         if (active) {
-          setMatches(sport === 'Football' ? demoMatches : [])
-          setUsingDemoData(sport === 'Football')
+          setMatches(sport === 'Football' && eventView === 'upcoming' ? demoMatches : [])
+          setUsingDemoData(sport === 'Football' && eventView === 'upcoming')
           setLoadingMatches(false)
         }
         return
