@@ -57,3 +57,24 @@
 .detail-info-grid b{display:block;color:#315b4b;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
 .detail-note{font-size:9px;line-height:1.6;color:#899a8f;margin:14px 2px 0}
 @media(max-width:480px){.detail-panel{padding:25px 18px 20px;border-radius:21px}.detail-panel h2{font-size:22px}.detail-mark{width:47px;height:47px}}
+
+
+/* Read-only administrator overview */
+.admin-open-btn{height:30px;padding:0 11px;border:1px solid #dcebe0;border-radius:9px;background:#eff8f0;color:#16845f;font-size:10px;font-weight:900;box-shadow:0 3px 8px #1d765014}
+.admin-open-btn:hover{background:#e2f4e8;transform:translateY(-1px)}
+.admin-backdrop{position:fixed;inset:0;z-index:35;background:#102c2380;backdrop-filter:blur(7px);display:grid;place-items:center;padding:18px;animation:authFade .18s ease-out}
+.admin-panel{position:relative;width:min(100%,540px);padding:30px;border-radius:24px;background:linear-gradient(155deg,#fff,#f4faf3);border:1px solid #e1ede1;box-shadow:0 28px 90px #0c392d40;animation:authRise .22s ease-out}
+.admin-close{position:absolute;right:16px;top:16px;width:34px;height:34px;border:0;border-radius:11px;background:#edf5ee;color:#658073;display:grid;place-items:center}
+.admin-kicker{display:flex;align-items:center;gap:7px;color:#16845f;font-size:9px;font-weight:900;letter-spacing:1.4px}
+.admin-panel h2{font:700 26px 'Space Grotesk',sans-serif;color:#193d30;margin:10px 0}
+.admin-intro,.admin-message{font-size:11px;line-height:1.6;color:#809287}
+.admin-message.error{color:#b84d3c}
+.admin-count-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0 12px}
+.admin-count-grid>div{display:grid;grid-template-columns:22px 1fr;align-items:center;gap:5px 8px;padding:15px;border:1px solid #e4eee3;background:#fff;border-radius:14px;color:#16845f}
+.admin-count-grid b{font:700 21px 'Space Grotesk',sans-serif;color:#244c3b}
+.admin-count-grid span{grid-column:2;color:#82958a;font-size:9px;font-weight:800}
+.admin-market-row{display:flex;justify-content:space-between;padding:13px 14px;border:1px solid #e4eee3;background:#fff;border-radius:12px;color:#557465;font-size:10px}
+.admin-market-row b{color:#244c3b}
+.admin-safety-note{display:flex;align-items:flex-start;gap:8px;margin-top:14px;padding:12px;border-radius:11px;background:#edf7ed;color:#4d7961;font-size:9px;line-height:1.5}
+.admin-safety-note svg{flex:none;color:#16845f}
+@media(max-width:480px){.admin-panel{padding:26px 18px 20px;border-radius:21px}.admin-panel h2{font-size:23px}}
