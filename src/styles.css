@@ -183,3 +183,29 @@
 .bet-slip-message{margin:5px 0;padding:8px 9px;border-radius:8px;background:#edf7ed;color:#47765d;font-size:8px;line-height:1.5;overflow-wrap:anywhere}
 .slip-cta:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:760px){.detail-market-heading{margin-top:16px}.market-outcomes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+.my-bets-open-btn{height:36px;border:1px solid #e0eae0;background:#fff;color:#527565;border-radius:10px;padding:0 11px;font-size:10px;font-weight:800}
+.bets-backdrop{position:fixed;inset:0;z-index:31;background:#173b2d66;backdrop-filter:blur(7px);display:flex;justify-content:flex-end}
+.bets-panel{position:relative;width:min(100%,500px);height:100%;overflow:auto;background:#f8fbf7;padding:30px 25px 36px;box-shadow:-18px 0 50px #163c2c30}
+.bets-panel h2{font:700 26px 'Space Grotesk';letter-spacing:-.8px;margin:9px 0 14px;color:#193b2d}
+.bets-filters{display:flex;gap:5px;overflow:auto;padding-bottom:12px}
+.bets-filters button{white-space:nowrap;border:1px solid #e0eae0;background:#fff;color:#7b9184;border-radius:8px;padding:7px 10px;font-size:8px;font-weight:800}
+.bets-filters button.active{background:#e3f4e8;border-color:#c7e5d0;color:#147b58}
+.bets-list{display:grid;gap:10px}
+.bet-history-card{background:#fff;border:1px solid #e5eee4;border-radius:13px;padding:12px}
+.bet-history-head{display:flex;align-items:center;justify-content:space-between;color:#789083;font-size:8px}
+.bet-status{font-size:8px;text-transform:uppercase;letter-spacing:.6px;padding:5px 7px;border-radius:6px;background:#edf2ee;color:#7e8d83}
+.bet-status.won{background:#e1f5e7;color:#13845c}.bet-status.lost{background:#fff0ed;color:#b84d42}.bet-status.pending{background:#fff5e5;color:#a77936}.bet-status.void{background:#edf1f3;color:#6b7e89}
+.bet-history-numbers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}
+.bet-history-numbers>div{display:grid;gap:4px}
+.bet-history-numbers small{font-size:7px;color:#92a197}
+.bet-history-numbers b{font-size:10px;color:#2c5944;overflow-wrap:anywhere}
+.bet-history-legs{display:grid;gap:6px;border-top:1px solid #eef3ed;padding-top:9px}
+.bet-history-legs>div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px;align-items:center;font-size:8px;color:#6d8678}
+.bet-history-legs>div span{overflow-wrap:anywhere}
+.bet-history-legs>div b{color:#345c48}
+.bet-history-legs>div strong{color:#16815d}
+.bet-history-legs>div small{text-transform:capitalize;color:#95a298}
+.bet-history-date{display:flex;align-items:center;gap:5px;color:#98a69d;font-size:7px;margin-top:10px}
+@media(max-width:760px){.bets-panel{width:100%;padding:25px 18px 35px}.my-bets-open-btn{height:33px;padding:0 8px;font-size:9px}}
