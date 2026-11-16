@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Clock3, RefreshCw, Ticket, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useLanguage } from '../i18n'
 
 type Props = { onClose: () => void }
 type Leg = { market_label: string; selection_label: string; odds_snapshot: number; result_status: string; fixtures?: { home_score: number | null; away_score: number | null; status: string } | null }
 type Bet = { id: string; stake: number; currency: string; combined_odds: number; potential_return: number; status: string; created_at: string; bet_legs: Leg[] }
 const money = (amount: number, currency: string) => new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(amount)
 
-export default function MyBetsPanel({onClose}:Props) {
+export default function MyBetsPanel({onClose}:Props) {\n const {t}=useLanguage()
  const [bets,setBets]=useState<Bet[]>([])
  const [loading,setLoading]=useState(true)
  const [error,setError]=useState('')
@@ -32,7 +33,7 @@ export default function MyBetsPanel({onClose}:Props) {
   <section className="bets-panel" role="dialog" aria-modal="true" aria-labelledby="my-bets-title">
    <button className="wallet-close" onClick={onClose} aria-label="Close bets"><X size={19}/></button>
    <div className="wallet-kicker"><Ticket size={15}/> BETNOVA · MY ACTIVITY</div>
-   <h2 id="my-bets-title">My bets</h2>
+   <h2 id="my-bets-title">{t('my_bets')}</h2>
    <div className="bets-filters">{['all','pending','won','lost','void'].map(v=><button key={v} className={filter===v?'active':''} onClick={()=>setFilter(v)}>{v==='all'?'All':v[0].toUpperCase()+v.slice(1)}</button>)}</div>
    {loading?<div className="markets-loading">Loading your bets…</div>:error?<div className="markets-empty">{error}</div>:visible.length===0?<div className="markets-empty"><Ticket size={22}/><b>No bets here yet</b><span>Your placed bets and their results will appear in this list.</span></div>:<div className="bets-list">{visible.map(b=><article className="bet-history-card" key={b.id}>
     <div className="bet-history-head"><span>#{b.id.slice(0,8)}</span><b className={'bet-status '+b.status}>{b.status}</b></div>
