@@ -236,3 +236,29 @@
 
 .wallet-form input[type="file"]{padding:8px;font-size:9px;color:#7a9184;background:#fbfdfb}
 .wallet-file-name{font-size:8px;color:#18835f;overflow-wrap:anywhere}
+
+
+/* BETNOVA mobile controls and Arabic layout */
+.mobile-more-backdrop,.notification-backdrop{position:fixed;inset:0;z-index:40;background:#102c2380;backdrop-filter:blur(6px);display:flex;justify-content:flex-end}
+.mobile-more-panel{width:min(88vw,360px);height:100%;overflow:auto;background:#f8fbf7;padding:22px 18px calc(28px + env(safe-area-inset-bottom));box-shadow:-18px 0 55px #163c2c30;display:flex;flex-direction:column;gap:7px;animation:wallet-in .2s ease-out}
+.mobile-more-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;margin-bottom:8px;border-bottom:1px solid #e4ece3;color:#1b4936}
+.mobile-more-header b{font:700 18px 'Space Grotesk',sans-serif}
+.mobile-more-header small{display:block;margin-top:3px;color:#91a397;font-size:9px}
+.mobile-more-panel>button{width:100%;min-height:45px;display:flex;align-items:center;gap:12px;border:1px solid #e7eee6;border-radius:11px;background:#fff;color:#456b58;padding:0 13px;text-align:start;font-size:12px;font-weight:800}
+.mobile-more-panel>button:active{background:#e5f4e9;color:#16845f}
+.mobile-more-language{display:flex;align-items:center;gap:9px;margin-top:12px;padding:12px;border:1px solid #e4ece3;border-radius:11px;background:#fff;color:#567565;font-size:11px}
+.mobile-more-language select{margin-left:auto;max-width:150px;border:0;background:transparent;color:#285b43;font-size:11px;font-weight:800}
+.notification-backdrop{z-index:41;justify-content:center;align-items:center;padding:20px}
+.notification-panel{width:min(100%,360px);padding:20px;border-radius:20px;background:#f8fbf7;box-shadow:0 20px 70px #163c2c40}
+.notification-panel .mobile-more-header{margin:0}
+.notification-empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:28px 12px;color:#7b9385}
+.notification-empty svg{color:#1b9a70}
+.notification-empty b{color:#315b47;font-size:13px}
+.notification-empty span{font-size:10px;line-height:1.6}
+.notification-panel .slip-cta{margin-top:5px}
+[dir="rtl"] .layout,[dir="rtl"] .topbar,[dir="rtl"] .ticker,[dir="rtl"] .desktop-nav,[dir="rtl"] .top-actions{direction:rtl}
+[dir="rtl"] .match-body,[dir="rtl"] .match-footer,[dir="rtl"] .slip-head,[dir="rtl"] .mobile-more-panel,[dir="rtl"] .notification-panel{direction:rtl}
+[dir="rtl"] .rail-item.selected{box-shadow:inset -3px 0 #18a777}
+[dir="rtl"] .detail-close,[dir="rtl"] .wallet-close,[dir="rtl"] .auth-close{right:auto;left:16px}
+[dir="rtl"] .mobile-more-language select{margin-left:0;margin-right:auto}
+html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"] select{font-family:Tahoma,Arial,sans-serif}
