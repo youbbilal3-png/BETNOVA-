@@ -209,3 +209,5 @@
 .bet-history-legs>div small{text-transform:capitalize;color:#95a298}
 .bet-history-date{display:flex;align-items:center;gap:5px;color:#98a69d;font-size:7px;margin-top:10px}
 @media(max-width:760px){.bets-panel{width:100%;padding:25px 18px 35px}.my-bets-open-btn{height:33px;padding:0 8px;font-size:9px}}
+
+.bet-slip-stake select{width:100%;border:1px solid #e0eae0;border-radius:9px;background:#fff;padding:9px;color:#345d49;font-size:9px;outline:none}
