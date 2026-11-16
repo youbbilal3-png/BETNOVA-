@@ -22,6 +22,7 @@ export default function AdminOverview({ onClose }: Props) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({})
+  const [currencyDrafts, setCurrencyDrafts] = useState<Record<string, string[]>>({})
 
   const loadFinance = useCallback(async () => {
     if (!supabase) return
@@ -93,6 +94,20 @@ export default function AdminOverview({ onClose }: Props) {
       setNotice(action === 'paid' ? 'Withdrawal marked paid. Confirm the external transfer was completed.' : 'Withdrawal rejected and reserved funds released.')
       await loadFinance()
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not review withdrawal.') }
+    finally { setBusyId(null) }
+  }
+
+  async function saveCurrencies(method: PaymentMethod) {
+    if (!supabase) return
+    const currencies = currencyDrafts[method.id] ?? method.supported_currencies
+    if (!currencies.length) { setError('Select at least one supported currency.'); return }
+    setBusyId(method.id); setError(''); setNotice('')
+    try {
+      const { error: updateError } = await supabase.from('payment_methods').update({ supported_currencies: currencies }).eq('id', method.id)
+      if (updateError) throw updateError
+      setNotice(`Currencies saved for ${method.display_name}.`)
+      await loadFinance()
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save supported currencies.') }
     finally { setBusyId(null) }
   }
 
@@ -171,7 +186,9 @@ export default function AdminOverview({ onClose }: Props) {
           {tab === 'payments' && <div className="admin-finance-list">
             {methods.length === 0 ? <p className="admin-message">Add payment methods to the payment_methods table to configure them here.</p> : methods.map(method => <article className="admin-finance-item" key={method.id}>
               <div className="admin-finance-top"><b>{method.display_name}</b><span>{method.is_enabled ? 'Enabled' : 'Disabled'}</span></div>
-              <p>{method.code} · {method.supported_currencies.join(', ')}</p>
+              <p>{method.code} · {(currencyDrafts[method.id] ?? method.supported_currencies).join(', ')}</p>
+              <div className="admin-currency-options">{['DZD','USD','EUR'].map(currency => <label key={currency}><input type="checkbox" checked={(currencyDrafts[method.id] ?? method.supported_currencies).includes(currency)} onChange={event => setCurrencyDrafts(current => ({...current,[method.id]:event.target.checked?[...(current[method.id] ?? method.supported_currencies),currency]:(current[method.id] ?? method.supported_currencies).filter(value=>value!==currency)}))}/>{currency}</label>)}</div>
+              <div className="admin-finance-actions"><button disabled={busyId === method.id} onClick={() => void saveCurrencies(method)}>Save currencies</button></div>
               <textarea className="admin-instructions-editor" value={instructionDrafts[method.id] ?? JSON.stringify(method.instructions, null, 2)} onChange={event => setInstructionDrafts(current => ({ ...current, [method.id]: event.target.value }))} rows={4} aria-label={`Instructions for ${method.display_name}`} />
               <div className="admin-finance-actions"><button disabled={busyId === method.id} onClick={() => void saveInstructions(method)}>Save instructions</button><button className="admin-method-toggle" disabled={busyId === method.id} onClick={() => void togglePaymentMethod(method)}>{method.is_enabled ? 'Disable method' : 'Enable method'}</button></div>
             </article>)}
