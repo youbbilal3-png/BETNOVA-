@@ -26,11 +26,15 @@ create index if not exists fixture_events_fixture_time_idx on public.fixture_eve
 create index if not exists markets_fixture_live_idx on public.markets(fixture_id,is_live,status);
 alter table public.market_templates enable row level security;
 alter table public.fixture_events enable row level security;
+drop policy if exists "Users read enabled market templates" on public.market_templates;
 create policy "Users read enabled market templates" on public.market_templates for select to authenticated using(is_enabled=true);
+drop policy if exists "Admins manage market templates" on public.market_templates;
 create policy "Admins manage market templates" on public.market_templates for all to authenticated
 using(exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'))
 with check(exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
+drop policy if exists "Users read fixture events" on public.fixture_events;
 create policy "Users read fixture events" on public.fixture_events for select to authenticated using(true);
+drop policy if exists "Admins read fixture events" on public.fixture_events;
 create policy "Admins read fixture events" on public.fixture_events for select to authenticated
 using(exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
 grant select on public.market_templates,public.fixture_events to authenticated;
