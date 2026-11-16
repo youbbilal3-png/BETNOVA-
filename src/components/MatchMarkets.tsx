@@ -10,6 +10,7 @@ type Props = {
 }
 type Selection = { id: string; name: string; odds: number; status: string; result_status: string }
 type Market = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; market_selections: Selection[] }
+type LiveEvent = { id: string; event_type: string; period: string | null; minute: number | null; added_time: number | null; player_name: string | null; team: { name: string; short_name: string | null } | null }
 
 const categoryFor = (market: Market) => {
   const key = (market.market_key || market.market_type || '').toLowerCase()
@@ -24,6 +25,7 @@ const categoryFor = (market: Market) => {
 
 export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }: Props) {
   const [markets, setMarkets] = useState<Market[]>([])
+  const [events, setEvents] = useState<LiveEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState('Match result')
@@ -47,14 +49,24 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
     setLoading(false)
   }
 
+  async function loadEvents() {
+    if (!supabase) return
+    const { data } = await supabase.from('fixture_events')
+      .select('id,event_type,period,minute,added_time,player_name,team:teams!fixture_events_team_id_fkey(name,short_name)')
+      .eq('fixture_id', fixtureId).order('occurred_at', { ascending: false }).limit(10)
+    setEvents((data ?? []) as unknown as LiveEvent[])
+  }
+
   useEffect(() => {
     setLoading(true)
     void loadMarkets()
+    void loadEvents()
     if (!supabase) return
     const client = supabase
     const channel = client.channel('match-markets-' + fixtureId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'markets', filter: 'fixture_id=eq.' + fixtureId }, () => { void loadMarkets() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'market_selections' }, () => { void loadMarkets() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fixture_events', filter: 'fixture_id=eq.' + fixtureId }, () => { void loadEvents() })
       .subscribe()
     return () => { void client.removeChannel(channel) }
   }, [fixtureId])
@@ -73,6 +85,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   if (!markets.length) return <div className="markets-empty"><Activity size={22}/><b>No verified odds available</b><span>Markets will appear here when active prices are supplied by a trusted data source.</span></div>
 
   return <div className="match-markets">
+    {live && events.length > 0 && <section className="match-event-feed"><div className="match-event-feed-head"><span><Radio size={12}/> LIVE MATCH EVENTS</span><small>{events.length} recent updates</small></div>{events.map(event=><div className="match-event-row" key={event.id}><b>{event.minute !== null ? event.minute + (event.added_time ? '+' + event.added_time : '') + "'" : '•'}</b><span className={'event-dot '+event.event_type}>{event.event_type==='goal'?'⚽':event.event_type==='yellow_card'?'🟨':event.event_type==='red_card'?'🟥':event.event_type==='corner'?'◉':event.event_type==='substitution'?'↔':'•'}</span><span>{event.player_name || event.event_type.replaceAll('_',' ')}{event.team?.name ? ' · '+event.team.name : ''}</span></div>)}</section>}
     <div className="markets-toolbar"><span>{markets.length} available markets</span><small>{lastUpdated ? 'Updated ' + lastUpdated.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : ''}</small><button onClick={() => { setLoading(true); void loadMarkets() }} aria-label="Refresh markets"><RefreshCw size={13}/></button></div>
     {grouped.map(([category, items]) => <section className="market-group" key={category}>
       <button className="market-group-head" onClick={() => setExpanded(expanded === category ? '' : category)}>
