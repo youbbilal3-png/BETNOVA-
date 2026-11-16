@@ -3,6 +3,7 @@ import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Glo
 import AuthPanel from './components/AuthPanel'
 import AdminOverview from './components/AdminOverview'
 import WalletPanel from './components/WalletPanel'
+import MatchMarkets from './components/MatchMarkets'
 import { supabase } from './lib/supabase'
 
 type Match = {
@@ -40,7 +41,10 @@ export default function App() {
   const [matches, setMatches] = useState<Match[]>(demoMatches)
   const [usingDemoData, setUsingDemoData] = useState(true)
   const [league, setLeague] = useState('All matches')
-  const [selected, setSelected] = useState<{ match: Match; label: string; odd: string }[]>([])
+  const [selected, setSelected] = useState<{ match: Match; label: string; odd: string; selectionId: string; marketId: string }[]>([])
+  const [betStake, setBetStake] = useState('')
+  const [betBusy, setBetBusy] = useState(false)
+  const [betMessage, setBetMessage] = useState('')
   const [mobileSlip, setMobileSlip] = useState(false)
   const [query, setQuery] = useState('')
   const [authOpen, setAuthOpen] = useState(false)
@@ -193,16 +197,38 @@ export default function App() {
     document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  function addSelection(match: Match, index: number) {
-    if (match.odds[index] === '—') return
-    const labels = ['Home', 'Draw', 'Away']
-    const exists = selected.some(s => s.match.id === match.id && s.label === labels[index])
-    setSelected(exists
-      ? selected.filter(s => !(s.match.id === match.id && s.label === labels[index]))
-      : [...selected.filter(s => s.match.id !== match.id), { match, label: labels[index], odd: match.odds[index] }])
+  function addMarketSelection(selection: { selectionId: string; marketId: string; marketLabel: string; selectionLabel: string; odds: string }) {
+    if (!detailMatch) return
+    setSelected(current => current.some(item => item.selectionId === selection.selectionId)
+      ? current.filter(item => item.selectionId !== selection.selectionId)
+      : [...current, { match: detailMatch, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId }])
+    setBetMessage('')
   }
 
-  const isPicked = (match: Match, index: number) => selected.some(s => s.match.id === match.id && s.label === ['Home', 'Draw', 'Away'][index])
+  async function placeBet() {
+    if (!supabase || !userEmail) { setBetMessage('Sign in before placing a bet.'); return }
+    if (usingDemoData || selected.length === 0 || selected.some(item => !item.selectionId)) {
+      setBetMessage('Choose verified market selections from a real fixture first.')
+      return
+    }
+    const stake = Number(betStake)
+    if (!Number.isFinite(stake) || stake <= 0) { setBetMessage('Enter a valid stake in DZD.'); return }
+    setBetBusy(true); setBetMessage('')
+    try {
+      const { data, error } = await supabase.rpc('betnova_place_bet', {
+        p_selections: selected.map(item => ({ selection_id: item.selectionId })),
+        p_stake: stake,
+        p_currency: 'DZD',
+        p_idempotency_key: crypto.randomUUID()
+      })
+      if (error) throw error
+      setBetMessage('Bet submitted successfully. Reference: ' + String(data).slice(0, 8))
+      setSelected([])
+      setBetStake('')
+    } catch (caught) {
+      setBetMessage(caught instanceof Error ? caught.message : 'Bet could not be placed.')
+    } finally { setBetBusy(false) }
+  }
 
   return (
     <div className="app-shell">
@@ -248,7 +274,7 @@ export default function App() {
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
                 <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? 'Score unavailable'}</> : <><Clock3 size={13}/>{match.time}</>}</span></div>
-                <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>addSelection(match,i)} className={isPicked(match,i)?'odd picked':'odd'}><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div>}</div>
+                <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>setDetailMatch(match)} className='odd'><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div>}</div>
                 <div className="match-footer"><button className="favorite-toggle" onClick={() => toggleFavorite(match.id)}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? 'Saved' : 'Add to favourites'}</button><button className="details-trigger" onClick={() => setDetailMatch(match)}>Match details <ArrowRight size={13}/></button></div>
               </article>) : <div className="empty-state">{query ? 'No events match your search. Try another team or league.' : sport === 'Football' ? eventView === 'live' ? 'No live ' + sport.toLowerCase() + ' events are available right now.' : eventView === 'results' ? 'No completed ' + sport.toLowerCase() + ' results are available yet.' : 'No upcoming football events are available right now.' : 'No verified ' + sport.toLowerCase() + ' events are available yet.'}</div>}
             </div>
@@ -258,7 +284,7 @@ export default function App() {
 
         <aside className="right-rail">
           <div className="slip-card"><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><button className="slip-clear" onClick={()=>setSelected([])}>Clear</button></div>
-            {selected.length ? <div className="slip-selections">{selected.map(s=><div className="slip-selection" key={s.match.id}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button onClick={()=>setSelected(selected.filter(x=>x.match.id!==s.match.id))}><X size={14}/></button></div>)}</div> : <div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}
+            {selected.length ? <div className="slip-selections">{selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button onClick={()=>setSelected(selected.filter(x=>x.match.id!==s.match.id))}><X size={14}/></button></div>)}</div> : <div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}
             <div className="slip-demo"><ShieldCheck size={14}/> Demo only — no transactions</div>
             <button className="slip-cta" onClick={()=>setMobileSlip(false)} disabled={!selected.length}>Review selections <ArrowRight size={15}/></button>
           </div>
@@ -269,7 +295,7 @@ export default function App() {
 
       <nav className="mobile-nav"><button className="mobile-active"><Trophy size={19}/>Sports</button><button onClick={() => openEventView('live')}><Activity size={19}/>Live</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>Slip {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>Saved</button><button><Menu size={19}/>More</button></nav>
       {mobileSlip && <div className="mobile-sheet-backdrop" onClick={()=>setMobileSlip(false)}><div className="mobile-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-handle"/><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><button className="icon-btn" onClick={()=>setMobileSlip(false)}><X/></button></div>{selected.length?selected.map(s=><div className="slip-selection" key={s.match.id}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong></div>):<div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}<div className="slip-demo"><ShieldCheck size={14}/> Demo only — no transactions</div></div></div>}
-      {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailMatch(null) }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => setDetailMatch(null)} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">Match details</h2><div className="detail-teams"><div><span className="detail-mark">{detailMatch.homeMark}</span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark">{detailMatch.awayMark}</span><b>{detailMatch.away}</b></div></div><div className="detail-info-grid"><div><small>{detailMatch.status === 'finished' ? 'MATCH STATUS' : detailMatch.status === 'live' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? 'Live now' : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div><p className="detail-note">Only verified information currently stored in BETNOVA is shown here. Additional statistics will appear when reliable match data is connected.</p></section></div>}
+      {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailMatch(null) }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => setDetailMatch(null)} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">Match details</h2><div className="detail-teams"><div><span className="detail-mark">{detailMatch.homeMark}</span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark">{detailMatch.awayMark}</span><b>{detailMatch.away}</b></div></div><div className="detail-info-grid"><div><small>{detailMatch.status === 'finished' ? 'MATCH STATUS' : detailMatch.status === 'live' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? 'Live now' : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div><div className="detail-market-heading"><div><span className="eyebrow dark">EXPLORE THE ODDS</span><h3>Match markets</h3></div><span>{detailMatch.status === 'live' ? 'LIVE EVENT' : 'PRE-MATCH'}</span></div><MatchMarkets fixtureId={detailMatch.id} live={detailMatch.status === 'live'} selectedIds={selected.map(item => item.selectionId)} onSelect={addMarketSelection} /></section></div>}
       {adminOpen && <AdminOverview onClose={() => setAdminOpen(false)} />}
       {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} />}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
