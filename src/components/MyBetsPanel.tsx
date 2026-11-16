@@ -8,7 +8,8 @@ type Leg = { market_label: string; selection_label: string; odds_snapshot: numbe
 type Bet = { id: string; stake: number; currency: string; combined_odds: number; potential_return: number; status: string; created_at: string; bet_legs: Leg[] }
 const money = (amount: number, currency: string) => new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(amount)
 
-export default function MyBetsPanel({onClose}:Props) {\n const {t}=useLanguage()
+export default function MyBetsPanel({onClose}:Props) {
+ const {t}=useLanguage()
  const [bets,setBets]=useState<Bet[]>([])
  const [loading,setLoading]=useState(true)
  const [error,setError]=useState('')
