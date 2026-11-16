@@ -83,7 +83,7 @@ export default function WalletPanel({ onClose }: Props) {
         throw insertError
       }
       setNotice('Your deposit request was sent. Your wallet will be credited after the transfer is verified.')
-      setAmount(''); setReference(''); setProofFile(null)
+      setAmount(''); setReference(''); setProofFile(null); const fileInput = document.getElementById('wallet-proof-input') as HTMLInputElement | null; if (fileInput) fileInput.value = ''
       await refresh()
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not submit deposit request.') }
     finally { setBusy(false) }
@@ -139,7 +139,7 @@ export default function WalletPanel({ onClose }: Props) {
           {!accountName && !accountNumber && !instructionText && <p>Payment instructions are being configured. Please check back soon.</p>}
         </div>}
         <label>Amount ({currency})<input inputMode="decimal" type="number" min="0.01" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="Enter amount" required/></label>
-        <label>Payment proof (JPG, PNG, WEBP or PDF · max 5 MB)<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>
+        <label>Payment proof (JPG, PNG, WEBP or PDF · max 5 MB)<input id="wallet-proof-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>
         <label>Transfer reference (optional)<input value={reference} onChange={event => setReference(event.target.value)} placeholder="Transaction ID or sender reference"/></label>
         <button className="wallet-submit" disabled={busy || !selectedMethod}>{busy ? 'Submitting…' : 'I have sent the transfer'}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> The balance is credited after your transfer is verified.</p>
