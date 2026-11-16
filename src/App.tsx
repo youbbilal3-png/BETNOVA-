@@ -44,6 +44,7 @@ export default function App() {
   const [league, setLeague] = useState('All matches')
   const [selected, setSelected] = useState<{ match: Match; label: string; odd: string; selectionId: string; marketId: string }[]>([])
   const [betStake, setBetStake] = useState('')
+  const [betCurrency, setBetCurrency] = useState('DZD')
   const [betBusy, setBetBusy] = useState(false)
   const [betMessage, setBetMessage] = useState('')
   const [mobileSlip, setMobileSlip] = useState(false)
@@ -220,7 +221,7 @@ export default function App() {
       const { data, error } = await supabase.rpc('betnova_place_bet', {
         p_selections: selected.map(item => ({ selection_id: item.selectionId })),
         p_stake: stake,
-        p_currency: 'DZD',
+        p_currency: betCurrency,
         p_idempotency_key: crypto.randomUUID()
       })
       if (error) throw error
@@ -287,7 +288,7 @@ export default function App() {
         <aside className="right-rail">
           <div className="slip-card"><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><button className="slip-clear" onClick={()=>setSelected([])}>Clear</button></div>
             {selected.length ? <div className="slip-selections">{selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button onClick={()=>setSelected(selected.filter(x=>x.selectionId!==s.selectionId))}><X size={14}/></button></div>)}</div> : <div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}
-            <div className="bet-slip-stake"><label>Stake · DZD<input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder="Enter stake"/></label><div><span>Potential return</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} DZD</b></div></div>
+            <div className="bet-slip-stake"><label>Stake<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder="Enter stake"/></label><div><span>Potential return</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} {betCurrency}</b></div></div>
             {betMessage && <p className="bet-slip-message">{betMessage}</p>}
             <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||!betStake}>{betBusy?'Submitting…':userEmail?'Place bet':'Sign in to bet'} <ArrowRight size={15}/></button>
           </div>
