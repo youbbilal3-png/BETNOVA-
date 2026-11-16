@@ -76,11 +76,11 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   const grouped = useMemo(() => {
     const groups = new Map<string, Market[]>()
     for (const market of markets) {
-      const category = categoryFor(market)
+      const category = categoryFor(market, t)
       groups.set(category, [...(groups.get(category) ?? []), market])
     }
     return Array.from(groups.entries())
-  }, [markets])
+  }, [markets, t])
 
   if (loading) return <div className="markets-loading"><LoaderCircle size={18}/> {t('loading_markets')}</div>
   if (error) return <div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets() }}>{t('try_again')}</button></div>
