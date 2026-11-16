@@ -20,7 +20,7 @@ export default function AdminOverview({ onClose }: Props) {
   const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'payments'>('deposits')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState('')\n  const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({})
 
   const loadFinance = useCallback(async () => {
     if (!supabase) return
@@ -95,6 +95,20 @@ export default function AdminOverview({ onClose }: Props) {
     finally { setBusyId(null) }
   }
 
+  async function saveInstructions(method: PaymentMethod) {
+    if (!supabase) return
+    setBusyId(method.id); setError(''); setNotice('')
+    try {
+      const instructions = JSON.parse(instructionDrafts[method.id] ?? JSON.stringify(method.instructions))
+      if (!instructions || typeof instructions !== 'object' || Array.isArray(instructions)) throw new Error('Instructions must be a JSON object.')
+      const { error: updateError } = await supabase.from('payment_methods').update({ instructions }).eq('id', method.id)
+      if (updateError) throw updateError
+      setNotice(`Instructions saved for ${method.display_name}.`)
+      await loadFinance()
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save payment instructions.') }
+    finally { setBusyId(null) }
+  }
+
   async function togglePaymentMethod(method: PaymentMethod) {
     if (!supabase) return
     setBusyId(method.id); setError(''); setNotice('')
@@ -152,7 +166,8 @@ export default function AdminOverview({ onClose }: Props) {
             {methods.length === 0 ? <p className="admin-message">Add payment methods to the payment_methods table to configure them here.</p> : methods.map(method => <article className="admin-finance-item" key={method.id}>
               <div className="admin-finance-top"><b>{method.display_name}</b><span>{method.is_enabled ? 'Enabled' : 'Disabled'}</span></div>
               <p>{method.code} · {method.supported_currencies.join(', ')}</p>
-              <button className="admin-method-toggle" disabled={busyId === method.id} onClick={() => void togglePaymentMethod(method)}>{method.is_enabled ? 'Disable method' : 'Enable method'}</button>
+              <textarea className="admin-instructions-editor" value={instructionDrafts[method.id] ?? JSON.stringify(method.instructions, null, 2)} onChange={event => setInstructionDrafts(current => ({ ...current, [method.id]: event.target.value }))} rows={4} aria-label={`Instructions for ${method.display_name}`} />
+              <div className="admin-finance-actions"><button disabled={busyId === method.id} onClick={() => void saveInstructions(method)}>Save instructions</button><button className="admin-method-toggle" disabled={busyId === method.id} onClick={() => void togglePaymentMethod(method)}>{method.is_enabled ? 'Disable method' : 'Enable method'}</button></div>
             </article>)}
           </div>}
           <div className="admin-safety-note"><ShieldCheck size={15}/> Deposit approvals credit the wallet atomically. Withdrawals reserve funds until you mark the external transfer paid or reject the request.</div>
