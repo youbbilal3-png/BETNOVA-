@@ -2,3 +2,30 @@
 @media(max-width:1100px){.layout{grid-template-columns:165px minmax(0,1fr);}.right-rail{display:none}.hero-art{right:4%}.match-body{grid-template-columns:minmax(0,1fr) 205px}.team b{font-size:10px}}
 @media(max-width:760px){.topbar{height:65px;padding:0 16px}.brand{font-size:20px}.brand-symbol{width:35px;height:35px}.desktop-nav,.login-btn,.top-actions>.icon-btn{display:none}.join-btn{height:35px;padding:0 12px}.menu-btn{display:grid}.ticker{padding:0 16px}.ticker-right{display:none}.layout{display:block;padding:16px 13px 90px}.left-rail{display:none}.hero{min-height:255px;padding:25px 22px;border-radius:19px}.hero h1{font-size:41px}.hero-copy>p{max-width:190px;line-height:1.5}.hero-art{right:-25px;top:54%;transform:translateY(-50%) scale(.75);opacity:.85}.hero-actions{align-items:flex-start;flex-direction:column;gap:11px}.hero-actions>span{font-size:8px}.hero-index{right:15px;bottom:12px}.quick-stats{gap:6px;margin:12px 0 25px}.quick-stats>div{padding:9px 7px;gap:6px;border-radius:11px}.stat-icon{width:27px;height:27px;flex:none}.quick-stats b{font-size:8px}.quick-stats small{font-size:7px}.section-heading h2{font-size:21px}.view-all{font-size:9px}.sports-tabs{gap:3px}.tab{padding:8px 9px;font-size:9px}.filter-row{align-items:flex-start;flex-direction:column}.league-filters{width:100%}.search-field{width:100%}.match-card{padding:12px}.match-body{grid-template-columns:1fr;gap:10px;padding:11px 0}.teams{justify-content:flex-start;gap:10px}.team b{font-size:11px}.odds-area{display:flex;align-items:center;gap:12px}.odds-caption{min-width:70px;margin:0}.odds-grid{flex:1}.odd{padding:8px}.footer{padding:14px 16px 85px;gap:8px;flex-wrap:wrap}.footer span:last-child{display:none}.mobile-nav{position:fixed;z-index:8;bottom:0;left:0;right:0;height:65px;background:#fbfdf9f2;backdrop-filter:blur(18px);border-top:1px solid #e3ebe2;display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}.mobile-nav button{position:relative;border:0;background:transparent;color:#8b9c91;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8px;font-weight:700;min-width:52px}.mobile-nav button.mobile-active{color:#16845f}.mobile-nav i{position:absolute;top:-5px;right:6px;background:#1aa779;color:white;border-radius:20px;font-size:8px;font-style:normal;padding:2px 5px}.mobile-sheet-backdrop{display:block;position:fixed;z-index:10;inset:0;background:#142d2580;backdrop-filter:blur(3px)}.mobile-sheet{position:absolute;bottom:0;left:0;right:0;background:#f8fbf6;border-radius:22px 22px 0 0;padding:13px 20px calc(25px + env(safe-area-inset-bottom));max-height:75vh;overflow:auto}.sheet-handle{width:35px;height:4px;border-radius:4px;background:#d7e3d9;margin:0 auto 18px}.mobile-sheet .slip-empty{padding:22px 8px}.mobile-sheet .slip-head{margin-bottom:8px}}
 @media(max-width:390px){.hero-art{right:-60px;opacity:.65}.hero-copy{z-index:2}.hero h1{font-size:37px}.quick-stats small{display:none}.quick-stats>div{justify-content:center}.team{gap:5px}.team-mark{width:25px;height:25px;font-size:18px}.team b{font-size:9px}.versus{font-size:7px}.odds-area{gap:7px}.odds-caption{min-width:62px;font-size:6px}.odd{padding:7px 5px}}
+
+.auth-backdrop{position:fixed;inset:0;z-index:30;background:#102c2380;backdrop-filter:blur(7px);display:grid;place-items:center;padding:18px;animation:authFade .18s ease-out}
+.auth-panel{position:relative;width:min(100%,430px);padding:34px 32px 25px;border-radius:25px;background:linear-gradient(155deg,#ffffff,#f5faf4);border:1px solid #e2eee2;box-shadow:0 28px 90px #0c392d40;animation:authRise .22s ease-out}
+.auth-close{position:absolute;right:17px;top:17px;width:34px;height:34px;border:0;border-radius:11px;background:#edf5ee;color:#658073;display:grid;place-items:center}
+.auth-brand-mark{width:48px;height:48px;border-radius:16px;background:linear-gradient(145deg,#0e8d68,#25bb8b);color:#fff;display:grid;place-items:center;box-shadow:0 8px 18px #15966b35;margin-bottom:18px}
+.auth-kicker{font-size:9px;font-weight:900;letter-spacing:1.8px;color:#16835f}
+.auth-panel h2{font:700 27px 'Space Grotesk',sans-serif;letter-spacing:-1px;color:#193d30;margin:8px 0}
+.auth-subtitle{font-size:12px;line-height:1.6;color:#82958a;margin:0 0 23px}
+.auth-form{display:grid;gap:14px}
+.auth-form label{display:grid;gap:7px;color:#426354;font-size:10px;font-weight:800}
+.auth-form input{width:100%;height:44px;border:1px solid #dfeae0;border-radius:11px;background:#fff;padding:0 13px;color:#214a39;outline:0;font-size:12px;transition:border-color .18s,box-shadow .18s}
+.auth-form input:focus{border-color:#35b58b;box-shadow:0 0 0 3px #35b58b1c}
+.password-wrap{position:relative;display:block}
+.password-wrap input{padding-right:45px}
+.password-wrap button{position:absolute;right:5px;top:5px;width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:#7d9487;display:grid;place-items:center}
+.auth-submit{height:46px;border:0;border-radius:12px;margin-top:3px;background:linear-gradient(135deg,#11855f,#20b987);color:white;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 15px #128b6630}
+.auth-submit:disabled{opacity:.65;cursor:wait}
+.auth-message{padding:10px 12px;border-radius:10px;font-size:10px;line-height:1.5}
+.auth-message.error{background:#fff0ed;color:#b84d3c;border:1px solid #f8d9d2}
+.auth-message.success{background:#eaf7ee;color:#26734e;border:1px solid #d5eddd}
+.auth-switch{text-align:center;margin-top:19px;color:#82948a;font-size:10px}
+.auth-switch button{border:0;background:transparent;color:#13835f;font-size:10px;font-weight:900;padding:0 0 0 4px}
+.auth-footnote{border-top:1px solid #eaf0e8;margin-top:20px;padding-top:14px;display:flex;align-items:center;justify-content:center;gap:7px;color:#91a197;font-size:8px}
+.auth-footnote svg{color:#229b70}
+@keyframes authFade{from{opacity:0}to{opacity:1}}
+@keyframes authRise{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:480px){.auth-panel{padding:29px 22px 22px;border-radius:21px}.auth-panel h2{font-size:24px}}
