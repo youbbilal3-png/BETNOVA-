@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, ShieldCheck, Wallet, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useLanguage } from '../i18n'
 
 type Props = { onClose: () => void }
 type Method = { code: string; display_name: string; supported_currencies: string[]; instructions: Record<string, unknown> }
@@ -10,7 +11,7 @@ type RequestRow = { id: string; payment_method: string; amount: number; currency
 const currencies = ['DZD', 'USD', 'EUR']
 const formatMoney = (amount: number, currency: string) => new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
 
-export default function WalletPanel({ onClose }: Props) {
+export default function WalletPanel({ onClose }: Props) {\n  const { t } = useLanguage()
   const [userId, setUserId] = useState('')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [methods, setMethods] = useState<Method[]>([])
@@ -102,10 +103,10 @@ export default function WalletPanel({ onClose }: Props) {
     <section className="wallet-panel" role="dialog" aria-modal="true" aria-labelledby="wallet-title">
       <button className="wallet-close" onClick={onClose} aria-label="Close wallet"><X size={19}/></button>
       <div className="wallet-kicker"><Wallet size={15}/> BETNOVA WALLET</div>
-      <h2 id="wallet-title">Your wallet</h2>
+      <h2 id="wallet-title">{t('wallet')}</h2>
       <div className="wallet-currency-row">{currencies.map(code => <button key={code} className={currency === code ? 'active' : ''} onClick={() => { setCurrency(code); setMethod('') }}>{code}</button>)}</div>
       <div className="wallet-balance-card">
-        <span>Available balance</span>
+        <span>{t('available_balance')}</span>
         <strong>{formatMoney(Number(account?.available_balance ?? 0), currency)}</strong>
         <small>{Number(account?.reserved_balance ?? 0) > 0 ? `${formatMoney(Number(account?.reserved_balance),currency)} reserved for withdrawals` : 'Your available wallet balance'}</small>
       </div>
