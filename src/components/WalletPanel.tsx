@@ -11,7 +11,8 @@ type RequestRow = { id: string; payment_method: string; amount: number; currency
 const currencies = ['DZD', 'USD', 'EUR']
 const formatMoney = (amount: number, currency: string) => new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
 
-export default function WalletPanel({ onClose }: Props) {\n  const { t } = useLanguage()
+export default function WalletPanel({ onClose }: Props) {
+  const { t } = useLanguage()
   const [userId, setUserId] = useState('')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [methods, setMethods] = useState<Method[]>([])
