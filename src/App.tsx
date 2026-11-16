@@ -182,7 +182,11 @@ export default function App() {
     }
 
     void loadFixtures()
-    return () => { active = false }
+    const client = supabase
+    const channel = client?.channel('betnova-fixture-live-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fixtures' }, () => { void loadFixtures() })
+      .subscribe()
+    return () => { active = false; if (client && channel) void client.removeChannel(channel) }
   }, [sport, userEmail, eventView])
 
   const visibleMatches = useMemo(() => matches.filter(m =>
