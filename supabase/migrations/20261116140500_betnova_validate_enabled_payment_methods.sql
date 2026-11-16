@@ -2,6 +2,7 @@ drop policy if exists "Users submit deposit requests" on public.deposit_requests
 create policy "Users submit deposit requests" on public.deposit_requests for insert to authenticated
 with check (
  user_id=(select auth.uid()) and status='pending' and reviewed_by is null and reviewed_at is null and wallet_ledger_id is null
+ and (proof_path is null or split_part(proof_path,'/',1)=(select auth.uid())::text)
  and exists(select 1 from public.payment_methods pm where pm.code=deposit_requests.payment_method and pm.is_enabled=true and deposit_requests.currency=any(pm.supported_currencies))
 );
 create or replace function public.betnova_request_withdrawal(p_payment_method text,p_amount numeric,p_currency text,p_destination_details text)
