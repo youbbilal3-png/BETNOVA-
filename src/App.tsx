@@ -31,6 +31,8 @@ const leagues = ['All matches', 'Popular', 'England', 'Spain', 'Italy', 'Germany
 export default function App() {
   const [sport, setSport] = useState('Football')
   const [eventView, setEventView] = useState<'upcoming' | 'live' | 'results'>('upcoming')
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([])
+  const [showFavorites, setShowFavorites] = useState(false)
   const [matches, setMatches] = useState<Match[]>(demoMatches)
   const [usingDemoData, setUsingDemoData] = useState(true)
   const [league, setLeague] = useState('All matches')
@@ -166,9 +168,21 @@ export default function App() {
   }, [sport, userEmail, eventView])
 
   const visibleMatches = useMemo(() => matches.filter(m =>
+    (!showFavorites || favoriteIds.includes(String(m.id))) &&
     (league === 'All matches' || league === 'Popular' || m.country === league) &&
     (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase())
-  ), [matches, league, query])
+  ), [matches, league, query, showFavorites, favoriteIds])
+
+  function toggleFavorite(matchId: string | number) {
+    const id = String(matchId)
+    setFavoriteIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id])
+  }
+
+  function openEventView(view: 'upcoming' | 'live' | 'results') {
+    setShowFavorites(false)
+    setEventView(view)
+    document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   function addSelection(match: Match, index: number) {
     if (match.odds[index] === '—') return
@@ -186,7 +200,7 @@ export default function App() {
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-symbol"><Activity size={22} strokeWidth={2.8}/></span><span>BET<span className="brand-accent">NOVA</span><small>A NEW WORLD OF SPORTS</small></span></a>
-        <nav className="desktop-nav"><a className="active" href="#">Sports</a><a href="#live">Live</a><a href="#promos">Promotions</a><a href="#results">Results</a></nav>
+        <nav className="desktop-nav"><a className="active" href="#events">Sports</a><button onClick={() => openEventView('live')}>Live</button><a href="#responsible">Responsible play</a><button onClick={() => openEventView('results')}>Results</button></nav>
         <div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18}/></button><button className="icon-btn" aria-label="Notifications"><Bell size={18}/></button>{userEmail ? <span className="signed-in-label">Signed in</span> : <button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>Log in</button>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? 'Sign out' : 'Join now'} <ArrowRight size={16}/></button><button className="menu-btn"><Menu/></button></div>
       </header>
 
@@ -197,7 +211,7 @@ export default function App() {
           <div className="rail-heading">DISCOVER <span>•••</span></div>
           <button className="rail-item selected"><Trophy size={18}/> Sports <span className="rail-count">24</span></button>
           <button className="rail-item"><Flame size={18}/> Live events <span className="live-count">LIVE</span></button>
-          <button className="rail-item"><Star size={18}/> Favourites</button>
+          <button className={showFavorites ? 'rail-item selected' : 'rail-item'} onClick={() => { setShowFavorites(!showFavorites); setEventView('upcoming') }}><Star size={18}/> Favourites <span className="rail-count">{favoriteIds.length}</span></button>
           <div className="rail-separator"/>
           <div className="rail-heading">SPORTS</div>
           {sports.map((s, i) => <button key={s} onClick={() => setSport(s)} className={sport === s ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
@@ -214,7 +228,7 @@ export default function App() {
           <div className="quick-stats"><div><span className="stat-icon"><Activity size={17}/></span><span><b>Live energy</b><small>Follow the action</small></span></div><div><span className="stat-icon teal"><Globe2 size={17}/></span><span><b>Global sports</b><small>From every corner</small></span></div><div><span className="stat-icon lime"><ShieldCheck size={17}/></span><span><b>Player first</b><small>Safety by design</small></span></div></div>
 
           <section className="events-section" id="events">
-            <div className="section-heading"><div><div className="eyebrow dark"><span/> YOUR DAILY LINEUP</div><h2>Featured events <span className="heading-star">✳</span></h2><p>Find the moments worth watching.</p></div><button className="view-all">View calendar <ArrowRight size={15}/></button></div>
+            <div className="section-heading"><div><div className="eyebrow dark"><span/> YOUR DAILY LINEUP</div><h2>{showFavorites ? 'Your favourites' : eventView === 'live' ? 'Live events' : eventView === 'results' ? 'Latest results' : 'Featured events'} <span className="heading-star">✳</span></h2><p>Find the moments worth watching.</p></div><button className="view-all" onClick={() => openEventView('upcoming')}>Upcoming schedule <ArrowRight size={15}/></button></div>
             <div className="event-view-tabs" role="tablist" aria-label="Event type">
               <button className={eventView === 'upcoming' ? 'event-view active' : 'event-view'} onClick={() => setEventView('upcoming')}>Upcoming</button>
               <button className={eventView === 'live' ? 'event-view active' : 'event-view'} onClick={() => setEventView('live')}>Live <span className="live-dot"/></button>
@@ -226,7 +240,7 @@ export default function App() {
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
                 <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? 'Score unavailable'}</> : <><Clock3 size={13}/>{match.time}</>}</span></div>
                 <div className="match-body"><div className="teams"><div className="team"><span className="team-mark">{match.homeMark}</span><b>{match.home}</b></div><span className="versus">VS</span><div className="team"><span className="team-mark">{match.awayMark}</span><b>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><span className="odds-caption">MATCH WINNER <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>addSelection(match,i)} className={isPicked(match,i)?'odd picked':'odd'}><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div>}</div>
-                <div className="match-footer"><span><Star size={13}/> Add to favourites</span>{eventView !== 'results' && <button disabled={usingDemoData}>All markets <ArrowRight size={13}/></button>}</div>
+                <div className="match-footer"><button className="favorite-toggle" onClick={() => toggleFavorite(match.id)}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? 'Saved' : 'Add to favourites'}</button>{eventView !== 'results' && <button disabled={usingDemoData}>All markets <ArrowRight size={13}/></button>}</div>
               </article>) : <div className="empty-state">{query ? 'No events match your search. Try another team or league.' : sport === 'Football' ? eventView === 'live' ? 'No live ' + sport.toLowerCase() + ' events are available right now.' : eventView === 'results' ? 'No completed ' + sport.toLowerCase() + ' results are available yet.' : 'No upcoming football events are available right now.' : 'No verified ' + sport.toLowerCase() + ' events are available yet.'}</div>}
             </div>
             <div className="demo-note"><ShieldCheck size={15}/><span>{usingDemoData ? 'Preview mode: sample fixtures and prices are illustrative only. No bets or payments can be placed.' : eventView === 'results' ? 'Final scores are loaded from completed fixtures in the BETNOVA database.' : 'Fixtures are loaded from your BETNOVA database. Prices appear only when active market selections are supplied.'}</span></div>
@@ -244,7 +258,7 @@ export default function App() {
         </aside>
       </main>
 
-      <nav className="mobile-nav"><button className="mobile-active"><Trophy size={19}/>Sports</button><button><Activity size={19}/>Live</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>Slip {selected.length>0&&<i>{selected.length}</i>}</button><button><Star size={19}/>Saved</button><button><Menu size={19}/>More</button></nav>
+      <nav className="mobile-nav"><button className="mobile-active"><Trophy size={19}/>Sports</button><button onClick={() => openEventView('live')}><Activity size={19}/>Live</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>Slip {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>Saved</button><button><Menu size={19}/>More</button></nav>
       {mobileSlip && <div className="mobile-sheet-backdrop" onClick={()=>setMobileSlip(false)}><div className="mobile-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-handle"/><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><button className="icon-btn" onClick={()=>setMobileSlip(false)}><X/></button></div>{selected.length?selected.map(s=><div className="slip-selection" key={s.match.id}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong></div>):<div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>Your slip is waiting</b><p>Select an event price to add it here.</p></div>}<div className="slip-demo"><ShieldCheck size={14}/> Demo only — no transactions</div></div></div>}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
       <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
