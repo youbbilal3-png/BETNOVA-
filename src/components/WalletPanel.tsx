@@ -22,6 +22,7 @@ export default function WalletPanel({ onClose }: Props) {
   const [method, setMethod] = useState('')
   const [amount, setAmount] = useState('')
   const [reference, setReference] = useState('')
+  const [proofFile, setProofFile] = useState<File | null>(null)
   const [destination, setDestination] = useState('')
   const [tab, setTab] = useState<'deposit' | 'withdraw' | 'history'>('deposit')
   const [busy, setBusy] = useState(false)
@@ -63,15 +64,26 @@ export default function WalletPanel({ onClose }: Props) {
     if (!supabase || !userId || !selectedMethod) return
     const value = Number(amount)
     if (!Number.isFinite(value) || value <= 0) { setError('Enter a valid deposit amount.'); return }
+    if (!proofFile && !reference.trim()) { setError('Add a transfer reference or upload your payment proof.'); return }
+    if (proofFile && (proofFile.size > 5 * 1024 * 1024 || !['image/jpeg','image/png','image/webp','application/pdf'].includes(proofFile.type))) { setError('Proof must be JPG, PNG, WEBP or PDF and no larger than 5 MB.'); return }
     setBusy(true); setError(''); setNotice('')
     try {
+      let proofPath: string | null = null
+      if (proofFile) {
+        proofPath = userId + '/' + crypto.randomUUID() + '-' + proofFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const { error: uploadError } = await supabase.storage.from('deposit-proofs').upload(proofPath, proofFile, { contentType: proofFile.type, upsert: false })
+        if (uploadError) throw uploadError
+      }
       const { error: insertError } = await supabase.from('deposit_requests').insert({
         user_id: userId, payment_method: method, amount: value, currency,
-        sender_reference: reference.trim() || null, status: 'pending'
+        sender_reference: reference.trim() || null, proof_path: proofPath, status: 'pending'
       })
-      if (insertError) throw insertError
+      if (insertError) {
+        if (proofPath) await supabase.storage.from('deposit-proofs').remove([proofPath])
+        throw insertError
+      }
       setNotice('Your deposit request was sent. Your wallet will be credited after the transfer is verified.')
-      setAmount(''); setReference('')
+      setAmount(''); setReference(''); setProofFile(null)
       await refresh()
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not submit deposit request.') }
     finally { setBusy(false) }
@@ -127,6 +139,7 @@ export default function WalletPanel({ onClose }: Props) {
           {!accountName && !accountNumber && !instructionText && <p>Payment instructions are being configured. Please check back soon.</p>}
         </div>}
         <label>Amount ({currency})<input inputMode="decimal" type="number" min="0.01" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="Enter amount" required/></label>
+        <label>Payment proof (JPG, PNG, WEBP or PDF · max 5 MB)<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>
         <label>Transfer reference (optional)<input value={reference} onChange={event => setReference(event.target.value)} placeholder="Transaction ID or sender reference"/></label>
         <button className="wallet-submit" disabled={busy || !selectedMethod}>{busy ? 'Submitting…' : 'I have sent the transfer'}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> The balance is credited after your transfer is verified.</p>
