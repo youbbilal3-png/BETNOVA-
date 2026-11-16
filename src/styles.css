@@ -220,3 +220,5 @@
 [dir="rtl"] .wallet-panel,[dir="rtl"] .bets-panel{direction:rtl}
 [dir="rtl"] .detail-panel{direction:rtl}
 @media(max-width:760px){.language-picker{height:30px;padding:0 5px}.language-picker select{max-width:75px;font-size:8px}.top-actions{gap:6px}}
+
+.admin-currency-options{display:flex;gap:12px;flex-wrap:wrap;margin:9px 0}.admin-currency-options label{display:flex;align-items:center;gap:5px;color:#587767;font-size:9px;font-weight:800}.admin-currency-options input{accent-color:#17845f;width:13px;height:13px}
