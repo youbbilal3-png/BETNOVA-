@@ -26,6 +26,7 @@ function safeEqual(a: string, b: string) {
 }
 
 function integer(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isInteger(n) && n >= 0 && n <= 99 ? n : null;
 }
@@ -48,7 +49,7 @@ function goalWasRuledOut(goal: any, events: any[]): boolean {
   return events.some((event: any) =>
     event?.type === "varDecision" &&
     event?.detail === "goalNotAwarded" &&
-    event?.side === goal?.side &&
+    (event?.side == null || event?.side === goal?.side) &&
     Number.isFinite(Number(event?.minute)) &&
     Number.isFinite(Number(goal?.minute)) &&
     Math.abs(Number(event.minute) - Number(goal.minute)) <= 1
@@ -171,7 +172,7 @@ Deno.serve(async (req: Request) => {
 
     const lastProcessed = Number(link.last_processed_goal_count ?? 0);
     const settledCount = Number(link.settled_goal_count ?? 0);
-    if (lastProcessed > activeGoals.length && settledCount > 0) {
+    if (lastProcessed > activeGoals.length) {
       await supabase.from("sportsapi_fixture_links")
         .update({ settlement_hold: true, updated_at: new Date().toISOString() })
         .eq("provider_fixture_id", providerFixtureId);
@@ -183,6 +184,7 @@ Deno.serve(async (req: Request) => {
     const endIndex = activeGoals.length;
     let inserted = 0;
     let settled = 0;
+    let goalEventsProcessed = 0;
 
     for (let i = startIndex; i < endIndex; i++) {
       const goal = activeGoals[i];
@@ -214,7 +216,7 @@ Deno.serve(async (req: Request) => {
         occurred_at: eventAt,
       };
       const { data: stored, error: insertError } = await supabase.from("fixture_events")
-        .upsert(eventPayload, { onConflict: "provider,provider_event_id", ignoreDuplicates: true })
+        .upsert(eventPayload, { onConflict: "provider,provider_event_id" })
         .select("id").maybeSingle();
       if (insertError) {
         providerErrors.push("could not store a confirmed goal event");
@@ -232,12 +234,13 @@ Deno.serve(async (req: Request) => {
           return { ok: false, processed: inserted, lastGoalCount: lastProcessed, baselineReady, hold: Boolean(link.settlement_hold) };
         }
         settled += Number(count ?? 0);
+        goalEventsProcessed++;
       }
     }
 
     const newBaselineReady = true;
     const newLastGoalCount = activeGoals.length;
-    const newSettledCount = settledCount + settled;
+    const newSettledCount = settledCount + goalEventsProcessed;
     const { error: linkError } = await supabase.from("sportsapi_fixture_links")
       .update({
         baseline_ready: newBaselineReady,
@@ -440,7 +443,7 @@ Deno.serve(async (req: Request) => {
               period: "full_time",
               event_data: { source: PROVIDER, confirmed: true, final: true, home_score: homeScore, away_score: awayScore },
               occurred_at: checkedAt,
-            }, { onConflict: "provider,provider_event_id", ignoreDuplicates: true })
+            }, { onConflict: "provider,provider_event_id" })
             .select("id").maybeSingle();
           if (!fullTimeError && fullTimeEvent?.id) {
             const { error: settleError } = await supabase.rpc(
