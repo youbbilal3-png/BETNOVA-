@@ -499,7 +499,9 @@ Deno.serve(async (req: Request) => {
         }
 
         await supabase.from("sportsapi_fixture_links").update({
-          last_status: settlementCompleted ? "finished" : "inprogress",
+          // Keep recently finished fixtures in the correction watch window so a
+          // provider-side post-match VAR update can still be reconciled automatically.
+          last_status: "inprogress",
           last_final_checked_at: checkedAt,
           updated_at: checkedAt,
         }).eq("provider_fixture_id", link.provider_fixture_id);
