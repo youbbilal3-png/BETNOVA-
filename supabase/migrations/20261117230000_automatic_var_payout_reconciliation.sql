@@ -348,7 +348,7 @@ for each row execute function public.betnova_track_initial_bet_return();
 -- Ensure first-goal / first-corner replay uses the event's actual match time,
 -- not the time it happened to arrive at our server. This matters when VAR inserts
 -- or removes an earlier event during a later reconciliation.
-do $
+do $var$
 declare
   v_definition text;
   v_old text := 'e.received_at<v_event.received_at';
@@ -362,7 +362,7 @@ begin
   v_definition := replace(v_definition, v_old, v_new);
   execute v_definition;
 end;
-$;
+$var$;
 
 -- Re-open only the affected fixture's settlement graph. Historical wallet
 -- credits remain untouched; the subsequent replay applies payout deltas.
