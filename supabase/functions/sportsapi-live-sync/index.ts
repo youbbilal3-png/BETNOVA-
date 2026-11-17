@@ -133,12 +133,19 @@ Deno.serve(async (req: Request) => {
   }
 
   async function invalidateLivePrices(fixtureId: string) {
+    const { data: openLiveMarkets, error: lookupError } = await supabase.from("markets")
+      .select("id").eq("fixture_id", fixtureId).eq("is_live", true).eq("status", "open").limit(1);
+    if (lookupError) {
+      providerErrors.push("could not inspect live prices before a score change: " + lookupError.message.slice(0, 120));
+      return;
+    }
+    if (!openLiveMarkets?.length) return;
     const staleTime = new Date(Date.now() - 4 * 60 * 1000).toISOString();
     const { error } = await supabase.from("markets")
       .update({ last_updated_at: staleTime })
       .eq("fixture_id", fixtureId).eq("is_live", true).eq("status", "open")
       .gt("last_updated_at", staleTime);
-    if (error) providerErrors.push("could not expire live prices for a score change");
+    if (error) providerErrors.push("could not expire live prices for a score change: " + error.message.slice(0, 120));
   }
 
   async function getFixture(fixtureId: string) {
@@ -487,10 +494,10 @@ Deno.serve(async (req: Request) => {
       fixturesMatched++;
       await supabase.from("fixtures").update({
         status: "live", home_score: homeScore, away_score: awayScore, updated_at: new Date().toISOString(),
-      }).eq("id", matchedFixtureId);
-      await invalidateLivePrices(matchedFixtureId);
+      }).eq("id", targetFixtureId);
+      await invalidateLivePrices(targetFixtureId);
       if (!baselineReady && requestsMade < MAX_REQUESTS_PER_RUN) {
-        await fetchAndProcessGoals(providerFixtureId, matchedFixtureId, link, { home: homeScore, away: awayScore }, true);
+        await fetchAndProcessGoals(providerFixtureId, targetFixtureId, link, { home: homeScore, away: awayScore }, true);
         const { data: refreshedLink } = await supabase.from("sportsapi_fixture_links")
           .select("*").eq("provider_fixture_id", providerFixtureId).maybeSingle();
         if (refreshedLink) link = refreshedLink;
