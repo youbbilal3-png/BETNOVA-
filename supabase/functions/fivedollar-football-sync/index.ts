@@ -449,7 +449,7 @@ Deno.serve(async (req: Request) => {
     if (handicap && Number.isFinite(Number(handicap.line)) && Math.round(Number(handicap.line) * 2) === Number(handicap.line) * 2) {
       const line = Number(handicap.line);
       const formatLine = (value: number) => (value > 0 ? "+" : "") + value.toFixed(1);
-      await saveMarket(fixtureId, isLive, "asian_handicap", "Asian Handicap · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "asian_handicap", "Asian Handicap · " + formatLine(line) + " · Bet365", line, [
         { name: "Home " + formatLine(line), key: "home", price: handicap.home },
         { name: "Away " + formatLine(-line), key: "away", price: handicap.away },
       ]);
