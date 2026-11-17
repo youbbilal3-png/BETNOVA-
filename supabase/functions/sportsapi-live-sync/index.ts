@@ -40,19 +40,6 @@ function mapPeriod(value: unknown): string | null {
   return p || null;
 }
 
-function goalWasRuledOut(goal: any, events: any[]): boolean {
-  return events.some((event: any) =>
-    event?.type === "varDecision" &&
-    event?.detail === "goalNotAwarded" &&
-    (event?.side == null || event?.side === goal?.side) &&
-    event?.minute != null &&
-    goal?.minute != null &&
-    Number.isFinite(Number(event.minute)) &&
-    Number.isFinite(Number(goal.minute)) &&
-    Math.abs(Number(event.minute) - Number(goal.minute)) <= 1
-  );
-}
-
 function providerEventId(providerFixtureId: number, event: any, index: number): string {
   const side = String(event?.side ?? "none");
   const minute = event?.minute == null ? "x" : String(event.minute);
@@ -158,7 +145,9 @@ Deno.serve(async (req: Request) => {
     const allGoals = providerEvents.filter((event: any) =>
       event?.type === "goal" && (event?.side === "home" || event?.side === "away")
     );
-    const activeGoals = allGoals.filter((goal: any) => !goalWasRuledOut(goal, providerEvents));
+    // The REST events list is the provider's current confirmed list. Goals
+    // removed after VAR are absent from this list; do not infer VAR outcomes locally.
+    const activeGoals = allGoals;
     const expectedGoals = finalScore.home + finalScore.away;
 
     if (activeGoals.length !== expectedGoals) {
@@ -299,7 +288,8 @@ Deno.serve(async (req: Request) => {
     const awayScore = integer(item?.awayScore?.current);
     if (!Number.isSafeInteger(providerFixtureId) || providerFixtureId <= 0 ||
         !homeName || !awayName || !Number.isFinite(startTime.getTime()) ||
-        item?.status?.type !== "inprogress" || homeScore === null || awayScore === null) continue;
+        item?.status?.type !== "inprogress" || item?.finalResultOnly === true ||
+        homeScore === null || awayScore === null) continue;
 
     seenProviderIds.add(providerFixtureId);
     let { data: link } = await supabase.from("sportsapi_fixture_links")
