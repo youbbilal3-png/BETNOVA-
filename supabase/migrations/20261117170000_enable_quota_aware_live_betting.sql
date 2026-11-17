@@ -81,6 +81,12 @@ begin
     if v_fixture_status = 'live' and not v_market_live then
       raise exception 'This market is not open for live betting';
     end if;
+    if v_fixture_status = 'scheduled' and v_market_live then
+      raise exception 'Live market state does not match the fixture';
+    end if;
+    if v_market_updated_at is null or v_market_updated_at > now() + interval '30 seconds' then
+      raise exception 'Odds timestamp is missing or invalid';
+    end if;
     if v_market_live and v_market_updated_at < now() - interval '3 minutes' then
       raise exception 'Live odds expired. Refresh the market and try again';
     end if;
