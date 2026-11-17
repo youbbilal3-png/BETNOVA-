@@ -139,8 +139,8 @@ declare
   v_correction_id uuid := gen_random_uuid();
   v_key uuid := gen_random_uuid();
 begin
-  if v_role <> 'service_role' then
-    raise exception 'Trusted settlement processor only';
+  if not (v_role = 'service_role' or (auth.uid() is not null and public.betnova_is_admin())) then
+    raise exception 'Trusted settlement processor or administrator only';
   end if;
   if p_bet_id is null or p_revision_key is null
      or length(trim(p_revision_key)) not between 1 and 160
