@@ -45,7 +45,7 @@ function stableGoalKeys(providerFixtureId: number, goals: any[]): string[] {
   return goals.map((event) => {
     const side = event?.side === "home" || event?.side === "away" ? event.side : "-";
     const minute = event?.minute != null && Number.isInteger(Number(event.minute)) ? String(Number(event.minute)) : "-";
-    const added = event?.addedMinute != null && Number.isInteger(Number(event.addedMinute)) ? String(Number(event.addedMinute)) : "-";
+    const added = event?.addedMinute == null ? "0" : (Number.isInteger(Number(event.addedMinute)) ? String(Number(event.addedMinute)) : "0");
     const base = `goal:${side}:${minute}:${added}`;
     const occurrence = (occurrences.get(base) ?? 0) + 1;
     occurrences.set(base, occurrence);
