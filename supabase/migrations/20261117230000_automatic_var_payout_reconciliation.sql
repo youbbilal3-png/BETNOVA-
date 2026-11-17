@@ -269,3 +269,27 @@ comment on column public.wallet_accounts.recovery_balance is
   'Outstanding amount from automatic post-settlement corrections; incoming credits are automatically offset.';
 comment on column public.bets.credited_payout is
   'Net payout currently recognized for this bet after all automatic settlement corrections.';
+
+
+-- Keep the audit trail append-only, including for trusted application roles.
+create or replace function public.betnova_reject_recovery_audit_mutation()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  raise exception 'Financial recovery audit records are immutable';
+end;
+$$;
+
+revoke all on function public.betnova_reject_recovery_audit_mutation() from public, anon, authenticated;
+
+drop trigger if exists bet_settlement_corrections_immutable on public.bet_settlement_corrections;
+create trigger bet_settlement_corrections_immutable
+before update or delete on public.bet_settlement_corrections
+for each row execute function public.betnova_reject_recovery_audit_mutation();
+
+drop trigger if exists wallet_recovery_ledger_immutable on public.wallet_recovery_ledger;
+create trigger wallet_recovery_ledger_immutable
+before update or delete on public.wallet_recovery_ledger
+for each row execute function public.betnova_reject_recovery_audit_mutation();
