@@ -21,10 +21,11 @@ export default function MatchStatistics({ fixtureId }: { fixtureId: string }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!supabase) { setLoading(false); return }
+    const client = supabase
+    if (!client) { setLoading(false); return }
     let active = true
     const load = async () => {
-      const { data } = await supabase.from('fixture_statistics')
+      const { data } = await client.from('fixture_statistics')
         .select('statistics,updated_at').eq('fixture_id', fixtureId)
         .order('updated_at', { ascending: false }).limit(1).maybeSingle()
       if (!active) return
@@ -32,10 +33,10 @@ export default function MatchStatistics({ fixtureId }: { fixtureId: string }) {
       setLoading(false)
     }
     void load()
-    const channel = supabase.channel('fixture-statistics-' + fixtureId)
+    const channel = client.channel('fixture-statistics-' + fixtureId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fixture_statistics', filter: 'fixture_id=eq.' + fixtureId }, () => { void load() })
       .subscribe()
-    return () => { active = false; void supabase?.removeChannel(channel) }
+    return () => { active = false; void client.removeChannel(channel) }
   }, [fixtureId])
 
   if (loading) return <div className="match-stats-state"><LoaderCircle size={16}/>{t('loading_statistics')}</div>
