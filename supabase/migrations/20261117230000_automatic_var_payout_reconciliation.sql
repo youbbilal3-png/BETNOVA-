@@ -82,6 +82,12 @@ begin
       raise exception 'Outstanding wallet recovery must be cleared before spending or withdrawing funds';
     end if;
 
+    if new.reserved_balance < old.reserved_balance
+       and old.recovery_balance > 0
+       and new.available_balance <= old.available_balance then
+      raise exception 'Outstanding wallet recovery must be cleared before a reserved withdrawal can be paid';
+    end if;
+
     v_credit := greatest(new.available_balance - old.available_balance, 0);
     if v_credit > 0 and old.recovery_balance > 0 then
       v_offset := least(v_credit, old.recovery_balance);
