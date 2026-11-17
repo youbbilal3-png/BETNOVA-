@@ -189,15 +189,23 @@ Deno.serve(async (req: Request) => {
     if (oldGoals.error) throw new Error("Could not inspect provider goal snapshot");
     const removed = (oldGoals.data ?? []).filter((event: any) => !currentGoalIds.has(event.provider_event_id));
     if (removed.length) {
-      const ids = removed.map((event: any) => event.id);
-      const { error } = await supabase.from("fixture_events").update({
-        event_type: "goal_retracted",
-        event_data: { retracted: true, retracted_at: now.toISOString(), correction_source: "5DollarFootballAPI" },
-      }).in("id", ids);
-      if (error) throw new Error("Could not record retracted goals");
+      for (const event of removed) {
+        const priorData = event.event_data && typeof event.event_data === "object" ? event.event_data : {};
+        const { error } = await supabase.from("fixture_events").update({
+          event_type: "goal_retracted",
+          event_data: {
+            ...priorData,
+            original_event_type: "goal",
+            retracted: true,
+            retracted_at: now.toISOString(),
+            correction_source: "5DollarFootballAPI",
+          },
+        }).eq("id", event.id);
+        if (error) throw new Error("Could not record retracted goal " + event.provider_event_id);
+      }
       retractedGoals += removed.length;
-      // Do not settle/replay here yet. This feed is first being wired and must not
-      // trigger a second provider's financial correction path before end-to-end tests.
+      // Keep the original event payload as an audit record. Financial replay is
+      // intentionally disabled until the provider's retraction path is tested end to end.
     }
   }
 
