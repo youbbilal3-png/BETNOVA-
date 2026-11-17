@@ -195,7 +195,8 @@ Deno.serve(async (req: Request) => {
           const h2h = bookmaker.markets?.find((market: any) => market.key === "h2h");
           if (h2h) {
             const outcomes = Array.isArray(h2h.outcomes) ? h2h.outcomes : [];
-            const byName = new Map(outcomes.map((item: any) => [normalize(item.name), validOdd(item.price)]));
+            const byName = new Map<string, number | null>();
+            for (const outcome of outcomes) byName.set(normalize(outcome.name), validOdd(outcome.price));
             const homeOdd = byName.get(normalize(event.home_team));
             const awayOdd = byName.get(normalize(event.away_team));
             const drawOdd = byName.get("draw");
