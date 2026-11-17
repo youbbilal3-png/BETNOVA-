@@ -23,7 +23,7 @@ declare
          end loop;
        end if;
      when 'both_teams_score' then
-$migration$;
+$case$;
 begin
   select pg_get_functiondef('public.betnova_process_live_event(uuid)'::regprocedure) into v_definition;
   if position(v_old in v_definition)=0 then raise exception 'Could not locate live event settlement switch'; end if;
