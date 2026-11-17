@@ -445,6 +445,16 @@ Deno.serve(async (req: Request) => {
       ], "first_half");
     }
 
+    const handicap = priceSet(odds.asian_handicap);
+    if (handicap && Number.isFinite(Number(handicap.line)) && Math.round(Number(handicap.line) * 2) === Number(handicap.line) * 2) {
+      const line = Number(handicap.line);
+      const formatLine = (value: number) => (value > 0 ? "+" : "") + value.toFixed(1);
+      await saveMarket(fixtureId, isLive, "asian_handicap", "Asian Handicap · Bet365", line, [
+        { name: "Home " + formatLine(line), key: "home", price: handicap.home },
+        { name: "Away " + formatLine(-line), key: "away", price: handicap.away },
+      ]);
+    }
+
     const btts = priceSet(odds.btts);
     if (btts) {
       await saveMarket(fixtureId, isLive, "both_teams_score", "Both Teams To Score · Bet365", null, [
