@@ -476,7 +476,7 @@ Deno.serve(async (req: Request) => {
       events_synced: eventsSynced, retracted_goals_recorded: retractedGoals,
       markets_synced: marketsSynced, selections_synced: selectionsSynced,
       provider_requests: requests, local_rate_limited: rateLimited, errors: errors.slice(0, 10),
-      settlement_policy: "Fixture events and score snapshots are stored; no live bet is settled by this new provider until cross-provider goal-retraction replay has passed production-safe tests. Only status=finished may later be used for final settlement.",
+      settlement_policy: "Live goals and full-time results are replayed after score/event consistency checks. A missing goal must be absent from two consecutive consistent snapshots before automatic VAR correction; the fixture is held from new bets during confirmation, then markets and payouts are automatically reconciled using the immutable wallet audit ledger.",
     });
   } catch (error) {
     return json({
