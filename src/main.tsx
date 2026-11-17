@@ -4,6 +4,7 @@ import App from './App'
 import './styles.css'
 import './visual-polish.css'
 import './mobile-app.css'
+import './betnova-next-ui.css'
 import { LanguageProvider } from './i18n'
 
 if ('serviceWorker' in navigator) {
