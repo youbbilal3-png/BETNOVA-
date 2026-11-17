@@ -13,6 +13,13 @@ type ProviderHealth = {
   prematch_markets_total: number
   prematch_markets_fresh: number
   last_market_update: string | null
+  fivedollar_requests_last_hour: number
+  fivedollar_request_hour_limit: number
+  fivedollar_fixtures_total: number
+  fivedollar_live_fixtures: number
+  fivedollar_live_markets: number
+  fivedollar_prematch_markets: number
+  fivedollar_last_request: string | null
 }
 type Counts = { sports: number; competitions: number; teams: number; fixtures: number; markets: number }
 type Deposit = { id: string; user_id: string; payment_method: string; amount: number; currency: string; sender_reference: string | null; proof_path: string | null; created_at: string }
@@ -235,6 +242,13 @@ export default function AdminOverview({ onClose }: Props) {
                 <small>Automatic correction holds: {providerHealth.sportsapi_correction_holds}</small>
                 <div className="admin-provider-meter"><span style={{width: Math.min(100, providerHealth.sportsapi_requests_today / Math.max(1, providerHealth.sportsapi_daily_limit) * 100) + '%'}} /></div>
                 <small>Free-tier budget protection is active. Live score polling is paused until the correction workflow is validated.</small>
+              </article>
+              <article className="admin-finance-item">
+                <div className="admin-finance-top"><b>FiveDollarFootballAPI · Bet365</b><span>{providerHealth.fivedollar_requests_last_hour} / {providerHealth.fivedollar_request_hour_limit} requests/hour</span></div>
+                <p>{providerHealth.fivedollar_fixtures_total} fixtures · {providerHealth.fivedollar_live_fixtures} live now</p>
+                <small>{providerHealth.fivedollar_live_markets} live markets · {providerHealth.fivedollar_prematch_markets} pre-match markets</small>
+                <div className="admin-provider-meter"><span style={{width: Math.min(100, providerHealth.fivedollar_requests_last_hour / Math.max(1, providerHealth.fivedollar_request_hour_limit) * 100) + '%'}} /></div>
+                <small>Live feed polls every 5 minutes. Request budget is capped below the provider's free-plan limit. Last API request: {providerHealth.fivedollar_last_request ? new Date(providerHealth.fivedollar_last_request).toLocaleString() : 'No request recorded'}</small>
               </article>
               <article className="admin-finance-item">
                 <div className="admin-finance-top"><b>Live odds markets</b><span>{providerHealth.live_markets_fresh} / {providerHealth.live_markets_total} fresh</span></div>
