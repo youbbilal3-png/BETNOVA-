@@ -32,6 +32,12 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState('Match result')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [clock, setClock] = useState(Date.now())
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 15000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   async function loadMarkets() {
     if (!supabase) { setMarkets([]); setLoading(false); return }
@@ -97,7 +103,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
         {items.map(market => {
           const updatedMs = new Date(market.last_updated_at).getTime()
           const maxAgeMs = market.is_live ? 3 * 60 * 1000 : 24 * 60 * 60 * 1000
-          const priceFresh = Number.isFinite(updatedMs) && Date.now() - updatedMs <= maxAgeMs && updatedMs <= Date.now() + 30000
+          const priceFresh = Number.isFinite(updatedMs) && clock - updatedMs <= maxAgeMs && updatedMs <= clock + 30000
           const canBet = market.status === "open" && priceFresh
           return <article className="market-item" key={market.id}>
           <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> LIVE</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">Price expired</span>}</div>
