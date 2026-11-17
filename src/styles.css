@@ -262,3 +262,6 @@
 [dir="rtl"] .detail-close,[dir="rtl"] .wallet-close,[dir="rtl"] .auth-close{right:auto;left:16px}
 [dir="rtl"] .mobile-more-language select{margin-left:0;margin-right:auto}
 html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"] select{font-family:Tahoma,Arial,sans-serif}
+
+
+.admin-provider-meter{height:7px;border-radius:99px;background:#e8f0e8;overflow:hidden;margin:11px 0 7px}.admin-provider-meter span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#15996e,#8ccf79);transition:width .25s ease}
