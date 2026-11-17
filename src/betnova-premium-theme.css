@@ -115,3 +115,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
  .detail-panel{background:linear-gradient(155deg,#172748,#0c1730)}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+.guest-slip-note{margin:12px 0;padding:12px 13px;border-radius:12px;background:linear-gradient(120deg,#1b315c,#282452);border:1px solid #8097ff44;color:#c7d5f6;font-size:12px;line-height:1.55}
