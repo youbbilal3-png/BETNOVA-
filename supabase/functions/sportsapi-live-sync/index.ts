@@ -148,6 +148,13 @@ Deno.serve(async (req: Request) => {
     return data;
   }
 
+  async function holdSportsApiFixture(providerFixtureId: number, reason: string) {
+    const { error } = await supabase.from("sportsapi_fixture_links")
+      .update({ settlement_hold: true, updated_at: new Date().toISOString() })
+      .eq("provider_fixture_id", providerFixtureId);
+    if (error) providerErrors.push("could not apply live settlement hold: " + reason);
+  }
+
   async function processGoalList(
     providerFixtureId: number,
     fixture: any,
@@ -258,6 +265,7 @@ Deno.serve(async (req: Request) => {
         .select("id").maybeSingle();
       if (insertError || !stored?.id) {
         providerErrors.push("could not store a confirmed goal event");
+        await holdSportsApiFixture(providerFixtureId, "goal event storage failed");
         return { ok: false, processed: inserted, lastGoalCount: lastProcessed, baselineReady, hold: true };
       }
       inserted++;
@@ -291,7 +299,10 @@ Deno.serve(async (req: Request) => {
         updated_at: new Date().toISOString(),
       })
       .eq("provider_fixture_id", providerFixtureId);
-    if (linkError) providerErrors.push("could not save processed-goal checkpoint");
+    if (linkError) {
+      providerErrors.push("could not save processed-goal checkpoint");
+      await holdSportsApiFixture(providerFixtureId, "goal checkpoint persistence failed");
+    }
 
     goalsInserted += inserted;
     marketsProcessed += settled;
@@ -306,11 +317,20 @@ Deno.serve(async (req: Request) => {
     baselineOnly = false,
   ) {
     const events = await providerGet("/fixtures/" + providerFixtureId + "/events");
-    if (!Array.isArray(events)) return false;
+    if (!Array.isArray(events)) {
+      await holdSportsApiFixture(providerFixtureId, "provider event timeline unavailable");
+      return false;
+    }
     const fixture = await getFixture(fixtureId);
-    if (!fixture) return false;
+    if (!fixture) {
+      await holdSportsApiFixture(providerFixtureId, "local fixture could not be loaded");
+      return false;
+    }
     const result = await processGoalList(providerFixtureId, fixture, link, events, finalScore, baselineOnly);
-    if (!result.ok) return false;
+    if (!result.ok) {
+      await holdSportsApiFixture(providerFixtureId, "goal snapshot could not be reconciled");
+      return false;
+    }
 
     // A VAR replay on an already-finished fixture must also replay the
     // full-time event, otherwise match-result / BTTS / totals markets can stay open.
@@ -333,6 +353,7 @@ Deno.serve(async (req: Request) => {
         .select("id").maybeSingle();
       if (fullTimeError || !fullTimeEvent?.id) {
         providerErrors.push("could not refresh the final-time event after VAR correction");
+        await holdSportsApiFixture(providerFixtureId, "full-time event could not be stored");
         return false;
       }
       const { error: fullTimeSettleError } = await supabase.rpc(
@@ -340,6 +361,7 @@ Deno.serve(async (req: Request) => {
       );
       if (fullTimeSettleError) {
         providerErrors.push("final-time markets could not be replayed after VAR correction");
+        await holdSportsApiFixture(providerFixtureId, "full-time settlement failed");
         return false;
       }
     }
@@ -529,10 +551,17 @@ Deno.serve(async (req: Request) => {
             if (!settleError) {
               finalized++;
               settlementCompleted = true;
-            } else providerErrors.push("full-time event stored but settlement processor failed");
+            } else {
+              providerErrors.push("full-time event stored but settlement processor failed");
+              await holdSportsApiFixture(Number(link.provider_fixture_id), "full-time settlement failed");
+            }
+          } else {
+            providerErrors.push("full-time event could not be stored");
+            await holdSportsApiFixture(Number(link.provider_fixture_id), "full-time event storage failed");
           }
         } else {
           providerErrors.push("final score and confirmed goal events did not reconcile; settlement held");
+          await holdSportsApiFixture(Number(link.provider_fixture_id), "final score and goal events did not reconcile");
         }
 
         await supabase.from("sportsapi_fixture_links").update({
