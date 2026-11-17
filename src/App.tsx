@@ -331,7 +331,7 @@ export default function App() {
       {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} />}
       {betsOpen && <MyBetsPanel onClose={() => setBetsOpen(false)} />}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
-      <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
+      <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span><span>Football data by <a href="https://5dollarfootballapi.com" target="_blank" rel="noreferrer">5DollarFootballAPI</a></span></footer>
     </div>
   )
 }
