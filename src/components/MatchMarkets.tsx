@@ -30,7 +30,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   const [events, setEvents] = useState<LiveEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [expanded, setExpanded] = useState('Match result')
+  const [expanded, setExpanded] = useState('')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [clock, setClock] = useState(Date.now())
 
@@ -85,7 +85,10 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       const category = categoryFor(market, t)
       groups.set(category, [...(groups.get(category) ?? []), market])
     }
-    return Array.from(groups.entries())
+    return Array.from(groups.entries()).sort((a, b) => {
+      const rank = (label: string) => /goal/i.test(label) ? 0 : /match|result/i.test(label) ? 1 : /corner/i.test(label) ? 2 : /card/i.test(label) ? 3 : 4
+      return rank(a[0]) - rank(b[0])
+    })
   }, [markets, t])
 
   if (loading) return <div className="markets-loading"><LoaderCircle size={18}/> {t('loading_markets')}</div>
@@ -99,17 +102,17 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       <button className="market-group-head" onClick={() => setExpanded(expanded === category ? '' : category)}>
         <span>{category}</span><small>{items.length} {t('markets_count')}</small>{expanded === category ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
       </button>
-      {expanded === category && <div className="market-group-body">
+      {(expanded === category || (!expanded && grouped[0]?.[0] === category)) && <div className="market-group-body">
         {items.map(market => {
           const updatedMs = new Date(market.last_updated_at).getTime()
-          const maxAgeMs = market.is_live ? 3 * 60 * 1000 : 24 * 60 * 60 * 1000
+          const maxAgeMs = market.is_live ? 7 * 60 * 1000 : 24 * 60 * 60 * 1000
           const priceFresh = Number.isFinite(updatedMs) && clock - updatedMs <= maxAgeMs && updatedMs <= clock + 30000
           const canBet = market.status === "open" && priceFresh && (live ? market.is_live : !market.is_live)
           return <article className="market-item" key={market.id}>
           <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> LIVE</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">Price expired</span>}</div>
           <div className="market-outcomes">{market.market_selections.map(selection => {
             const picked = selectedIds.includes(selection.id)
-            return <button key={selection.id} disabled={!canBet || picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketLabel:market.name,selectionLabel:selection.name,odds:String(selection.odds)})}>
+            return <button key={selection.id} disabled={!canBet} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketLabel:market.name,selectionLabel:selection.name,odds:String(selection.odds)})}>
               <span>{selection.name}</span><b>{Number(selection.odds).toFixed(2)}</b>
             </button>
           })}</div>
