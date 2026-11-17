@@ -358,7 +358,9 @@ Deno.serve(async (req: Request) => {
     const changed = previousHome !== homeScore || previousAway !== awayScore;
     const regressed = homeScore < previousHome || awayScore < previousAway;
     const nowIso = new Date().toISOString();
-    const nextHold = Boolean(link.settlement_hold) || (regressed && Number(link.settled_goal_count ?? 0) > 0);
+    // Any score regression (usually a VAR reversal or provider correction) pauses
+    // automated settlement for this fixture; never attempt an automatic wallet reversal.
+    const nextHold = Boolean(link.settlement_hold) || regressed;
     const nextObservations = changed ? 1 : Math.min(Number(link.score_observations ?? 0) + 1, 10);
     const nextStableSince = changed ? nowIso : link.score_stable_since;
 
