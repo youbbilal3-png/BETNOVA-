@@ -185,6 +185,7 @@ Deno.serve(async (req: Request) => {
     const currentEventIds = new Set<string>();
     const events = item.events;
     const occurrences = new Map<string, number>();
+    let eventTimelineChanged = false;
 
     for (const event of events) {
       const type = eventType(event?.type);
@@ -205,6 +206,8 @@ Deno.serve(async (req: Request) => {
       const added = finiteScore(event?.added_time ?? event?.added_minute);
       const occurredAt = minute === null ? now.toISOString() : new Date(new Date(item.kickoff_utc).getTime() + minute * 60000 + (occurrence % 60) * 1000).toISOString();
       const prior = await supabase.from("fixture_events").select("id").eq("provider", PROVIDER).eq("provider_event_id", providerEventId).maybeSingle();
+      if (prior.error) throw new Error("Could not inspect existing provider event");
+      if (!prior.data) eventTimelineChanged = true;
       const saved = await supabase.from("fixture_events").upsert({
         fixture_id: fixtureId, provider: PROVIDER, provider_event_id: providerEventId,
         event_type: type, period: period(event?.period), minute, added_time: added,
@@ -220,9 +223,14 @@ Deno.serve(async (req: Request) => {
 
     // Full-time is a distinct settlement event and is written only when the
     // provider explicitly reports the fixture finished.
+    let newFullTimeEvent = false;
     if (item?.status === "finished") {
       const fullTimeId = String(item.id) + ":full_time";
       currentEventIds.add(fullTimeId);
+      const priorFullTime = await supabase.from("fixture_events").select("id")
+        .eq("provider", PROVIDER).eq("provider_event_id", fullTimeId).maybeSingle();
+      if (priorFullTime.error) throw new Error("Could not inspect full-time event");
+      newFullTimeEvent = !priorFullTime.data;
       const fullTime = await supabase.from("fixture_events").upsert({
         fixture_id: fixtureId, provider: PROVIDER, provider_event_id: fullTimeId,
         event_type: "full_time", period: "full_time",
@@ -300,7 +308,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const snapshotChanged = JSON.stringify(previousSnapshot) !== JSON.stringify(currentSnapshot);
-    const needsReplay = snapshotChanged || correctionConfirmed || Boolean(existingHold.data) || item?.status === "finished";
+    const needsReplay = snapshotChanged || eventTimelineChanged || correctionConfirmed || Boolean(existingHold.data) || newFullTimeEvent;
     if (needsReplay) {
       const { data: replay, error: replayError } = await supabase.rpc("betnova_replay_fixture_events", {
         p_fixture_id: fixtureId, p_provider: PROVIDER,
@@ -420,6 +428,7 @@ Deno.serve(async (req: Request) => {
       const id = await storeFixture(item);
       if (!id) continue;
       stored.push({ item, id });
+      await syncStatistics(item, id);
       if (mode === "live") await syncEvents(item, id);
     }
 
