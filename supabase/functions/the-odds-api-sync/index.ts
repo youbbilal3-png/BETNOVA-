@@ -193,6 +193,10 @@ Deno.serve(async (req: Request) => {
             bookmaker.markets?.find((m: any) => m.key === "totals")?.last_update;
           const updateMs = Date.parse(String(rawUpdatedAt ?? ""));
           const isLive = new Date(String(event.commence_time)).getTime() <= Date.now();
+          // Keep the daily pre-match job from opening live markets. The live job
+          // must be the only path that can publish in-play prices.
+          if (mode === "prematch" && isLive) continue;
+          if (mode === "live" && !isLive) continue;
           if (!Number.isFinite(updateMs) || updateMs > Date.now() + 30000 || (isLive && Date.now() - updateMs > 180000)) continue;
           const updatedAt = new Date(updateMs).toISOString();
 
