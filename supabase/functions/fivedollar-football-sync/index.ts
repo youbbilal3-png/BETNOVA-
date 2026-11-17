@@ -429,10 +429,12 @@ Deno.serve(async (req: Request) => {
   try {
     let fixtures: any[] = [];
     if (mode === "live") {
-      const data = await get("/fixtures?status=live&include=events,stats&per_page=500");
+      const data = await get("/fixtures?status=live&include=events,stats&per_page=50");
       fixtures = Array.isArray(data) ? data : [];
     } else if (mode === "finalize") {
-      const data = await get("/fixtures?status=finished&include=events,stats&per_page=100");
+      const end = Math.floor(Date.now() / 1000);
+      const start = end - 24 * 60 * 60;
+      const data = await get("/fixtures?status=finished&start_time=" + start + "&end_time=" + end + "&include=events,stats&per_page=50");
       fixtures = Array.isArray(data) ? data : [];
     } else {
       const start = Math.floor(Date.now() / 1000);
