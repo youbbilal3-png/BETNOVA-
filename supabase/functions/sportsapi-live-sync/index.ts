@@ -92,6 +92,7 @@ Deno.serve(async (req: Request) => {
   let providerLimited = false;
   let providerErrors: string[] = [];
   let fixturesMatched = 0;
+  let fixturesCreated = 0;
   let fixturesUnmatched = 0;
   let goalsInserted = 0;
   let marketsProcessed = 0;
@@ -132,12 +133,19 @@ Deno.serve(async (req: Request) => {
   }
 
   async function invalidateLivePrices(fixtureId: string) {
+    const { data: openLiveMarkets, error: lookupError } = await supabase.from("markets")
+      .select("id").eq("fixture_id", fixtureId).eq("is_live", true).eq("status", "open").limit(1);
+    if (lookupError) {
+      providerErrors.push("could not inspect live prices before a score change: " + lookupError.message.slice(0, 120));
+      return;
+    }
+    if (!openLiveMarkets?.length) return;
     const staleTime = new Date(Date.now() - 4 * 60 * 1000).toISOString();
     const { error } = await supabase.from("markets")
       .update({ last_updated_at: staleTime })
       .eq("fixture_id", fixtureId).eq("is_live", true).eq("status", "open")
       .gt("last_updated_at", staleTime);
-    if (error) providerErrors.push("could not expire live prices for a score change");
+    if (error) providerErrors.push("could not expire live prices for a score change: " + error.message.slice(0, 120));
   }
 
   async function getFixture(fixtureId: string) {
@@ -146,6 +154,56 @@ Deno.serve(async (req: Request) => {
       .eq("id", fixtureId).maybeSingle();
     if (error || !data) return null;
     return data;
+  }
+
+  async function createLiveFixture(
+    item: any, providerFixtureId: number, homeName: string, awayName: string,
+    startTime: Date, homeScore: number, awayScore: number,
+  ): Promise<string | null> {
+    const { data: football, error: sportError } = await supabase.from("sports")
+      .select("id").eq("slug", "football").eq("is_active", true).maybeSingle();
+    if (sportError || !football?.id) {
+      providerErrors.push("could not load football catalogue for an unmatched live fixture");
+      return null;
+    }
+    const slug = (value: string) => value.toLowerCase().normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const homeExternal = String(item?.home?.id ?? "name:" + slug(homeName));
+    const awayExternal = String(item?.away?.id ?? "name:" + slug(awayName));
+    const country = String(item?.tournament?.country ?? item?.competition?.country ?? "").trim() || null;
+    const competitionName = String(item?.tournament?.name ?? item?.competition?.name ?? item?.league?.name ?? "Live Matches").trim();
+    const competitionExternal = String(item?.tournament?.id ?? item?.competition?.id ?? item?.league?.id ?? "live-feed");
+    const [home, away, competition] = await Promise.all([
+      supabase.from("teams").upsert({
+        name: homeName, short_name: String(item?.home?.shortName ?? homeName.slice(0, 3)).slice(0, 12),
+        country: String(item?.home?.country ?? country ?? "").trim() || null,
+        source_provider: PROVIDER, external_id: homeExternal,
+      }, { onConflict: "source_provider,external_id" }).select("id").single(),
+      supabase.from("teams").upsert({
+        name: awayName, short_name: String(item?.away?.shortName ?? awayName.slice(0, 3)).slice(0, 12),
+        country: String(item?.away?.country ?? country ?? "").trim() || null,
+        source_provider: PROVIDER, external_id: awayExternal,
+      }, { onConflict: "source_provider,external_id" }).select("id").single(),
+      supabase.from("competitions").upsert({
+        sport_id: football.id, name: competitionName, country,
+        season: String(startTime.getUTCFullYear()), is_active: true,
+        source_provider: PROVIDER, external_id: competitionExternal,
+      }, { onConflict: "source_provider,external_id" }).select("id").single(),
+    ]);
+    if (home.error || away.error || competition.error || !home.data?.id || !away.data?.id || !competition.data?.id) {
+      providerErrors.push("could not create catalogue records for an unmatched live fixture");
+      return null;
+    }
+    const saved = await supabase.from("fixtures").upsert({
+      competition_id: competition.data.id, home_team_id: home.data.id, away_team_id: away.data.id,
+      starts_at: startTime.toISOString(), status: "live", home_score: homeScore, away_score: awayScore,
+      source_provider: PROVIDER, external_id: String(providerFixtureId), updated_at: new Date().toISOString(),
+    }, { onConflict: "source_provider,external_id" }).select("id").single();
+    if (saved.error || !saved.data?.id) {
+      providerErrors.push("could not create the unmatched live fixture");
+      return null;
+    }
+    return saved.data.id;
   }
 
   async function holdSportsApiFixture(providerFixtureId: number, reason: string) {
@@ -401,17 +459,22 @@ Deno.serve(async (req: Request) => {
         "betnova_match_sportsapi_fixture",
         { p_home_name: homeName, p_away_name: awayName, p_start_time: startTime.toISOString() },
       );
-      if (matchError || !matchedFixtureId) {
-        fixturesUnmatched++;
-        continue;
+      let targetFixtureId = matchedFixtureId as string | null;
+      if (matchError || !targetFixtureId) {
+        targetFixtureId = await createLiveFixture(item, providerFixtureId, homeName, awayName, startTime, homeScore, awayScore);
+        if (!targetFixtureId) {
+          fixturesUnmatched++;
+          continue;
+        }
+        fixturesCreated++;
       }
-      const fixture = await getFixture(matchedFixtureId);
+      const fixture = await getFixture(targetFixtureId);
       if (!fixture) continue;
       const baselineReady = homeScore + awayScore === 0;
       const { data: insertedLink, error: linkError } = await supabase.from("sportsapi_fixture_links")
         .insert({
           provider_fixture_id: providerFixtureId,
-          fixture_id: matchedFixtureId,
+          fixture_id: targetFixtureId,
           last_status: "inprogress",
           last_seen_at: new Date().toISOString(),
           last_home_score: homeScore,
@@ -431,10 +494,10 @@ Deno.serve(async (req: Request) => {
       fixturesMatched++;
       await supabase.from("fixtures").update({
         status: "live", home_score: homeScore, away_score: awayScore, updated_at: new Date().toISOString(),
-      }).eq("id", matchedFixtureId);
-      await invalidateLivePrices(matchedFixtureId);
+      }).eq("id", targetFixtureId);
+      await invalidateLivePrices(targetFixtureId);
       if (!baselineReady && requestsMade < MAX_REQUESTS_PER_RUN) {
-        await fetchAndProcessGoals(providerFixtureId, matchedFixtureId, link, { home: homeScore, away: awayScore }, true);
+        await fetchAndProcessGoals(providerFixtureId, targetFixtureId, link, { home: homeScore, away: awayScore }, true);
         const { data: refreshedLink } = await supabase.from("sportsapi_fixture_links")
           .select("*").eq("provider_fixture_id", providerFixtureId).maybeSingle();
         if (refreshedLink) link = refreshedLink;
@@ -598,6 +661,7 @@ Deno.serve(async (req: Request) => {
     provider: PROVIDER,
     live_fixtures_received: liveScores.length,
     fixtures_matched: fixturesMatched,
+    fixtures_created: fixturesCreated,
     fixtures_unmatched: fixturesUnmatched,
     goal_events_inserted: goalsInserted,
     markets_processed: marketsProcessed,
