@@ -165,7 +165,9 @@ grant execute on function public.betnova_get_sportsapi_live_config() to service_
 grant execute on function public.betnova_reserve_sportsapi_request(integer) to service_role;
 grant execute on function public.betnova_match_sportsapi_fixture(text, text, timestamptz) to service_role;
 
--- Two-minute polling: 720 baseline requests/day, leaving budget for event and final-result checks.
+-- Sustainable free-tier polling: 72 baseline requests/day at 20-minute intervals,
+-- leaving a limited reserve for event and final-result checks. The provider's beta
+-- allowance may be higher temporarily, but the design targets the post-beta 100/day tier.
 -- No provider requests are made until the API key exists in Vault.
 select cron.unschedule(jobid)
 from cron.job
@@ -173,7 +175,7 @@ where jobname = 'betnova-sportsapi-live-sync';
 
 select cron.schedule(
   'betnova-sportsapi-live-sync',
-  '*/2 * * * *',
+  '*/20 * * * *',
   $job$
     select net.http_post(
       url := 'https://lvhuipkfsdughearjsvy.supabase.co/functions/v1/sportsapi-live-sync',
