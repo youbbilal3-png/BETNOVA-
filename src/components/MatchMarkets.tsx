@@ -10,7 +10,7 @@ type Props = {
   live: boolean
 }
 type Selection = { id: string; name: string; odds: number; status: string; result_status: string }
-type Market = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; market_selections: Selection[] }
+type Market = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; market_selections: Selection[] }
 type LiveEvent = { id: string; event_type: string; period: string | null; minute: number | null; added_time: number | null; player_name: string | null; team: { name: string; short_name: string | null } | null }
 
 const categoryFor = (market: Market, t: (key: any) => string) => {
@@ -32,13 +32,19 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState('Match result')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [clock, setClock] = useState(Date.now())
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 15000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   async function loadMarkets() {
     if (!supabase) { setMarkets([]); setLoading(false); return }
     setError('')
     const { data, error: queryError } = await supabase
       .from('markets')
-      .select('id,market_key,market_type,name,status,is_live,market_selections(id,name,odds,status,result_status)')
+      .select('id,market_key,market_type,name,status,is_live,last_updated_at,market_selections(id,name,odds,status,result_status)')
       .eq('fixture_id', fixtureId)
       .eq('is_active', true)
       .in('status', ['open','suspended'])
@@ -94,15 +100,20 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
         <span>{category}</span><small>{items.length} {t('markets_count')}</small>{expanded === category ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
       </button>
       {expanded === category && <div className="market-group-body">
-        {items.map(market => <article className="market-item" key={market.id}>
-          <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> LIVE</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}</div>
+        {items.map(market => {
+          const updatedMs = new Date(market.last_updated_at).getTime()
+          const maxAgeMs = market.is_live ? 3 * 60 * 1000 : 24 * 60 * 60 * 1000
+          const priceFresh = Number.isFinite(updatedMs) && clock - updatedMs <= maxAgeMs && updatedMs <= clock + 30000
+          const canBet = market.status === "open" && priceFresh && (live ? market.is_live : !market.is_live)
+          return <article className="market-item" key={market.id}>
+          <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> LIVE</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">Price expired</span>}</div>
           <div className="market-outcomes">{market.market_selections.map(selection => {
             const picked = selectedIds.includes(selection.id)
-            return <button key={selection.id} disabled={market.status !== 'open' || picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketLabel:market.name,selectionLabel:selection.name,odds:String(selection.odds)})}>
+            return <button key={selection.id} disabled={!canBet || picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketLabel:market.name,selectionLabel:selection.name,odds:String(selection.odds)})}>
               <span>{selection.name}</span><b>{Number(selection.odds).toFixed(2)}</b>
             </button>
           })}</div>
-        </article>)}
+        </article>})}
       </div>}
     </section>)}
     {live && <div className="markets-live-note"><Clock3 size={13}/> {t('live_prices_warning')}</div>}
