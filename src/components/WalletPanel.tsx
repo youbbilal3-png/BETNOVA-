@@ -5,7 +5,7 @@ import { useLanguage } from '../i18n'
 
 type Props = { onClose: () => void }
 type Method = { code: string; display_name: string; supported_currencies: string[]; instructions: Record<string, unknown> }
-type Account = { currency: string; available_balance: number; reserved_balance: number }
+type Account = { currency: string; available_balance: number; reserved_balance: number; recovery_balance: number }
 type RequestRow = { id: string; payment_method: string; amount: number; currency: string; status: string; created_at: string }
 
 const currencies = ['DZD', 'USD', 'EUR']
@@ -39,7 +39,7 @@ export default function WalletPanel({ onClose }: Props) {
     if (!user) throw new Error(t('sign_in_wallet'))
     setUserId(user.id)
     const [a, m, d, w] = await Promise.all([
-      supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance').eq('user_id', user.id),
+      supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance,recovery_balance').eq('user_id', user.id),
       supabase.from('payment_methods').select('code,display_name,supported_currencies,instructions').eq('is_enabled', true).order('sort_order'),
       supabase.from('deposit_requests').select('id,payment_method,amount,currency,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
       supabase.from('withdrawal_requests').select('id,payment_method,amount,currency,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8)
@@ -121,14 +121,14 @@ export default function WalletPanel({ onClose }: Props) {
       <div className="wallet-balance-card">
         <span>{t('available_balance')}</span>
         <strong>{formatMoney(Number(account?.available_balance ?? 0), currency)}</strong>
-        <small>{Number(account?.reserved_balance ?? 0) > 0 ? `${formatMoney(Number(account?.reserved_balance),currency)} reserved for withdrawals` : t('available_wallet_balance')}</small>
+        <small>{Number(account?.reserved_balance ?? 0) > 0 ? `${formatMoney(Number(account?.reserved_balance),currency)} reserved for withdrawals` : t('available_wallet_balance')}</small>{Number(account?.recovery_balance ?? 0) > 0 && <div className="wallet-recovery-chip"><b>{t('recovery_balance')}</b><strong>{formatMoney(Number(account?.recovery_balance),currency)}</strong></div>}
       </div>
       <div className="wallet-tabs">
         <button className={tab === 'deposit' ? 'active' : ''} onClick={() => setTab('deposit')}><ArrowDownToLine size={14}/> {t('deposit_tab')}</button>
         <button className={tab === 'withdraw' ? 'active' : ''} onClick={() => setTab('withdraw')}><ArrowUpFromLine size={14}/> {t('withdraw_tab')}</button>
         <button className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}><Clock3 size={14}/> {t('history_tab')}</button>
       </div>
-      {error && <p className="wallet-message error">{error}</p>}
+      {Number(account?.recovery_balance ?? 0) > 0 && <div className="wallet-recovery-notice"><b>{t('recovery_notice')}</b><span>{t('recovery_blocks_withdrawal')}</span></div>}{error && <p className="wallet-message error">{error}</p>}
       {notice && <p className="wallet-message success">{notice}</p>}
       {tab === 'deposit' && <form className="wallet-form" onSubmit={submitDeposit}>
         <label>{t('payment_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
@@ -148,7 +148,7 @@ export default function WalletPanel({ onClose }: Props) {
         <label>{t('withdrawal_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min="0.01" max={account?.available_balance ?? 0} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
-        <button className="wallet-submit" disabled={busy || methods.length === 0}>{busy ? t('submitting') : t('request_withdrawal')}</button>
+        <button className="wallet-submit" disabled={busy || methods.length === 0 || Number(account?.recovery_balance ?? 0) > 0}>{busy ? t('submitting') : t('request_withdrawal')}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('withdrawal_reserved')}</p>
       </form>}
       {tab === 'history' && <div className="wallet-history">
