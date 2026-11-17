@@ -1,0 +1,119 @@
+/* BETNOVA unified premium visual system — public and signed-in match centre */
+:root{
+  color-scheme:dark;
+  --bn-night:#070d1d;--bn-deep:#0b1530;--bn-panel:#111d3a;--bn-panel-2:#152448;
+  --bn-blue:#5c91ff;--bn-violet:#8b72ff;--bn-cyan:#66d8ef;--bn-ink:#edf2ff;
+  --bn-muted:#98a8ca;--bn-line:#2b3b63;--bn-green:#5c91ff;--bn-lime:#8c7aff;
+}
+html,body,#root{background:#070d1d;color:#edf2ff}
+body{background:radial-gradient(ellipse at 12% 0%,#152858 0,transparent 34%),radial-gradient(ellipse at 90% 55%,#211b50 0,transparent 32%),#070d1d}
+.app-shell{background:radial-gradient(ellipse at 4% 3%,#172956 0,transparent 30%),radial-gradient(ellipse at 94% 52%,#201b4c 0,transparent 31%),linear-gradient(145deg,#080f22,#070d1d 65%,#0c1028);color:#edf2ff}
+.ambient-one{background:#3e70df;opacity:.13}.ambient-two{background:#7954d8;opacity:.12}
+.topbar{background:linear-gradient(105deg,#080f22 0%,#101d3e 58%,#211b4a 100%);border-bottom:1px solid #ffffff16;box-shadow:0 12px 34px #0006}
+.brand,.brand:hover{color:#f5f7ff}.brand-accent{color:#8c9dff}.brand small{color:#98a8ca}
+.brand-symbol{background:linear-gradient(145deg,#74b7ff,#7466ee);color:#fff;box-shadow:0 9px 22px #526fff55,inset 0 1px #ffffff88}
+.desktop-nav a,.desktop-nav button{color:#aebbe0}.desktop-nav a.active{color:#a9baff}.desktop-nav a.active:after{background:linear-gradient(90deg,#5ca6ff,#9675ff)}
+.top-actions .icon-btn,.menu-btn{background:#ffffff0d;color:#dce6ff;border:1px solid #ffffff20}
+.top-actions .language-picker,.language-picker{background:#ffffff0d;border-color:#ffffff20;color:#dce6ff}
+.top-actions .language-picker select,.language-picker select{color:#f0f3ff;background:transparent}
+.top-actions .login-btn,.login-btn{background:#ffffff0b;border:1px solid #7187c955;color:#e4eaff}
+.join-btn{background:linear-gradient(120deg,#5d9dff,#856cff);color:#fff;box-shadow:0 8px 22px #586cff55}
+.guest-preview-label{font-size:8px;font-weight:900;letter-spacing:1.2px;color:#a9c3ff;border:1px solid #6b8dfb55;background:#557cff18;border-radius:30px;padding:8px 10px;white-space:nowrap}
+.ticker{background:#0d1832;color:#a6b5d5;border-bottom:1px solid #ffffff13}
+.ticker strong{color:#a8c0ff}.ticker-divider{background:#34446c}.ticker-right{color:#9eafd2}.live-dot{background:#58e0ce;box-shadow:0 0 0 4px #58e0ce20}
+.layout{color:#eaf0ff}
+.left-rail,.right-rail{color:#eaf0ff}
+.left-rail{background:linear-gradient(155deg,#101c38,#0d1730);border:1px solid #ffffff14;border-radius:21px;box-shadow:0 18px 42px #0004}
+.rail-heading{color:#8295bf}.rail-item,.sport-item{color:#aab9dc}
+.rail-item.selected,.sport-item.chosen{background:linear-gradient(110deg,#263d70,#24264f);color:#dce7ff;box-shadow:inset 3px 0 #78aaff}
+.rail-count{background:#293c69;color:#c4d5ff}.rail-separator{background:#ffffff16}
+.rail-promo{background:linear-gradient(145deg,#172c57,#292258);border:1px solid #7c83ff38;color:#f1f3ff}
+.rail-promo p{color:#aab8d8}.rail-promo>span{color:#9cbaff}.promo-orb{background:linear-gradient(145deg,#7ebaff,#8b70ff);color:#fff}
+.hero{background:radial-gradient(circle at 78% 40%,#596be0 0,transparent 31%),linear-gradient(118deg,#0d1b3b 0%,#173d75 52%,#3d347e 100%);box-shadow:0 24px 55px #0007,inset 0 1px #ffffff35;border:1px solid #91aaff35}
+.hero:before{background:linear-gradient(125deg,#ffffff16,transparent 38%,transparent 68%,#a48dff18)}
+.hero h1{color:#f8f9ff;text-shadow:0 5px 20px #02081788}.hero h1 em{color:#9fc2ff}
+.hero-copy>p{color:#c0cbed}.eyebrow{color:#b9d0ff}.eyebrow>span{background:#76e8ed}
+.hero-actions button{background:linear-gradient(120deg,#73baff,#8c74ff);color:#fff;box-shadow:0 8px 22px #596fff55}
+.hero-actions>span{color:#c0cbed}.orbit{border-color:#a8c7ff66}.art-tag{background:#101c3cbb;border:1px solid #9dbbff55;color:#e5ecff}.tag-bottom{background:#806df5;color:#fff}
+.quick-stats>div,.match-card,.slip-card,.help-card,.responsible-card{background:linear-gradient(150deg,#142344,#0e1932);border:1px solid #ffffff17;box-shadow:0 15px 36px #0005;color:#edf2ff}
+.quick-stats>div{background:linear-gradient(145deg,#17294d,#101c37);border-color:#ffffff18}
+.stat-icon,.stat-icon.teal,.stat-icon.lime{background:#293d70;color:#9bc3ff}
+.quick-stats b,.team b,.section-heading h2,.slip-head h3,.help-card b,.responsible-card b{color:#f0f3ff}
+.quick-stats small,.section-heading p,.match-meta,.match-footer,.match-time,.odds-caption{color:#9eafd1}
+.section-heading h2{color:#f3f5ff}.heading-star{color:#9b8aff}
+.event-view-tabs,.sports-tabs,.filter-row{color:#aebce0}
+.event-view,.tab,.filter{background:#101d3a;border:1px solid #ffffff16;color:#aab9dc}
+.event-view.active,.tab.active-tab,.filter.active-filter{background:linear-gradient(110deg,#315a9e,#51428c);border-color:#7da6ff;color:#fff;box-shadow:0 6px 18px #0003}
+.search-field{background:#101d3a;border:1px solid #ffffff22;color:#aebde0}.search-field input{color:#f0f3ff}
+.match-card{background:linear-gradient(145deg,#162648,#101b35);border-color:#ffffff1c}
+.match-card:hover{border-color:#718fff88;box-shadow:0 18px 35px #0007}
+.team-mark{background:linear-gradient(145deg,#263d70,#28234f);color:#dce8ff;box-shadow:inset 0 1px #ffffff44,0 4px 12px #0005}
+.team-crest{background:linear-gradient(145deg,#273f79,#282454);color:#dce8ff}
+.team-crest img{background:#fff}
+.versus{color:#8195c1}.odds-caption{color:#9aabd0}
+.odd,.market-outcome{background:#1a2b50;border:1px solid #40547f;color:#c9d6f6}
+.odd small,.market-outcome span{color:#b0c0e5}.odd b,.market-outcome b{color:#9fc4ff}
+.odd:hover:not(:disabled),.market-outcome:hover:not(:disabled){border-color:#83aaff;background:#243d70;box-shadow:0 7px 18px #0005}
+.odd.picked,.market-outcome.picked{background:#293e79;border-color:#8b9fff;box-shadow:inset 0 0 0 1px #8b9fff}
+.odd:disabled,.market-outcome:disabled{opacity:.4}
+.match-footer button,.favorite-toggle,.details-trigger,.view-all{color:#a9c1ff}
+.result-label{color:#9dbbff}
+.demo-note{background:#101d3a;border:1px solid #ffffff17;color:#aebde0}
+.slip-card{background:linear-gradient(155deg,#18294c,#101a34);border-color:#ffffff20}
+.slip-head h3 span{background:#2d4477;color:#c6d7ff}
+.slip-clear{color:#a9baff}.slip-empty{color:#a9b9dd}.slip-empty b{color:#eef2ff}.slip-empty p{color:#97a8cb}
+.slip-empty-icon{background:#263b6b;color:#a8c5ff}
+.slip-selection{border-bottom:1px solid #ffffff17}.slip-selection b{color:#edf2ff}.slip-selection small{color:#9eafd1}.slip-selection>strong{color:#a9c4ff}
+.slip-selection>button{background:#39253d;color:#ff9cbd}
+.bet-slip-stake label,.bet-slip-stake>div{color:#aebde0}
+.bet-slip-stake input,.bet-slip-stake select{background:#0b1630;border:1px solid #3a4d78;color:#f0f3ff}
+.slip-cta,.wallet-submit,.auth-submit{background:linear-gradient(115deg,#5b9dff,#806bfa);color:#fff}
+.slip-cta:disabled{opacity:.45;filter:saturate(.6)}
+.help-card,.responsible-card{background:linear-gradient(145deg,#142344,#101a34);border-color:#ffffff18}
+.help-card p,.responsible-card p{color:#a1b0d1}.help-card a,.responsible-card a{color:#9dbaff}
+.footer{color:#8192b9;border-top:1px solid #ffffff14}
+.mobile-nav{background:#0b1530;border-top:1px solid #ffffff20;box-shadow:0 -12px 32px #0007}
+.mobile-nav button{color:#8fa3ce}.mobile-nav button.mobile-active{color:#a9c5ff}
+.mobile-nav button i{background:#766aff;color:#fff}
+.mobile-more-panel,.mobile-sheet,.notification-panel,.detail-panel,.auth-panel,.admin-panel,.wallet-panel,.bets-panel{background:linear-gradient(155deg,#172748,#0c1730);color:#eef2ff;border:1px solid #ffffff1b;box-shadow:0 30px 90px #000b}
+.mobile-more-header,.sheet-head{color:#f0f3ff}.mobile-more-panel>button{color:#d0dcf8;border-bottom:1px solid #ffffff12}
+.mobile-more-language{color:#b4c3e5}.mobile-more-language select{background:#0b1630;color:#f0f3ff;border:1px solid #ffffff24}
+.detail-backdrop,.auth-backdrop,.notification-backdrop,.mobile-more-backdrop,.mobile-sheet-backdrop,.admin-backdrop,.wallet-backdrop,.bets-backdrop{background:#020716c9;backdrop-filter:blur(9px)}
+.detail-close,.auth-close,.icon-btn{background:#1a2b50;border:1px solid #ffffff20;color:#e5ecff}
+.detail-kicker,.detail-league,.detail-info-grid small,.detail-market-heading>span{color:#a4b7e2}
+.detail-panel>h2,.detail-teams b,.detail-market-heading h3{color:#f1f4ff}
+.detail-mark{background:linear-gradient(145deg,#2b4b86,#433678);color:#fff}
+.detail-info-grid>div{background:#101d3a;border:1px solid #ffffff17}
+.detail-info-grid b{color:#e9efff}
+.market-group{background:#101d38;border:1px solid #ffffff17;box-shadow:0 7px 20px #0004}
+.market-group-head{background:#142344;color:#eaf0ff}
+.market-group-head small,.markets-toolbar,.markets-empty,.markets-loading{color:#a6b6d9}
+.market-item{border-top:1px solid #ffffff12}.market-item-title{color:#eaf0ff}
+.market-live-tag{background:#173d49;color:#74e7dc}.market-suspended{background:#4b2e48;color:#ffb5d0}
+.markets-empty,.markets-loading,.match-event-feed{background:#111e3b;border:1px solid #ffffff16;color:#b4c2e2}
+.match-event-feed-head span{color:#9fc0ff}.match-event-row{border-top:1px solid #ffffff12;color:#dce6ff}
+.markets-live-note{color:#a9bbdf}
+.auth-brand-mark{background:linear-gradient(145deg,#6faeff,#8069f6);color:#fff}
+.auth-kicker,.auth-subtitle,.auth-switch,.auth-footnote{color:#aab9dc}
+.auth-panel h2{color:#f4f6ff}.auth-form label{color:#cbd7f2}
+.auth-form input,.password-wrap input{background:#0b1630;border:1px solid #40527a;color:#f4f6ff}
+.auth-form input::placeholder{color:#7488b4}
+.auth-switch button{color:#a9c1ff}
+.auth-message.error{background:#48293b;color:#ffb8cc}.auth-message.success{background:#193d43;color:#a5eee3}
+input,select,textarea{accent-color:#789bff}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #82aaff77;outline-offset:3px}
+@media(max-width:900px){
+ .layout{grid-template-columns:190px minmax(0,1fr) 260px}
+ .guest-preview-label{display:none}
+}
+@media(max-width:760px){
+ .topbar{background:linear-gradient(105deg,#080f22,#17254a 70%,#211b4a)}
+ .layout{background:transparent}
+ .left-rail{background:#101c38}
+ .match-card,.slip-card{box-shadow:0 12px 28px #0006}
+ .guest-preview-label{display:none}
+ .detail-panel{background:linear-gradient(155deg,#172748,#0c1730)}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+.guest-slip-note{margin:12px 0;padding:12px 13px;border-radius:12px;background:linear-gradient(120deg,#1b315c,#282452);border:1px solid #8097ff44;color:#c7d5f6;font-size:12px;line-height:1.55}
