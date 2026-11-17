@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Menu, Search, ShieldCheck, Sparkles, Star, Trophy, Wallet, X } from 'lucide-react'
 import AuthPanel from './components/AuthPanel'
+import PublicLanding from './PublicLanding'
 import AdminOverview from './components/AdminOverview'
 import WalletPanel from './components/WalletPanel'
 import MatchMarkets from './components/MatchMarkets'
@@ -245,6 +246,17 @@ export default function App() {
       setBetMessage(/outstanding wallet recovery/i.test(message) ? t('recovery_blocks_withdrawal') : message)
     } finally { setBetBusy(false) }
   }
+
+  if (!userEmail) return <>
+    <PublicLanding
+      isArabic={language.startsWith('ar')}
+      language={language}
+      onLanguageChange={value=>setLanguage(value as typeof language)}
+      onSignup={()=>{setAuthMode('signup');setAuthOpen(true)}}
+      onLogin={()=>{setAuthMode('login');setAuthOpen(true)}}
+    />
+    <AuthPanel open={authOpen} mode={authMode} onClose={()=>setAuthOpen(false)} onModeChange={setAuthMode}/>
+  </>
 
   return (
     <div className="app-shell">
