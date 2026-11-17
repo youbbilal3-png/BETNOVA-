@@ -223,10 +223,21 @@ Deno.serve(async (req: Request) => {
     if (saved.error || !saved.data) return;
     marketsSynced++;
     for (const pick of usable) {
-      const result = await supabase.from("market_selections").upsert({
+      const { data: oldSelection, error: oldSelectionError } = await supabase.from("market_selections")
+        .select("id,status,result_status").eq("market_id", saved.data.id).eq("selection_key", pick.key).maybeSingle();
+      if (oldSelectionError) {
+        errors.push("selection lookup: " + oldSelectionError.message.slice(0, 100));
+        continue;
+      }
+      // Never reactivate or rewrite a selection that has already been settled.
+      if (oldSelection && (oldSelection.status !== "active" || oldSelection.result_status !== "pending")) continue;
+      const selectionPayload = {
         market_id: saved.data.id, name: pick.name, selection_key: pick.key,
         odds: pick.odds, status: "active", result_status: "pending", updated_at: timestamp,
-      }, { onConflict: "market_id,selection_key" });
+      };
+      const result = oldSelection
+        ? await supabase.from("market_selections").update(selectionPayload).eq("id", oldSelection.id)
+        : await supabase.from("market_selections").insert(selectionPayload);
       if (result.error) errors.push("selection: " + result.error.message.slice(0, 100));
       else selectionsSynced++;
     }
