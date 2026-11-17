@@ -394,8 +394,8 @@ Deno.serve(async (req: Request) => {
     const changed = previousHome !== homeScore || previousAway !== awayScore;
     const regressed = homeScore < previousHome || awayScore < previousAway;
     const nowIso = new Date().toISOString();
-    // Any score regression (usually a VAR reversal or provider correction) pauses
-    // automated settlement for this fixture; never attempt an automatic wallet reversal.
+    // Score regressions mark the fixture for a fresh authoritative event snapshot.
+    // Payout changes are applied only after the score and provider event list agree.
     const nextHold = Boolean(link.settlement_hold) || regressed;
     const nextObservations = changed ? 1 : Math.min(Number(link.score_observations ?? 0) + 1, 10);
     const nextStableSince = changed ? nowIso : link.score_stable_since;
@@ -428,8 +428,12 @@ Deno.serve(async (req: Request) => {
     }
 
     const stableSince = link.score_stable_since ? Date.parse(String(link.score_stable_since)) : 0;
+    const eventSnapshotPredatesScore = !link.last_events_checked_at ||
+      (link.score_stable_since &&
+       Date.parse(String(link.last_events_checked_at)) < Date.parse(String(link.score_stable_since)));
     const needsEventReconciliation = nextHold ||
-      Number(link.last_processed_goal_count ?? 0) !== homeScore + awayScore;
+      Number(link.last_processed_goal_count ?? 0) !== homeScore + awayScore ||
+      (nextObservations >= 2 && Boolean(eventSnapshotPredatesScore));
     if (needsEventReconciliation && nextObservations >= 2 && stableSince > 0 &&
         Date.now() - stableSince >= 90000 && requestsMade < MAX_REQUESTS_PER_RUN) {
       await fetchAndProcessGoals(providerFixtureId, link.fixture_id, { ...link, settlement_hold: nextHold }, { home: homeScore, away: awayScore }, false);
