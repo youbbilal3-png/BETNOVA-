@@ -214,7 +214,7 @@ Deno.serve(async (req: Request) => {
               const name = "Match Winner · " + String(bookmaker.title ?? bookmaker.key ?? "EU bookmaker");
               const { data: existing } = await supabase.from("markets").select("id,status")
                 .eq("fixture_id", fixtureId).eq("market_key", "match_result").eq("name", name).maybeSingle();
-              if (!existing || existing.status === "open") {
+              if (!existing || existing.status === "open" || (isLive && existing.status === "suspended")) {
                 const payload = {
                   fixture_id: fixtureId, market_type: "match_result", market_key: "match_result",
                   name, settlement_rule: {}, is_live: isLive, is_active: true, status: "open",
@@ -306,6 +306,15 @@ Deno.serve(async (req: Request) => {
         }
         providerErrors.push(String(sport.key) + " odds: " + (error instanceof Error ? error.message : "unknown error"));
       }
+    }
+
+    if (mode === "live") {
+      const staleBefore = new Date(Date.now() - 180000).toISOString();
+      const { error: suspendError } = await supabase.from("markets")
+        .update({ status: "suspended", suspended_at: new Date().toISOString() })
+        .eq("source_provider", PROVIDER).eq("is_live", true).eq("status", "open")
+        .lt("last_updated_at", staleBefore);
+      if (suspendError) providerErrors.push("stale live market suspension: " + suspendError.message);
     }
 
     return json({
