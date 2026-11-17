@@ -20,7 +20,7 @@ const categoryFor = (market: Market, t: (key: any) => string) => {
   if (/corner/.test(key + ' ' + name)) return t('corners')
   if (/card|booking|foul/.test(key + ' ' + name)) return t('cards_fouls')
   if (/player|shot|assist/.test(key + ' ' + name)) return t('player_markets')
-  if (/half|period|result|winner/.test(key + ' ' + name)) return t('match_result')
+  if (/half|period|result|winner|handicap/.test(key + ' ' + name)) return t('match_result')
   return t('match_markets')
 }
 
