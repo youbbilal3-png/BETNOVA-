@@ -345,6 +345,25 @@ create trigger wallet_ledger_track_bet_return
 after insert on public.wallet_ledger
 for each row execute function public.betnova_track_initial_bet_return();
 
+-- Ensure first-goal / first-corner replay uses the event's actual match time,
+-- not the time it happened to arrive at our server. This matters when VAR inserts
+-- or removes an earlier event during a later reconciliation.
+do $
+declare
+  v_definition text;
+  v_old text := 'e.received_at<v_event.received_at';
+  v_new text := 'coalesce(e.occurred_at,e.received_at)<coalesce(v_event.occurred_at,v_event.received_at)';
+begin
+  select pg_get_functiondef('public.betnova_process_live_event(uuid)'::regprocedure)
+    into v_definition;
+  if position(v_old in v_definition) = 0 then
+    raise exception 'Could not locate event ordering expressions in live event processor';
+  end if;
+  v_definition := replace(v_definition, v_old, v_new);
+  execute v_definition;
+end;
+$;
+
 -- Re-open only the affected fixture's settlement graph. Historical wallet
 -- credits remain untouched; the subsequent replay applies payout deltas.
 create or replace function public.betnova_reopen_fixture_for_correction(p_fixture_id uuid)
