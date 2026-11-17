@@ -428,10 +428,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const stableSince = link.score_stable_since ? Date.parse(String(link.score_stable_since)) : 0;
-    if (!nextHold && nextObservations >= 2 && stableSince > 0 && Date.now() - stableSince >= 90000 &&
-        Number(link.last_processed_goal_count ?? 0) < homeScore + awayScore &&
-        requestsMade < MAX_REQUESTS_PER_RUN) {
-      await fetchAndProcessGoals(providerFixtureId, link.fixture_id, link, { home: homeScore, away: awayScore }, false);
+    const needsEventReconciliation = nextHold ||
+      Number(link.last_processed_goal_count ?? 0) !== homeScore + awayScore;
+    if (needsEventReconciliation && nextObservations >= 2 && stableSince > 0 &&
+        Date.now() - stableSince >= 90000 && requestsMade < MAX_REQUESTS_PER_RUN) {
+      await fetchAndProcessGoals(providerFixtureId, link.fixture_id, { ...link, settlement_hold: nextHold }, { home: homeScore, away: awayScore }, false);
     }
   }
 
@@ -539,6 +540,6 @@ Deno.serve(async (req: Request) => {
     quota_limited: quotaLimited,
     provider_rate_limited: providerLimited,
     provider_errors: providerErrors.slice(0, 8),
-    settlement_policy: "Score changes are confirmed across polls and reconciled against the provider event list. If scores regress after a goal has already been settled, that fixture is held for manual review; the system never auto-reverses wallet settlements.",
+    settlement_policy: "Score changes are confirmed across polls. When the provider's confirmed goal snapshot changes, affected markets are replayed and wallet payouts are automatically reconciled with idempotent recovery offsets.",
   });
 });
