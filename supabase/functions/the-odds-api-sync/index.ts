@@ -222,7 +222,7 @@ Deno.serve(async (req: Request) => {
                   last_updated_at: updatedAt,
                 };
                 const saved = existing
-                  ? await supabase.from("markets").update(payload).eq("id", existing.id).eq("status", "open").select("id").single()
+                  ? await supabase.from("markets").update(payload).eq("id", existing.id).select("id").single()
                   : await supabase.from("markets").insert(payload).select("id").single();
                 if (!saved.error && saved.data) {
                   marketsUpdated++;
