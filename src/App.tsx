@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Menu, Search, ShieldCheck, Sparkles, Star, Trophy, Wallet, X } from 'lucide-react'
 import AuthPanel from './components/AuthPanel'
-import PublicLanding from './PublicLanding'
 import AdminOverview from './components/AdminOverview'
 import WalletPanel from './components/WalletPanel'
 import MatchMarkets from './components/MatchMarkets'
@@ -247,16 +246,7 @@ export default function App() {
     } finally { setBetBusy(false) }
   }
 
-  if (!userEmail) return <>
-    <PublicLanding
-      isArabic={language.startsWith('ar')}
-      language={language}
-      onLanguageChange={value=>setLanguage(value as typeof language)}
-      onSignup={()=>{setAuthMode('signup');setAuthOpen(true)}}
-      onLogin={()=>{setAuthMode('login');setAuthOpen(true)}}
-    />
-    <AuthPanel open={authOpen} mode={authMode} onClose={()=>setAuthOpen(false)} onModeChange={setAuthMode}/>
-  </>
+  // Guests use the same live match centre and market details as members; betting remains authenticated.
 
   return (
     <div className="app-shell">
@@ -264,7 +254,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-symbol"><Activity size={22} strokeWidth={2.8}/></span><span>BET<span className="brand-accent">NOVA</span><small>{t("brand_tagline")}</small></span></a>
         <nav className="desktop-nav"><a className="active" href="#events">{t('sports')}</a><button onClick={() => openEventView('live')}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => openEventView('results')}>{t('results')}</button></nav>
-        <div className="top-actions"><label className="language-picker" aria-label={t("language")}><Globe2 size={14}/><select value={language} onChange={event=>setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="wallet-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> {t("wallet")}</button><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>Admin</button></> : <button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? t('signout') : t('join')} <ArrowRight size={16}/></button><button className="menu-btn" aria-label={t("menu")} onClick={() => setMobileMoreOpen(true)}><Menu/></button></div>
+        <div className="top-actions"><label className="language-picker" aria-label={t("language")}><Globe2 size={14}/><select value={language} onChange={event=>setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="wallet-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> {t("wallet")}</button><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>Admin</button></> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button></>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? t('signout') : t('join')} <ArrowRight size={16}/></button><button className="menu-btn" aria-label={t("menu")} onClick={() => setMobileMoreOpen(true)}><Menu/></button></div>
       </header>
 
       <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
