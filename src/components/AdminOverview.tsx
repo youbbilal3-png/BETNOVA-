@@ -3,6 +3,17 @@ import { Activity, CalendarDays, CheckCircle2, Clock3, CreditCard, RefreshCw, Sh
 import { supabase } from '../lib/supabase'
 
 type Props = { onClose: () => void }
+type ProviderHealth = {
+  sportsapi_requests_today: number
+  sportsapi_daily_limit: number
+  sportsapi_mapped_fixtures: number
+  sportsapi_correction_holds: number
+  live_markets_total: number
+  live_markets_fresh: number
+  prematch_markets_total: number
+  prematch_markets_fresh: number
+  last_market_update: string | null
+}
 type Counts = { sports: number; competitions: number; teams: number; fixtures: number; markets: number }
 type Deposit = { id: string; user_id: string; payment_method: string; amount: number; currency: string; sender_reference: string | null; proof_path: string | null; created_at: string }
 type Withdrawal = { id: string; user_id: string; payment_method: string; amount: number; currency: string; destination_details: string; created_at: string }
@@ -17,13 +28,23 @@ export default function AdminOverview({ onClose }: Props) {
   const [deposits, setDeposits] = useState<Deposit[]>([])
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
   const [methods, setMethods] = useState<PaymentMethod[]>([])
-  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'payments'>('deposits')
+  const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null)
+  const [providerHealthError, setProviderHealthError] = useState('')
+  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'payments' | 'providers'>('deposits')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({})
   const [currencyDrafts, setCurrencyDrafts] = useState<Record<string, string[]>>({})
   const [payoutReferences, setPayoutReferences] = useState<Record<string, string>>({})
+
+  const loadProviderHealth = useCallback(async () => {
+    if (!supabase) return
+    setProviderHealthError('')
+    const { data, error: rpcError } = await supabase.rpc('betnova_admin_provider_health')
+    if (rpcError) { setProviderHealthError('Provider health could not be loaded.'); return }
+    setProviderHealth(data as ProviderHealth)
+  }, [])
 
   const loadFinance = useCallback(async () => {
     if (!supabase) return
@@ -63,14 +84,14 @@ export default function AdminOverview({ onClose }: Props) {
           sports: results[0].count ?? 0, competitions: results[1].count ?? 0,
           teams: results[2].count ?? 0, fixtures: results[3].count ?? 0, markets: results[4].count ?? 0,
         })
-        await loadFinance()
+        await Promise.all([loadFinance(), loadProviderHealth()])
       } catch (caught) {
         if (active) setError(caught instanceof Error ? caught.message : 'Could not load the admin overview.')
       } finally { if (active) setChecking(false) }
     }
     void load()
     return () => { active = false }
-  }, [loadFinance])
+  }, [loadFinance, loadProviderHealth])
 
   async function openDepositProof(path: string) {
     if (!supabase) return
@@ -182,6 +203,7 @@ export default function AdminOverview({ onClose }: Props) {
             <button className={tab === 'deposits' ? 'active' : ''} onClick={() => setTab('deposits')}><Wallet size={14}/> Deposits <b>{deposits.length}</b></button>
             <button className={tab === 'withdrawals' ? 'active' : ''} onClick={() => setTab('withdrawals')}><CreditCard size={14}/> Withdrawals <b>{withdrawals.length}</b></button>
             <button className={tab === 'payments' ? 'active' : ''} onClick={() => setTab('payments')}><ShieldCheck size={14}/> Methods</button>
+            <button className={tab === 'providers' ? 'active' : ''} onClick={() => { setTab('providers'); void loadProviderHealth() }}><Activity size={14}/> Data health</button>
             <button className="admin-refresh" onClick={() => void loadFinance()} aria-label="Refresh finance"><RefreshCw size={14}/></button>
           </div>
           {error && <p className="admin-message error">{error}</p>}
@@ -203,6 +225,27 @@ export default function AdminOverview({ onClose }: Props) {
               <label className="admin-payout-reference">External transfer reference<input value={payoutReferences[item.id] ?? ''} onChange={event => setPayoutReferences(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Transaction / transfer ID" maxLength={160} /></label>
               <div className="admin-finance-actions"><button disabled={busyId === item.id || (payoutReferences[item.id] ?? '').trim().length < 4} onClick={() => void reviewWithdrawal(item.id, 'paid')}><CheckCircle2 size={14}/> Mark paid</button><button className="reject" disabled={busyId === item.id} onClick={() => void reviewWithdrawal(item.id, 'reject')}><XCircle size={14}/> Reject & release</button></div>
             </article>)}
+          </div>}
+          {tab === 'providers' && <div className="admin-finance-list">
+            {providerHealthError && <p className="admin-message error">{providerHealthError}</p>}
+            {!providerHealth && !providerHealthError ? <p className="admin-message">Loading provider health…</p> : providerHealth && <>
+              <article className="admin-finance-item">
+                <div className="admin-finance-top"><b>SportsAPI live scores</b><span>{providerHealth.sportsapi_requests_today} / {providerHealth.sportsapi_daily_limit} requests today</span></div>
+                <p>Mapped live fixtures: {providerHealth.sportsapi_mapped_fixtures}</p>
+                <small>Automatic correction holds: {providerHealth.sportsapi_correction_holds}</small>
+                <div className="admin-provider-meter"><span style={{width: Math.min(100, providerHealth.sportsapi_requests_today / Math.max(1, providerHealth.sportsapi_daily_limit) * 100) + '%'}} /></div>
+                <small>Free-tier budget protection is active. Live score polling is paused until the correction workflow is validated.</small>
+              </article>
+              <article className="admin-finance-item">
+                <div className="admin-finance-top"><b>Live odds markets</b><span>{providerHealth.live_markets_fresh} / {providerHealth.live_markets_total} fresh</span></div>
+                <p>Expired prices are automatically disabled.</p>
+              </article>
+              <article className="admin-finance-item">
+                <div className="admin-finance-top"><b>Pre-match odds</b><span>{providerHealth.prematch_markets_fresh} / {providerHealth.prematch_markets_total} fresh</span></div>
+                <small>Last market update: {providerHealth.last_market_update ? new Date(providerHealth.last_market_update).toLocaleString() : 'No update recorded'}</small>
+              </article>
+              <div className="admin-finance-actions"><button onClick={() => void loadProviderHealth()}><RefreshCw size={14}/> Refresh data health</button></div>
+            </>}
           </div>}
           {tab === 'payments' && <div className="admin-finance-list">
             {methods.length === 0 ? <p className="admin-message">Add payment methods to the payment_methods table to configure them here.</p> : methods.map(method => <article className="admin-finance-item" key={method.id}>
