@@ -40,13 +40,30 @@ function mapPeriod(value: unknown): string | null {
   return p || null;
 }
 
-function providerEventId(providerFixtureId: number, event: any, index: number): string {
-  const side = String(event?.side ?? "none");
-  const minute = event?.minute == null ? "x" : String(event.minute);
-  const added = event?.addedMinute == null ? "0" : String(event.addedMinute);
-  const player = String(event?.player?.id ?? event?.player?.name ?? "unknown")
-    .toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 40);
-  return `${providerFixtureId}:${event?.type ?? "event"}:${side}:${minute}:${added}:${player}:${index}`.slice(0, 160);
+function stableGoalKeys(providerFixtureId: number, goals: any[]): string[] {
+  const occurrences = new Map<string, number>();
+  return goals.map((event) => {
+    const side = event?.side === "home" || event?.side === "away" ? event.side : "-";
+    const minute = event?.minute != null && Number.isInteger(Number(event.minute)) ? String(Number(event.minute)) : "-";
+    const added = event?.addedMinute == null ? "0" : (Number.isInteger(Number(event.addedMinute)) ? String(Number(event.addedMinute)) : "0");
+    const base = `goal:${side}:${minute}:${added}`;
+    const occurrence = (occurrences.get(base) ?? 0) + 1;
+    occurrences.set(base, occurrence);
+    return `${providerFixtureId}:${occurrence === 1 ? base : `${base}#${occurrence}`}`.slice(0, 160);
+  });
+}
+
+function goalSnapshot(goals: any[], keys: string[]) {
+  return goals.map((goal, index) => ({
+    key: keys[index],
+    side: goal?.side ?? null,
+    minute: goal?.minute ?? null,
+    addedMinute: goal?.addedMinute ?? null,
+    period: goal?.period ?? null,
+    detail: goal?.detail ?? null,
+    playerId: goal?.player?.id == null ? null : String(goal.player.id),
+    playerName: goal?.player?.name ?? goal?.playerName ?? null,
+  }));
 }
 
 Deno.serve(async (req: Request) => {
@@ -161,6 +178,20 @@ Deno.serve(async (req: Request) => {
 
     const lastProcessed = Number(link.last_processed_goal_count ?? 0);
     const settledCount = Number(link.settled_goal_count ?? 0);
+    const stableKeys = stableGoalKeys(providerFixtureId, activeGoals);
+    const currentSnapshot = goalSnapshot(activeGoals, stableKeys);
+    const previousSnapshot = Array.isArray(link.processed_goal_snapshot) ? link.processed_goal_snapshot : [];
+    if (!baselineOnly && Boolean(link.baseline_ready) && lastProcessed > 0) {
+      const priorPrefix = previousSnapshot.slice(0, lastProcessed);
+      const currentPrefix = currentSnapshot.slice(0, lastProcessed);
+      if (priorPrefix.length !== lastProcessed ||
+          JSON.stringify(priorPrefix) !== JSON.stringify(currentPrefix)) {
+        await supabase.from("sportsapi_fixture_links")
+          .update({ settlement_hold: true, updated_at: new Date().toISOString() })
+          .eq("provider_fixture_id", providerFixtureId);
+        return { ok: false, processed: 0, lastGoalCount: lastProcessed, baselineReady: true, hold: true };
+      }
+    }
     if (lastProcessed > activeGoals.length) {
       await supabase.from("sportsapi_fixture_links")
         .update({ settlement_hold: true, updated_at: new Date().toISOString() })
@@ -178,7 +209,7 @@ Deno.serve(async (req: Request) => {
     for (let i = startIndex; i < endIndex; i++) {
       const goal = activeGoals[i];
       const teamId = goal.side === "home" ? fixture.home_team_id : fixture.away_team_id;
-      const eventId = providerEventId(providerFixtureId, goal, i);
+      const eventId = stableKeys[i];
       const eventAt = goal.at && Number.isFinite(Date.parse(String(goal.at)))
         ? new Date(String(goal.at)).toISOString()
         : null;
@@ -233,6 +264,7 @@ Deno.serve(async (req: Request) => {
     const { error: linkError } = await supabase.from("sportsapi_fixture_links")
       .update({
         baseline_ready: newBaselineReady,
+        processed_goal_snapshot: currentSnapshot,
         last_processed_goal_count: newLastGoalCount,
         settled_goal_count: newSettledCount,
         last_events_checked_at: new Date().toISOString(),
