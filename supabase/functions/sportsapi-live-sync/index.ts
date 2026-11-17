@@ -31,11 +31,6 @@ function integer(value: unknown): number | null {
   return Number.isInteger(n) && n >= 0 && n <= 99 ? n : null;
 }
 
-function normalizedName(value: unknown): string {
-  return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
 function mapPeriod(value: unknown): string | null {
   const p = String(value ?? "").toLowerCase();
   if (["period1", "first_half", "1h", "firsthalf"].includes(p)) return "first_half";
@@ -50,8 +45,10 @@ function goalWasRuledOut(goal: any, events: any[]): boolean {
     event?.type === "varDecision" &&
     event?.detail === "goalNotAwarded" &&
     (event?.side == null || event?.side === goal?.side) &&
-    Number.isFinite(Number(event?.minute)) &&
-    Number.isFinite(Number(goal?.minute)) &&
+    event?.minute != null &&
+    goal?.minute != null &&
+    Number.isFinite(Number(event.minute)) &&
+    Number.isFinite(Number(goal.minute)) &&
     Math.abs(Number(event.minute) - Number(goal.minute)) <= 1
   );
 }
@@ -155,6 +152,9 @@ Deno.serve(async (req: Request) => {
     finalScore: { home: number; away: number },
     baselineOnly = false,
   ): Promise<{ ok: boolean; processed: number; lastGoalCount: number; baselineReady: boolean; hold: boolean }> {
+    if (Boolean(link.settlement_hold)) {
+      return { ok: false, processed: 0, lastGoalCount: Number(link.last_processed_goal_count ?? 0), baselineReady: Boolean(link.baseline_ready), hold: true };
+    }
     const allGoals = providerEvents.filter((event: any) =>
       event?.type === "goal" && (event?.side === "home" || event?.side === "away")
     );
@@ -199,8 +199,8 @@ Deno.serve(async (req: Request) => {
         provider_event_id: eventId,
         event_type: "goal",
         period: mapPeriod(goal.period),
-        minute: Number.isInteger(Number(goal.minute)) ? Number(goal.minute) : null,
-        added_time: Number.isInteger(Number(goal.addedMinute)) ? Number(goal.addedMinute) : null,
+        minute: goal.minute != null && Number.isInteger(Number(goal.minute)) ? Number(goal.minute) : null,
+        added_time: goal.addedMinute != null && Number.isInteger(Number(goal.addedMinute)) ? Number(goal.addedMinute) : null,
         team_id: teamId,
         player_id: goal.player?.id == null ? null : String(goal.player.id),
         player_name: String(goal.player?.name ?? goal.playerName ?? "").slice(0, 160) || null,
@@ -431,6 +431,7 @@ Deno.serve(async (req: Request) => {
         );
         const { data: refreshed } = await supabase.from("sportsapi_fixture_links")
           .select("*").eq("provider_fixture_id", link.provider_fixture_id).maybeSingle();
+        let settlementCompleted = false;
 
         if (goalsOk && refreshed && !refreshed.settlement_hold &&
             Number(refreshed.last_processed_goal_count ?? 0) === homeScore + awayScore) {
@@ -449,15 +450,17 @@ Deno.serve(async (req: Request) => {
             const { error: settleError } = await supabase.rpc(
               "betnova_process_live_event", { p_event_id: fullTimeEvent.id },
             );
-            if (!settleError) finalized++;
-            else providerErrors.push("full-time event stored but settlement processor failed");
+            if (!settleError) {
+              finalized++;
+              settlementCompleted = true;
+            } else providerErrors.push("full-time event stored but settlement processor failed");
           }
         } else {
           providerErrors.push("final score and confirmed goal events did not reconcile; settlement held");
         }
 
         await supabase.from("sportsapi_fixture_links").update({
-          last_status: "finished",
+          last_status: settlementCompleted ? "finished" : "inprogress",
           last_final_checked_at: checkedAt,
           updated_at: checkedAt,
         }).eq("provider_fixture_id", link.provider_fixture_id);
