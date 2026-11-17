@@ -57,15 +57,16 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const expected = Deno.env.get("BETNOVA_SYNC_SECRET") ?? "";
-  if (!expected) return json({ error: "BETNOVA_SYNC_SECRET is not configured" }, 503);
-  if (!safeEqual(req.headers.get("x-betnova-sync-secret") ?? "", expected)) return json({ error: "Unauthorized" }, 401);
-  const apiKey = Deno.env.get("API_FOOTBALL_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!apiKey || !supabaseUrl || !serviceKey) return json({ error: "Server configuration is incomplete" }, 503);
-
+  if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration is incomplete" }, 503);
   const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: config, error: configError } = await supabase.rpc("betnova_get_provider_sync_config");
+  if (configError || !config) return json({ error: "Secure provider configuration is unavailable" }, 503);
+  const expected = String(config.sync_secret ?? "");
+  if (!expected || !safeEqual(req.headers.get("x-betnova-sync-secret") ?? "", expected)) return json({ error: "Unauthorized" }, 401);
+  const apiKey = String(config.api_key ?? "");
+  if (!apiKey) return json({ error: "API-Football key is not configured in Supabase Vault" }, 503);
   try {
     const from = day(0), to = day(7);
     const fixtures = await providerGet(`/fixtures?from=${from}&to=${to}&timezone=Africa%2FAlgiers`, apiKey);
