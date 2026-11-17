@@ -350,7 +350,7 @@ Deno.serve(async (req: Request) => {
     if (linkError) errors.push("could not save provider event checkpoint");
   }
 
-  async function saveMarket(fixtureId: string, isLive: boolean, key: string, name: string, line: number | null, picks: Array<{name:string;key:string;price:unknown}>) {
+  async function saveMarket(fixtureId: string, isLive: boolean, key: string, name: string, line: number | null, picks: Array<{name:string;key:string;price:unknown}>, period: string | null = null) {
     const usable = picks.map(p => ({...p, odds: odd(p.price)})).filter(p => p.odds !== null) as Array<{name:string;key:string;price:unknown;odds:number}>;
     if (usable.length !== picks.length || !usable.length) return;
     const marketKey = key;
@@ -361,7 +361,7 @@ Deno.serve(async (req: Request) => {
     const timestamp = now.toISOString();
     const marketPayload = {
       fixture_id: fixtureId, market_type: marketKey, market_key: marketKey, name,
-      settlement_rule: line === null ? {} : { line },
+      settlement_rule: { ...(line === null ? {} : { line }), ...(period ? { period } : {}) },
       is_live: isLive, is_active: true, status: "open",
       source_provider: PROVIDER, external_id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       last_updated_at: timestamp,
@@ -409,14 +409,40 @@ Deno.serve(async (req: Request) => {
       ]);
     }
 
+    // Only publish individually quoted fixed goal lines. Never synthesize prices.
+    const fixedGoals = Array.isArray(odds.goal_line_fixed) ? odds.goal_line_fixed : [];
+    const fixedLineNumbers = new Set<number>(fixedGoals.map((row: any) => Number(row?.line)).filter((line: number) => Number.isFinite(line)));
+    for (const row of fixedGoals) {
+      const line = Number(row?.line);
+      if (!Number.isFinite(line) || line < 0.5 || line > 9.5 || Math.round(line * 2) !== line * 2) continue;
+      const prices = isLive ? row?.inplay : row?.closing;
+      if (!prices) continue;
+      const key = line.toFixed(1).replace(".", "_");
+      await saveMarket(fixtureId, isLive, "total_goals", "Total Goals · " + line + " · Bet365", line, [
+        { name: "Over " + line, key: "over_" + key, price: prices.over },
+        { name: "Under " + line, key: "under_" + key, price: prices.under },
+      ]);
+    }
+
+    // Quarter-goal lines are intentionally not offered until split-stake settlement is supported.
     const goals = priceSet(odds.goal_line ?? odds.goalline);
-    if (goals && Number.isFinite(Number(goals.line))) {
+    if (goals && Number.isFinite(Number(goals.line)) && Math.round(Number(goals.line) * 2) === Number(goals.line) * 2 && !fixedLineNumbers.has(Number(goals.line))) {
       const line = Number(goals.line);
-      const key = String(line).replace(".", "_");
-      await saveMarket(fixtureId, isLive, "total_goals", "Total Goals " + line + " · Bet365", line, [
+      const key = line.toFixed(1).replace(".", "_");
+      await saveMarket(fixtureId, isLive, "total_goals", "Main Total Goals · " + line + " · Bet365", line, [
         { name: "Over " + line, key: "over_" + key, price: goals.over },
         { name: "Under " + line, key: "under_" + key, price: goals.under },
       ]);
+    }
+
+    const firstHalfGoals = priceSet(odds.goal_line_half);
+    if (firstHalfGoals && Number.isFinite(Number(firstHalfGoals.line)) && Math.round(Number(firstHalfGoals.line) * 2) === Number(firstHalfGoals.line) * 2) {
+      const line = Number(firstHalfGoals.line);
+      const key = line.toFixed(1).replace(".", "_");
+      await saveMarket(fixtureId, isLive, "total_goals", "1st Half Goals · " + line + " · Bet365", line, [
+        { name: "Over " + line, key: "over_" + key, price: firstHalfGoals.over },
+        { name: "Under " + line, key: "under_" + key, price: firstHalfGoals.under },
+      ], "first_half");
     }
 
     const btts = priceSet(odds.btts);
@@ -424,6 +450,16 @@ Deno.serve(async (req: Request) => {
       await saveMarket(fixtureId, isLive, "both_teams_score", "Both Teams To Score · Bet365", null, [
         { name: "Yes", key: "yes", price: btts.yes },
         { name: "No", key: "no", price: btts.no },
+      ]);
+    }
+
+    const corners = priceSet(odds.corner_line);
+    if (corners && Number.isFinite(Number(corners.line)) && Math.round(Number(corners.line) * 2) === Number(corners.line) * 2) {
+      const line = Number(corners.line);
+      const key = line.toFixed(1).replace(".", "_");
+      await saveMarket(fixtureId, isLive, "total_corners", "Total Corners · " + line + " · Bet365", line, [
+        { name: "Over " + line, key: "over_" + key, price: corners.over },
+        { name: "Under " + line, key: "under_" + key, price: corners.under },
       ]);
     }
   }

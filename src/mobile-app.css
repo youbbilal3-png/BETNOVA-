@@ -41,7 +41,7 @@ body{background:var(--bn-paper)}
 .match-body{gap:18px;padding:15px 0}
 .team b{font-size:14px}
 .team-mark{width:42px;height:42px;border-radius:13px;font-size:14px}
-.team-crest{position:relative;overflow:hidden;background:linear-gradient(145deg,#e9f6e9,#d5eadb);border:1px solid #cfe4d3;color:#176044;font-size:11px;font-weight:900;box-shadow:inset 0 1px #fff,0 4px 10px #174d3218}
+.team-crest{position:relative;overflow:hidden;background:linear-gradient(145deg,#1a7954,#0d4c37);border:0;color:#eaffc7;font-size:11px;font-weight:900;box-shadow:inset 0 1px #fff,0 4px 10px #174d3218;clip-path:polygon(50% 0,92% 13%,87% 66%,50% 100%,13% 66%,8% 13%)}
 .team-crest img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:4px;background:#fff;z-index:1}
 .team-crest>span{position:relative;z-index:0}
 .versus{font-size:10px}
@@ -238,3 +238,5 @@ body{background:var(--bn-paper)}
   .detail-market-heading{margin-inline:-11px;padding-inline:11px}
 }
 @media(prefers-reduced-motion:reduce){.hero-ball{animation:none}}
+
+/* Mobile layout tuned for touch-first navigation and safe-area devices. */
