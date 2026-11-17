@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const API_BASE = "https://api.sportsapi.app/v2";
 const PROVIDER = "sportsapi";
-const DAILY_REQUEST_LIMIT = 950;
+const DAILY_REQUEST_LIMIT = 95;
 const MAX_REQUESTS_PER_RUN = 8;
 const cors = {
   "Access-Control-Allow-Origin": "*",
