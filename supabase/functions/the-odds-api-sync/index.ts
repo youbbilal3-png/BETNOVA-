@@ -211,7 +211,7 @@ Deno.serve(async (req: Request) => {
               if (!existing || existing.status === "open" || (isLive && existing.status === "suspended")) {
                 const payload = {
                   fixture_id: fixtureId, market_type: "match_result", market_key: "match_result",
-                  name, settlement_rule: {}, is_live: isLive, is_active: true, status: "open",
+                  name, settlement_rule: {}, is_live: isLive, is_active: true, status: "open", suspended_at: null,
                   source_provider: PROVIDER, external_id: String(event.id) + ":h2h:" + String(bookmaker.key),
                   last_updated_at: updatedAt,
                 };
