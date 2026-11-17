@@ -1,0 +1,246 @@
+/* BETNOVA — native sportsbook visual system v2 */
+:root{
+ color-scheme:dark;
+ --bn-bg:#07110f;--bn-panel:#101d19;--bn-panel2:#14251f;--bn-card:#12221c;
+ --bn-line:#263b31;--bn-muted:#8ca398;--bn-text:#f1f8f2;--bn-green:#19c783;--bn-lime:#c7f36a;
+}
+*{box-sizing:border-box}
+html{background:var(--bn-bg);scroll-behavior:smooth}
+body{margin:0!important;background:radial-gradient(ellipse at 50% -18%,#1c4b37 0%,#0b1c16 42%,#07110f 78%)!important;color:var(--bn-text)!important;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif!important}
+#root{min-height:100vh}
+.app-shell{min-height:100vh;background:transparent!important;color:var(--bn-text)!important;overflow-x:hidden}
+.ambient{opacity:.14!important;filter:blur(100px)}
+.topbar{height:74px!important;padding:0 max(22px,calc((100vw - 1480px)/2))!important;background:#091510eF!important;border-bottom:1px solid #263a30!important;box-shadow:0 12px 36px #0005!important;backdrop-filter:blur(22px);position:sticky;top:0;z-index:50}
+.brand{font-size:25px!important;color:#f5fff7!important;letter-spacing:-1.4px!important}
+.brand-symbol{width:42px!important;height:42px!important;border-radius:14px!important;background:linear-gradient(145deg,#d7ff83,#7bdc59)!important;color:#0c2b1d!important;box-shadow:0 7px 25px #a5f76c26,inset 0 1px #fff!important}
+.brand-accent{color:var(--bn-lime)!important}
+.brand small{color:#8ba99a!important;font-size:8px!important;letter-spacing:2px!important}
+.desktop-nav{gap:28px!important}
+.desktop-nav a,.desktop-nav button{color:#9eb4a7!important;font-size:12px!important}
+.desktop-nav a.active{color:#d7ff8c!important}
+.desktop-nav a.active:after{background:var(--bn-lime)!important}
+.top-actions{gap:9px!important}
+.language-picker,.top-actions .language-picker{height:38px!important;border:1px solid #30483b!important;border-radius:12px!important;background:#14251d!important;color:#cfe3d6!important}
+.language-picker select,.top-actions .language-picker select{color:#e8f6ec!important;background:transparent!important}
+.icon-btn,.top-actions .icon-btn{width:39px!important;height:39px!important;border-radius:12px!important;background:#14251d!important;border:1px solid #30483b!important;color:#cfe3d6!important}
+.join-btn{min-height:40px!important;border-radius:12px!important;padding:0 17px!important;background:linear-gradient(120deg,#d8ff8b,#a5e85e)!important;color:#102b1d!important;font-weight:900!important;box-shadow:0 8px 24px #b7f47720!important}
+.login-btn,.wallet-open-btn,.my-bets-open-btn{color:#dcebe1!important;background:#14251d!important;border:1px solid #30483b!important;border-radius:11px!important}
+.ticker{min-height:37px!important;padding:0 max(22px,calc((100vw - 1480px)/2))!important;background:#0e1b15!important;color:#8ca99a!important;border-bottom:1px solid #20342a!important;font-size:10px!important}
+.ticker strong{color:#d9f7df!important;font-size:10px!important}
+.ticker-right{color:#80a18d!important}
+.layout{max-width:1480px!important;margin:0 auto!important;padding:27px 25px 50px!important;gap:22px!important;grid-template-columns:218px minmax(0,1fr) 305px!important}
+.left-rail{height:max-content!important;padding:17px 13px!important;border:1px solid #263b30!important;border-radius:19px!important;background:linear-gradient(160deg,#12231b,#0d1914)!important;box-shadow:0 20px 50px #0003!important}
+.rail-heading{color:#708d7b!important;font-size:9px!important;letter-spacing:1.6px!important}
+.rail-item,.sport-item{min-height:43px!important;border-radius:11px!important;color:#a9c0b1!important;font-size:11px!important}
+.rail-item.selected,.sport-item.chosen{background:linear-gradient(100deg,#17432e,#142a20)!important;color:#d8ff9b!important;box-shadow:inset 3px 0 #b9ef65!important}
+.rail-count{background:#203b2b!important;color:#c9f17d!important}
+.rail-separator{border-color:#26392e!important}
+.rail-promo{margin-top:17px!important;border:1px solid #34533b!important;border-radius:15px!important;background:radial-gradient(circle at 90% 5%,#346c3e,#112b20 60%)!important;padding:15px!important;color:#e9f7e8!important}
+.promo-orb{background:linear-gradient(145deg,#d8ff8c,#9fe65b)!important;color:#16341f!important}
+.main-content{min-width:0!important}
+.hero{position:relative!important;min-height:300px!important;padding:39px 42px!important;border:1px solid #39664a!important;border-radius:25px!important;background:radial-gradient(circle at 77% 50%,#1c8053 0%,transparent 30%),linear-gradient(115deg,#10291d 0%,#164a30 52%,#0d3325 100%)!important;box-shadow:0 26px 70px #0005,inset 0 1px #ffffff18!important;overflow:hidden}
+.hero:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,#ffffff09,transparent 45%),repeating-linear-gradient(135deg,transparent 0 38px,#ffffff05 39px 40px)}
+.hero-copy{position:relative;z-index:2}
+.eyebrow{color:#b8ed85!important;font-size:9px!important;letter-spacing:2px!important}
+.eyebrow>span{background:#c5f475!important;box-shadow:0 0 12px #c5f47588}
+.hero h1{font-size:clamp(42px,4.6vw,62px)!important;line-height:.98!important;letter-spacing:-2.5px!important;color:#f3fff3!important}
+.hero h1 em{color:#c9f476!important}
+.hero-copy>p{max-width:410px!important;color:#b9d2c1!important;font-size:13px!important;line-height:1.7!important}
+.hero-actions button{min-height:44px!important;padding:0 18px!important;border-radius:12px!important;background:linear-gradient(120deg,#d9ff8c,#a8e95e)!important;color:#14331f!important;font-weight:900!important}
+.hero-actions>span{color:#bdd7c4!important;font-size:10px!important}
+.hero-art{right:6%!important;opacity:1!important}
+.hero-ball{filter:drop-shadow(0 22px 22px #0008)!important}
+.orbit{border-color:#c5f4754d!important}
+.art-tag{background:#0b2118cc!important;border:1px solid #9bcf7a55!important;color:#e4f8d9!important;backdrop-filter:blur(10px)}
+.tag-bottom{background:#d4f77f!important;color:#19341e!important;border:0!important}
+.hero-index{color:#a8c9b2!important}
+.quick-stats{gap:10px!important;margin:14px 0 27px!important}
+.quick-stats>div{min-height:72px!important;padding:12px!important;border:1px solid #263b30!important;border-radius:14px!important;background:linear-gradient(145deg,#15271f,#101d17)!important;box-shadow:0 12px 26px #0002!important}
+.stat-icon{width:34px!important;height:34px!important;border-radius:11px!important;background:#1a3b2a!important;color:#bff178!important}
+.stat-icon.teal{background:#173c36!important;color:#73ddbd!important}
+.stat-icon.lime{background:#354323!important;color:#d3f27a!important}
+.quick-stats b{font-size:11px!important;color:#e5f3e8!important}
+.quick-stats small{font-size:9px!important;color:#8da797!important}
+.section-heading{margin-bottom:16px!important}
+.section-heading h2{font-size:28px!important;letter-spacing:-1px!important;color:#eff9f1!important}
+.section-heading p{font-size:11px!important;color:#8da596!important}
+.eyebrow.dark{color:#8cae98!important}
+.heading-star{color:#c5f475!important}
+.view-all{color:#c6ef79!important;font-size:10px!important}
+.event-view-tabs{width:100%!important;padding:4px!important;border:1px solid #2b4034!important;border-radius:12px!important;background:#101e17!important}
+.event-view{min-height:40px!important;border-radius:9px!important;color:#8ea697!important;font-size:11px!important}
+.event-view.active{background:linear-gradient(120deg,#1c6946,#155338)!important;color:#efffe4!important;box-shadow:0 5px 14px #0003!important}
+.sports-tabs{border-color:#263a2f!important;gap:7px!important}
+.tab{padding:9px 12px!important;border:1px solid #273b30!important;border-radius:10px!important;background:#111f18!important;color:#94aa9a!important;font-size:10px!important}
+.tab.active-tab{background:#1a3b29!important;border-color:#507344!important;color:#d8f78c!important}
+.filter-row{margin:13px 0!important}
+.filter{background:#111f18!important;color:#8ea596!important;border:1px solid #263b30!important;border-radius:9px!important;padding:8px 10px!important}
+.filter.active-filter{background:#d0f47b!important;color:#18351f!important;border-color:#d0f47b!important}
+.search-field{min-height:40px!important;border-radius:10px!important;background:#101e17!important;border:1px solid #2a4033!important;color:#8fa99a!important}
+.search-field input{background:transparent!important;color:#eff9f1!important;font-size:11px!important}
+.match-list{gap:11px!important}
+.match-card{position:relative!important;padding:16px 17px 13px!important;border:1px solid #2b4134!important;border-radius:17px!important;background:linear-gradient(145deg,#172a20,#101d17 75%)!important;box-shadow:0 13px 28px #0003!important;transition:transform .2s,border-color .2s,box-shadow .2s!important}
+.match-card:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 5px 5px 0;background:linear-gradient(#d6f77e,#1bc887)!important}
+.match-card:hover{transform:translateY(-3px)!important;border-color:#55774a!important;box-shadow:0 18px 36px #0005!important}
+.match-meta{color:#819b8b!important;font-size:9px!important}
+.league-name{color:#b6cdbd!important}
+.league-ball{color:#bff078!important}
+.match-time{color:#9db5a4!important}
+.match-body{padding:14px 0!important;gap:13px!important}
+.team{gap:9px!important}
+.team-mark{width:39px!important;height:39px!important;border-radius:12px!important;background:linear-gradient(145deg,#244b34,#142b20)!important;color:#d9f88c!important;border:1px solid #3d6544!important;box-shadow:inset 0 1px #ffffff18,0 6px 13px #0003!important}
+.team-crest img{background:#fff!important}
+.team b{font-size:12px!important;color:#f0f8f1!important}
+.versus{color:#668271!important;font-size:9px!important}
+.odds-caption{color:#8ca596!important;font-size:8px!important;letter-spacing:1px!important}
+.odds-grid{gap:7px!important}
+.odd{min-height:47px!important;padding:8px 10px!important;border:1px solid #304838!important;border-radius:10px!important;background:linear-gradient(145deg,#1b3325,#14251c)!important;color:#d9f6df!important}
+.odd small{color:#8ba997!important;font-size:9px!important}
+.odd b{font-size:13px!important;color:#d9f78a!important}
+.odd:hover:not(:disabled),.odd.picked{background:linear-gradient(145deg,#2a5738,#1b422b)!important;border-color:#a6d85f!important;box-shadow:0 0 0 1px #a6d85f33,0 8px 17px #0003!important}
+.odd:disabled{opacity:.28!important}
+.match-footer{border-color:#263a2e!important;color:#7d9887!important;font-size:9px!important}
+.match-footer button,.favorite-toggle,.details-trigger{color:#bde979!important;font-size:9px!important}
+.details-trigger{padding:7px 10px!important;border-radius:8px!important;background:#1b3b28!important}
+.demo-note{border:1px solid #283d31!important;background:#101e17!important;color:#8fa797!important;border-radius:10px!important;font-size:9px!important}
+.demo-note svg{color:#c5ef77!important}
+.right-rail{padding-top:0!important}
+.slip-card{position:sticky!important;top:125px!important;padding:17px!important;border:1px solid #344b3a!important;border-radius:18px!important;background:linear-gradient(155deg,#172a20,#101b16)!important;box-shadow:0 20px 50px #0004!important}
+.slip-head h3{font-size:20px!important;color:#f0f8f1!important}
+.slip-head h3 span{background:#28452c!important;color:#d5f77d!important}
+.slip-clear{color:#a0b5a6!important}
+.slip-empty{padding:24px 8px!important}
+.slip-empty-icon{width:50px!important;height:50px!important;border-radius:15px!important;background:#203b2a!important;color:#c9f37a!important}
+.slip-empty b{color:#e7f3e9!important;font-size:11px!important}
+.slip-empty p{color:#8ba394!important;font-size:9px!important}
+.slip-selection{border-color:#2a3f32!important}
+.slip-selection b{color:#e4f2e7!important}
+.slip-selection small{color:#8ba294!important}
+.slip-selection>strong{color:#d0f47c!important}
+.slip-selection>button{width:28px!important;height:28px!important;border-radius:8px!important;background:#3c2421!important;color:#ffaaa0!important}
+.bet-slip-stake label{color:#b5c9ba!important;font-size:10px!important}
+.bet-slip-stake input,.bet-slip-stake select{min-height:42px!important;border:1px solid #334a3a!important;border-radius:10px!important;background:#0c1812!important;color:#eff8f0!important;font-size:12px!important}
+.bet-slip-stake>div{color:#9db3a4!important}
+.bet-slip-stake>div b{color:#d6f67f!important;font-size:15px!important}
+.slip-cta{min-height:45px!important;border-radius:11px!important;background:linear-gradient(110deg,#17875a,#1bc987)!important;color:#062416!important;font-size:11px!important;font-weight:900!important}
+.slip-cta:disabled{background:#26372d!important;color:#758b7b!important}
+.help-card,.responsible-card{border:1px solid #293f32!important;border-radius:13px!important;background:#111f18!important;color:#d9e9dd!important}
+.help-card b,.responsible-card b{color:#e6f3e8!important}
+.help-card p,.responsible-card p{color:#8da596!important}
+.help-icon,.responsible-icon{background:#203c2b!important;color:#c8f178!important}
+.responsible-card{background:#1d2a1a!important}
+.footer{border-color:#25392d!important;color:#738c7c!important}
+.footer a{color:#c4ed78!important}
+.empty-state{padding:30px 18px!important;border:1px dashed #385343!important;border-radius:15px!important;background:#111f18!important;color:#9ab1a1!important}
+.detail-backdrop,.admin-backdrop,.auth-backdrop{background:#020805d9!important;backdrop-filter:blur(12px)!important}
+.detail-panel,.admin-panel,.auth-panel{border:1px solid #3b5743!important;border-radius:22px!important;background:linear-gradient(155deg,#172a20,#0c1812)!important;color:#eef8ef!important;box-shadow:0 30px 100px #000b!important}
+.detail-panel h2,.admin-panel h2,.auth-panel h2{color:#f1f8f2!important}
+.detail-teams,.detail-info-grid>div,.admin-count-grid>div,.admin-market-row{background:#102018!important;border-color:#2b4133!important}
+.detail-teams b,.detail-info-grid b,.admin-count-grid b,.admin-market-row b{color:#e6f3e8!important}
+.detail-info-grid small,.detail-note,.admin-intro,.admin-count-grid span{color:#90a797!important}
+.detail-mark{background:#203b2a!important;color:#d2f47c!important}
+.detail-close,.admin-close,.auth-close{background:#20372a!important;color:#d5ebda!important}
+.auth-form input{background:#0d1913!important;border-color:#334a39!important;color:#f0f8f1!important}
+.auth-form label{color:#b8cdbd!important}
+.auth-submit{background:linear-gradient(110deg,#16885b,#1cc887)!important;color:#062416!important}
+.mobile-nav{background:#091510f2!important;border-top:1px solid #2a4033!important;box-shadow:0 -12px 35px #0007!important;backdrop-filter:blur(22px)!important}
+.mobile-nav button{color:#829b8b!important;font-size:9px!important}
+.mobile-nav button.mobile-active{color:#d5f77e!important}
+.mobile-nav button.mobile-active:before{content:"";position:absolute;top:-8px;width:25px;height:3px;border-radius:3px;background:#c5f475}
+.mobile-nav button i{background:#c5f475!important;color:#132b1c!important}
+.mobile-sheet-backdrop{background:#000b!important;backdrop-filter:blur(8px)!important}
+.mobile-sheet{background:#101e17!important;border:1px solid #314638!important;border-bottom:0!important;color:#eef8ef!important}
+.sheet-handle{background:#496150!important}
+@media(max-width:1100px){
+ .layout{grid-template-columns:minmax(0,1fr) 275px!important;max-width:980px!important;padding-inline:18px!important}
+ .left-rail{display:none!important}
+}
+@media(max-width:760px){
+ html,body{background:#07110f!important;scroll-padding-top:72px}
+ .app-shell{padding-bottom:calc(82px + env(safe-area-inset-bottom))!important}
+ .topbar{height:62px!important;padding:0 13px!important;position:sticky!important;top:0!important;z-index:70!important}
+ .brand{font-size:21px!important;gap:8px!important}
+ .brand-symbol{width:35px!important;height:35px!important;border-radius:11px!important}
+ .brand small{font-size:7px!important;letter-spacing:1.1px!important}
+ .desktop-nav,.signed-in-label,.wallet-open-btn,.my-bets-open-btn,.admin-open-btn,.login-btn{display:none!important}
+ .top-actions{gap:6px!important}
+ .top-actions .icon-btn{display:grid!important;width:34px!important;height:34px!important}
+ .join-btn{height:34px!important;min-height:34px!important;padding:0 10px!important;font-size:10px!important}
+ .language-picker{height:33px!important;padding:0 6px!important}
+ .language-picker select{max-width:50px!important;font-size:9px!important}
+ .ticker{height:29px!important;min-height:29px!important;padding:0 13px!important;font-size:8px!important;gap:6px!important}
+ .ticker strong{font-size:8px!important}
+ .ticker-right{display:none!important}
+ .layout{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:10px 10px 24px!important}
+ .main-content{width:100%!important}
+ .hero{min-height:204px!important;padding:23px 17px!important;border-radius:19px!important}
+ .hero h1{font-size:clamp(35px,9vw,43px)!important;line-height:.97!important;letter-spacing:-1.8px!important;margin:10px 0 8px!important}
+ .hero-copy>p{max-width:66%!important;font-size:10px!important;line-height:1.5!important}
+ .hero-actions{margin-top:13px!important;gap:8px!important;flex-wrap:wrap!important}
+ .hero-actions button{min-height:36px!important;padding:0 11px!important;border-radius:9px!important;font-size:9px!important}
+ .hero-actions>span{font-size:8px!important}
+ .hero-art{right:-21px!important;width:148px!important;height:145px!important;transform:translateY(-50%) scale(.76)!important;transform-origin:center!important}
+ .hero-ball{font-size:100px!important}
+ .art-tag{font-size:6px!important;padding:5px 6px!important}
+ .hero-index{right:11px!important;bottom:9px!important;font-size:7px!important}
+ .quick-stats{gap:6px!important;margin:9px 0 21px!important}
+ .quick-stats>div{min-height:63px!important;padding:8px 6px!important;gap:5px!important;border-radius:11px!important}
+ .stat-icon{width:27px!important;height:27px!important;border-radius:9px!important}
+ .quick-stats b{font-size:8px!important;line-height:1.2!important}
+ .quick-stats small{font-size:7px!important;line-height:1.2!important}
+ .section-heading{align-items:flex-end!important;margin:0 2px 11px!important}
+ .section-heading h2{font-size:22px!important;line-height:1.1!important;letter-spacing:-.7px!important}
+ .section-heading p{font-size:9px!important}
+ .eyebrow{font-size:8px!important;letter-spacing:1.3px!important}
+ .view-all{font-size:8px!important}
+ .event-view-tabs{display:grid!important;width:100%!important;grid-template-columns:repeat(3,1fr)!important;gap:5px!important;padding:4px!important;margin-bottom:10px!important}
+ .event-view{min-height:38px!important;font-size:10px!important}
+ .sports-tabs{gap:5px!important;padding-bottom:8px!important}
+ .tab{padding:8px 9px!important;font-size:9px!important}
+ .filter-row{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;margin:9px 0 11px!important}
+ .league-filters{gap:4px!important;overflow:auto!important}
+ .filter{font-size:8px!important;padding:7px 8px!important;white-space:nowrap!important}
+ .search-field{width:100%!important;min-height:39px!important;padding:8px 10px!important}
+ .search-field input{font-size:12px!important}
+ .match-list{gap:9px!important}
+ .match-card{padding:12px 11px 10px!important;border-radius:15px!important}
+ .match-meta{font-size:8px!important}
+ .match-body{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important;padding:11px 0 9px!important}
+ .teams{display:grid!important;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr)!important;gap:4px!important}
+ .team{gap:6px!important;min-width:0!important}
+ .team:last-child{justify-content:flex-end!important}
+ .team b{font-size:11px!important;line-height:1.2!important;white-space:normal!important;overflow-wrap:anywhere!important}
+ .team-mark{width:36px!important;height:36px!important;border-radius:10px!important;flex:none!important}
+ .versus{font-size:7px!important;text-align:center!important}
+ .odds-caption{font-size:8px!important;margin-bottom:6px!important}
+ .odds-grid{gap:6px!important}
+ .odd{min-height:45px!important;padding:7px 8px!important;border-radius:9px!important}
+ .odd small{font-size:9px!important}
+ .odd b{font-size:12px!important}
+ .match-footer{padding-top:8px!important;font-size:8px!important}
+ .match-footer button{font-size:8px!important;min-height:28px!important}
+ .demo-note{font-size:8px!important;padding:9px!important}
+ .right-rail{display:none!important}
+ .mobile-nav{height:calc(67px + env(safe-area-inset-bottom))!important;padding:5px 5px calc(5px + env(safe-area-inset-bottom))!important}
+ .mobile-nav button{min-width:49px!important;font-size:8px!important;gap:3px!important}
+ .mobile-nav button svg{width:18px!important;height:18px!important}
+ .mobile-sheet{padding:13px 15px calc(20px + env(safe-area-inset-bottom))!important;max-height:82vh!important}
+ .detail-panel,.admin-panel,.auth-panel{width:min(100%,560px)!important;padding:25px 17px 20px!important;border-radius:20px!important}
+ .detail-panel h2{font-size:22px!important}
+ .detail-teams{gap:7px!important;padding:15px 8px!important}
+ .detail-mark{width:45px!important;height:45px!important}
+ .detail-teams b{font-size:10px!important}
+ .detail-info-grid{gap:7px!important}
+ .detail-info-grid>div{padding:10px!important}
+ .detail-info-grid b{font-size:9px!important}
+ .auth-panel h2{font-size:23px!important}
+ .footer{display:none!important}
+}
+@media(max-width:360px){
+ .hero{padding-inline:14px!important}
+ .hero h1{font-size:33px!important}
+ .hero-art{right:-35px!important;opacity:.72!important}
+ .team b{font-size:10px!important}
+ .team-mark{width:32px!important;height:32px!important}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
