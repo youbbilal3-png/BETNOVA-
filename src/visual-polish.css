@@ -58,3 +58,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Transparent VAR recovery state and corrected payout presentation */
+.wallet-recovery-chip{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 12px;border-radius:11px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:10px}
+.wallet-recovery-chip strong{font:700 13px 'Space Grotesk';white-space:nowrap}
+.wallet-recovery-notice{display:grid;gap:5px;margin:0 0 13px;padding:12px 14px;border-radius:12px;background:#fff7e8;border:1px solid #f3d8a6;color:#78521c;font-size:11px;line-height:1.5}
+.wallet-recovery-notice b{font-size:12px;color:#714811}
+.wallet-submit:disabled{opacity:.48;cursor:not-allowed;transform:none;box-shadow:none}
