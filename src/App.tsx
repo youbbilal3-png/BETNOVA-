@@ -25,13 +25,6 @@ type Match = {
   dateLabel?: string
 }
 
-const demoMatches: Match[] = [
-  { id: 1, league: 'Premier League', country: 'England', time: '18:30', home: 'Arsenal', away: 'Chelsea', homeMark: '🔴', awayMark: '🔵', odds: ['1.82', '3.70', '4.20'], featured: true },
-  { id: 2, league: 'La Liga', country: 'Spain', time: '19:00', home: 'Real Madrid', away: 'Sevilla', homeMark: '⚪', awayMark: '🔴', odds: ['1.45', '4.60', '6.80'] },
-  { id: 3, league: 'Serie A', country: 'Italy', time: '20:45', home: 'Inter', away: 'Napoli', homeMark: '🔵', awayMark: '🔷', odds: ['2.10', '3.25', '3.40'] },
-  { id: 4, league: 'Bundesliga', country: 'Germany', time: '21:00', home: 'Dortmund', away: 'Leverkusen', homeMark: '🟡', awayMark: '🔴', odds: ['2.65', '3.50', '2.40'] },
-]
-
 const sports = ['Football', 'Basketball', 'Tennis', 'Ice Hockey', 'Volleyball']
 const leagues = ['All matches', 'Popular', 'England', 'Spain', 'Italy', 'Germany']
 
@@ -41,8 +34,8 @@ export default function App() {
   const [eventView, setEventView] = useState<'upcoming' | 'live' | 'results'>('upcoming')
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [showFavorites, setShowFavorites] = useState(false)
-  const [matches, setMatches] = useState<Match[]>(demoMatches)
-  const [usingDemoData, setUsingDemoData] = useState(true)
+  const [matches, setMatches] = useState<Match[]>([])
+  const [usingDemoData, setUsingDemoData] = useState(false)
   const [league, setLeague] = useState('All matches')
   const [selected, setSelected] = useState<{ match: Match; label: string; odd: string; selectionId: string; marketId: string }[]>([])
   const [betStake, setBetStake] = useState('')
@@ -81,8 +74,8 @@ export default function App() {
 
       if (!supabase) {
         if (active) {
-          setMatches(sport === 'Football' && eventView === 'upcoming' ? demoMatches : [])
-          setUsingDemoData(sport === 'Football' && eventView === 'upcoming')
+          setMatches([])
+          setUsingDemoData(false)
           setLoadingMatches(false)
         }
         return
@@ -168,9 +161,6 @@ export default function App() {
         if (mapped.length) {
           setMatches(mapped)
           setUsingDemoData(false)
-        } else if (!userEmail && sport === 'Football' && eventView === 'upcoming') {
-          setMatches(demoMatches)
-          setUsingDemoData(true)
         } else {
           setMatches([])
           setUsingDemoData(false)
