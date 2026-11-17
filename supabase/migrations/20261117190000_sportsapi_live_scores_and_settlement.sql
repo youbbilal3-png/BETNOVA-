@@ -10,6 +10,8 @@ create table if not exists public.sportsapi_fixture_links (
   score_observations integer not null default 0 check (score_observations >= 0),
   score_stable_since timestamptz,
   last_processed_goal_count integer not null default 0 check (last_processed_goal_count >= 0),
+  settled_goal_count integer not null default 0 check (settled_goal_count >= 0),
+  baseline_ready boolean not null default true,
   last_events_checked_at timestamptz,
   last_final_checked_at timestamptz,
   settlement_hold boolean not null default false,
