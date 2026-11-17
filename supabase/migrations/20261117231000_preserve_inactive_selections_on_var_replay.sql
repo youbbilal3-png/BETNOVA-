@@ -1,3 +1,4 @@
+-- Preserve suspended markets and only reopen markets with a settled outcome.
 -- Keep the correction replay from reactivating selections that were inactive
 -- before the affected fixture was settled.
 create or replace function public.betnova_reopen_fixture_for_correction(p_fixture_id uuid)
