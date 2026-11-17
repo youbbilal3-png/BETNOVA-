@@ -23,6 +23,7 @@ export default function AdminOverview({ onClose }: Props) {
   const [notice, setNotice] = useState('')
   const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({})
   const [currencyDrafts, setCurrencyDrafts] = useState<Record<string, string[]>>({})
+  const [payoutReferences, setPayoutReferences] = useState<Record<string, string>>({})
 
   const loadFinance = useCallback(async () => {
     if (!supabase) return
@@ -99,10 +100,15 @@ export default function AdminOverview({ onClose }: Props) {
 
   async function reviewWithdrawal(id: string, action: 'paid' | 'reject') {
     if (!supabase) return
+    const payoutReference = (payoutReferences[id] ?? '').trim()
+    if (action === 'paid' && payoutReference.length < 4) {
+      setError('Enter the external transfer reference before marking this withdrawal paid.')
+      return
+    }
     setBusyId(id); setError(''); setNotice('')
     try {
       const { error: rpcError } = await supabase.rpc('betnova_review_withdrawal', {
-        p_request_id: id, p_action: action, p_admin_note: null, p_payout_reference: null
+        p_request_id: id, p_action: action, p_admin_note: null, p_payout_reference: action === 'paid' ? payoutReference : null
       })
       if (rpcError) throw rpcError
       setNotice(action === 'paid' ? 'Withdrawal marked paid. Confirm the external transfer was completed.' : 'Withdrawal rejected and reserved funds released.')
@@ -194,7 +200,8 @@ export default function AdminOverview({ onClose }: Props) {
               <div className="admin-finance-top"><b>{money(Number(item.amount), item.currency)}</b><span><Clock3 size={12}/> {new Date(item.created_at).toLocaleString()}</span></div>
               <p>{item.payment_method.toUpperCase()} · User {item.user_id.slice(0, 8)}…</p>
               <small>Destination: {item.destination_details}</small>
-              <div className="admin-finance-actions"><button disabled={busyId === item.id} onClick={() => void reviewWithdrawal(item.id, 'paid')}><CheckCircle2 size={14}/> Mark paid</button><button className="reject" disabled={busyId === item.id} onClick={() => void reviewWithdrawal(item.id, 'reject')}><XCircle size={14}/> Reject & release</button></div>
+              <label className="admin-payout-reference">External transfer reference<input value={payoutReferences[item.id] ?? ''} onChange={event => setPayoutReferences(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Transaction / transfer ID" maxLength={160} /></label>
+              <div className="admin-finance-actions"><button disabled={busyId === item.id || (payoutReferences[item.id] ?? '').trim().length < 4} onClick={() => void reviewWithdrawal(item.id, 'paid')}><CheckCircle2 size={14}/> Mark paid</button><button className="reject" disabled={busyId === item.id} onClick={() => void reviewWithdrawal(item.id, 'reject')}><XCircle size={14}/> Reject & release</button></div>
             </article>)}
           </div>}
           {tab === 'payments' && <div className="admin-finance-list">

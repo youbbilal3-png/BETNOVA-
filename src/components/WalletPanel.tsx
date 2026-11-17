@@ -36,7 +36,7 @@ export default function WalletPanel({ onClose }: Props) {
     if (!supabase) return
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError) throw authError
-    if (!user) throw new Error('Please sign in to view your wallet.')
+    if (!user) throw new Error(t('sign_in_wallet'))
     setUserId(user.id)
     const [a, m, d, w] = await Promise.all([
       supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance').eq('user_id', user.id),
@@ -51,7 +51,7 @@ export default function WalletPanel({ onClose }: Props) {
     setWithdrawals((w.data ?? []) as RequestRow[])
   }
 
-  useEffect(() => { void refresh().catch(caught => setError(caught instanceof Error ? caught.message : 'Could not load wallet.')) }, [])
+  useEffect(() => { void refresh().catch(caught => setError(caught instanceof Error ? caught.message : t('could_not_load_wallet'))) }, [])
 
   useEffect(() => {
     if (selectedMethod && !selectedMethod.supported_currencies.includes(currency)) {
@@ -63,9 +63,9 @@ export default function WalletPanel({ onClose }: Props) {
     event.preventDefault()
     if (!supabase || !userId || !selectedMethod) return
     const value = Number(amount)
-    if (!Number.isFinite(value) || value <= 0) { setError('Enter a valid deposit amount.'); return }
-    if (!proofFile && !reference.trim()) { setError('Add a transfer reference or upload your payment proof.'); return }
-    if (proofFile && (proofFile.size > 5 * 1024 * 1024 || !['image/jpeg','image/png','image/webp','application/pdf'].includes(proofFile.type))) { setError('Proof must be JPG, PNG, WEBP or PDF and no larger than 5 MB.'); return }
+    if (!Number.isFinite(value) || value <= 0) { setError(t('valid_deposit_amount')); return }
+    if (!proofFile && !reference.trim()) { setError(t('add_transfer_proof')); return }
+    if (proofFile && (proofFile.size > 5 * 1024 * 1024 || !['image/jpeg','image/png','image/webp','application/pdf'].includes(proofFile.type))) { setError(t('proof_format')); return }
     setBusy(true); setError(''); setNotice('')
     try {
       let proofPath: string | null = null
@@ -82,10 +82,10 @@ export default function WalletPanel({ onClose }: Props) {
         if (proofPath) await supabase.storage.from('deposit-proofs').remove([proofPath])
         throw insertError
       }
-      setNotice('Your deposit request was sent. Your wallet will be credited after the transfer is verified.')
+      setNotice(t('deposit_sent'))
       setAmount(''); setReference(''); setProofFile(null); const fileInput = document.getElementById('wallet-proof-input') as HTMLInputElement | null; if (fileInput) fileInput.value = ''
       await refresh()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not submit deposit request.') }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : t('could_not_load_wallet')) }
     finally { setBusy(false) }
   }
 
@@ -93,17 +93,17 @@ export default function WalletPanel({ onClose }: Props) {
     event.preventDefault()
     if (!supabase) return
     const value = Number(amount)
-    if (!Number.isFinite(value) || value <= 0 || !method || !destination.trim()) { setError('Complete all withdrawal details.'); return }
+    if (!Number.isFinite(value) || value <= 0 || !method || !destination.trim()) { setError(t('complete_withdrawal')); return }
     setBusy(true); setError(''); setNotice('')
     try {
       const { error: rpcError } = await supabase.rpc('betnova_request_withdrawal', {
         p_payment_method: method, p_amount: value, p_currency: currency, p_destination_details: destination.trim()
       })
       if (rpcError) throw rpcError
-      setNotice('Your withdrawal request was submitted. The amount is reserved while it is reviewed.')
+      setNotice(t('withdrawal_sent'))
       setAmount(''); setDestination('')
       await refresh()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not submit withdrawal request.') }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : t('could_not_load_wallet')) }
     finally { setBusy(false) }
   }
 
@@ -114,47 +114,47 @@ export default function WalletPanel({ onClose }: Props) {
 
   return <div className="wallet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
     <section className="wallet-panel" role="dialog" aria-modal="true" aria-labelledby="wallet-title">
-      <button className="wallet-close" onClick={onClose} aria-label="Close wallet"><X size={19}/></button>
+      <button className="wallet-close" onClick={onClose} aria-label={t('close')}><X size={19}/></button>
       <div className="wallet-kicker"><Wallet size={15}/> BETNOVA WALLET</div>
       <h2 id="wallet-title">{t('wallet')}</h2>
       <div className="wallet-currency-row">{currencies.map(code => <button key={code} className={currency === code ? 'active' : ''} onClick={() => { setCurrency(code); setMethod('') }}>{code}</button>)}</div>
       <div className="wallet-balance-card">
         <span>{t('available_balance')}</span>
         <strong>{formatMoney(Number(account?.available_balance ?? 0), currency)}</strong>
-        <small>{Number(account?.reserved_balance ?? 0) > 0 ? `${formatMoney(Number(account?.reserved_balance),currency)} reserved for withdrawals` : 'Your available wallet balance'}</small>
+        <small>{Number(account?.reserved_balance ?? 0) > 0 ? `${formatMoney(Number(account?.reserved_balance),currency)} reserved for withdrawals` : t('available_wallet_balance')}</small>
       </div>
       <div className="wallet-tabs">
-        <button className={tab === 'deposit' ? 'active' : ''} onClick={() => setTab('deposit')}><ArrowDownToLine size={14}/> Deposit</button>
-        <button className={tab === 'withdraw' ? 'active' : ''} onClick={() => setTab('withdraw')}><ArrowUpFromLine size={14}/> Withdraw</button>
-        <button className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}><Clock3 size={14}/> History</button>
+        <button className={tab === 'deposit' ? 'active' : ''} onClick={() => setTab('deposit')}><ArrowDownToLine size={14}/> {t('deposit_tab')}</button>
+        <button className={tab === 'withdraw' ? 'active' : ''} onClick={() => setTab('withdraw')}><ArrowUpFromLine size={14}/> {t('withdraw_tab')}</button>
+        <button className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}><Clock3 size={14}/> {t('history_tab')}</button>
       </div>
       {error && <p className="wallet-message error">{error}</p>}
       {notice && <p className="wallet-message success">{notice}</p>}
       {tab === 'deposit' && <form className="wallet-form" onSubmit={submitDeposit}>
-        <label>Payment method<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">Choose a method</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
+        <label>{t('payment_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
         {selectedMethod && <div className="wallet-instructions">
-          {accountName && <p><b>Account name:</b> {accountName}</p>}
-          {accountNumber && <p><b>Transfer details:</b> {accountNumber}</p>}
+          {accountName && <p><b>{t('account_name')}</b> {accountName}</p>}
+          {accountNumber && <p><b>{t('transfer_details')}</b> {accountNumber}</p>}
           {instructionText && <p>{instructionText}</p>}
-          {!accountName && !accountNumber && !instructionText && <p>Payment instructions are being configured. Please check back soon.</p>}
+          {!accountName && !accountNumber && !instructionText && <p>{t('payment_instructions_pending')}</p>}
         </div>}
-        <label>Amount ({currency})<input inputMode="decimal" type="number" min="0.01" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="Enter amount" required/></label>
-        <label>Payment proof (JPG, PNG, WEBP or PDF · max 5 MB)<input id="wallet-proof-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>
-        <label>Transfer reference (optional)<input value={reference} onChange={event => setReference(event.target.value)} placeholder="Transaction ID or sender reference"/></label>
-        <button className="wallet-submit" disabled={busy || !selectedMethod}>{busy ? 'Submitting…' : 'I have sent the transfer'}</button>
-        <p className="wallet-footnote"><ShieldCheck size={13}/> The balance is credited after your transfer is verified.</p>
+        <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min="0.01" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
+        <label>{t('payment_proof')}<input id="wallet-proof-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>
+        <label>{t('transfer_reference')}<input value={reference} onChange={event => setReference(event.target.value)} placeholder={t('transaction_reference')}/></label>
+        <button className="wallet-submit" disabled={busy || !selectedMethod}>{busy ? t('submitting') : t('sent_transfer')}</button>
+        <p className="wallet-footnote"><ShieldCheck size={13}/> {t('balance_after_verification')}</p>
       </form>}
       {tab === 'withdraw' && <form className="wallet-form" onSubmit={submitWithdrawal}>
-        <label>Withdrawal method<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">Choose a method</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
-        <label>Amount ({currency})<input inputMode="decimal" type="number" min="0.01" max={account?.available_balance ?? 0} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="Enter amount" required/></label>
-        <label>Your receiving account details<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder="Enter the account, wallet ID or receiving details" rows={3} required maxLength={1000}/></label>
-        <button className="wallet-submit" disabled={busy || methods.length === 0}>{busy ? 'Submitting…' : 'Request withdrawal'}</button>
-        <p className="wallet-footnote"><ShieldCheck size={13}/> The requested amount is reserved while your withdrawal is reviewed.</p>
+        <label>{t('withdrawal_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
+        <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min="0.01" max={account?.available_balance ?? 0} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
+        <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
+        <button className="wallet-submit" disabled={busy || methods.length === 0}>{busy ? t('submitting') : t('request_withdrawal')}</button>
+        <p className="wallet-footnote"><ShieldCheck size={13}/> {t('withdrawal_reserved')}</p>
       </form>}
       {tab === 'history' && <div className="wallet-history">
-        {[...deposits.map(item => ({...item, kind:'Deposit'})), ...withdrawals.map(item => ({...item, kind:'Withdrawal'}))].sort((a,b) => +new Date(b.created_at)-+new Date(a.created_at)).map(item => <article key={item.id}><div><b>{item.kind} · {item.payment_method.toUpperCase()}</b><small>{new Date(item.created_at).toLocaleString()}</small></div><strong>{formatMoney(Number(item.amount),item.currency)}</strong><span className={item.status}>{item.status}</span></article>)}
-        {deposits.length + withdrawals.length === 0 && <p className="wallet-empty">Your deposit and withdrawal history will appear here.</p>}
-        <button className="wallet-refresh" onClick={() => void refresh()}><RefreshCw size={13}/> Refresh history</button>
+        {[...deposits.map(item => ({...item, kind:t('deposit_kind')})), ...withdrawals.map(item => ({...item, kind:t('withdrawal_kind')}))].sort((a,b) => +new Date(b.created_at)-+new Date(a.created_at)).map(item => <article key={item.id}><div><b>{item.kind} · {item.payment_method.toUpperCase()}</b><small>{new Date(item.created_at).toLocaleString()}</small></div><strong>{formatMoney(Number(item.amount),item.currency)}</strong><span className={item.status}>{item.status}</span></article>)}
+        {deposits.length + withdrawals.length === 0 && <p className="wallet-empty">{t('no_wallet_history')}</p>}
+        <button className="wallet-refresh" onClick={() => void refresh()}><RefreshCw size={13}/> {t('refresh_history')}</button>
       </div>}
     </section>
   </div>

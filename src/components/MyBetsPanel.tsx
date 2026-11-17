@@ -17,9 +17,9 @@ export default function MyBetsPanel({onClose}:Props) {
  async function load(){
   if(!supabase){setLoading(false);return}
   const {data:{user}}=await supabase.auth.getUser()
-  if(!user){setError('Sign in to view your bets.');setLoading(false);return}
+  if(!user){setError(t('sign_in_bets'));setLoading(false);return}
   const {data,error}=await supabase.from('bets').select('id,stake,currency,combined_odds,potential_return,status,created_at,bet_legs(market_label,selection_label,odds_snapshot,result_status,fixtures(home_score,away_score,status))').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50)
-  if(error){setError('Could not load your bet history.');setBets([])}else{setBets((data??[]) as unknown as Bet[]);setError('')}
+  if(error){setError(t('could_not_load_bet_history'));setBets([])}else{setBets((data??[]) as unknown as Bet[]);setError('')}
   setLoading(false)
  }
  useEffect(()=>{
@@ -35,14 +35,14 @@ export default function MyBetsPanel({onClose}:Props) {
    <button className="wallet-close" onClick={onClose} aria-label="Close bets"><X size={19}/></button>
    <div className="wallet-kicker"><Ticket size={15}/> BETNOVA · MY ACTIVITY</div>
    <h2 id="my-bets-title">{t('my_bets')}</h2>
-   <div className="bets-filters">{['all','pending','won','lost','void'].map(v=><button key={v} className={filter===v?'active':''} onClick={()=>setFilter(v)}>{v==='all'?'All':v[0].toUpperCase()+v.slice(1)}</button>)}</div>
-   {loading?<div className="markets-loading">Loading your bets…</div>:error?<div className="markets-empty">{error}</div>:visible.length===0?<div className="markets-empty"><Ticket size={22}/><b>No bets here yet</b><span>Your placed bets and their results will appear in this list.</span></div>:<div className="bets-list">{visible.map(b=><article className="bet-history-card" key={b.id}>
-    <div className="bet-history-head"><span>#{b.id.slice(0,8)}</span><b className={'bet-status '+b.status}>{b.status}</b></div>
-    <div className="bet-history-numbers"><div><small>Stake</small><b>{money(Number(b.stake),b.currency)}</b></div><div><small>Odds</small><b>{Number(b.combined_odds).toFixed(2)}</b></div><div><small>Potential return</small><b>{money(Number(b.potential_return),b.currency)}</b></div></div>
+   <div className="bets-filters">{['all','pending','won','lost','void'].map(v=><button key={v} className={filter===v?'active':''} onClick={()=>setFilter(v)}>{v==='all'?t('all'):t(v as 'pending'|'won'|'lost'|'void')}</button>)}</div>
+   {loading?<div className="markets-loading">{t('loading_markets')}</div>:error?<div className="markets-empty">{error}</div>:visible.length===0?<div className="markets-empty"><Ticket size={22}/><b>{t('no_bets')}</b><span>{t('no_bets_desc')}</span></div>:<div className="bets-list">{visible.map(b=><article className="bet-history-card" key={b.id}>
+    <div className="bet-history-head"><span>#{b.id.slice(0,8)}</span><b className={'bet-status '+b.status}>{['pending','won','lost','void'].includes(b.status) ? t(b.status as 'pending'|'won'|'lost'|'void') : b.status}</b></div>
+    <div className="bet-history-numbers"><div><small>{t('stake')}</small><b>{money(Number(b.stake),b.currency)}</b></div><div><small>{t('odds')}</small><b>{Number(b.combined_odds).toFixed(2)}</b></div><div><small>{t('potential_return')}</small><b>{money(Number(b.potential_return),b.currency)}</b></div></div>
     <div className="bet-history-legs">{(b.bet_legs??[]).map((leg,i)=><div key={i}><span>{leg.market_label}: <b>{leg.selection_label}</b></span><strong>{Number(leg.odds_snapshot).toFixed(2)}</strong><small>{leg.result_status}</small></div>)}</div>
     <small className="bet-history-date"><Clock3 size={11}/> {new Date(b.created_at).toLocaleString()}</small>
    </article>)}</div>}
-   <button className="wallet-refresh" onClick={()=>{setLoading(true);void load()}}><RefreshCw size={13}/> Refresh</button>
+   <button className="wallet-refresh" onClick={()=>{setLoading(true);void load()}}><RefreshCw size={13}/> {t('refresh')}</button>
   </section>
  </div>
 }

@@ -25,13 +25,6 @@ type Match = {
   dateLabel?: string
 }
 
-const demoMatches: Match[] = [
-  { id: 1, league: 'Premier League', country: 'England', time: '18:30', home: 'Arsenal', away: 'Chelsea', homeMark: '🔴', awayMark: '🔵', odds: ['1.82', '3.70', '4.20'], featured: true },
-  { id: 2, league: 'La Liga', country: 'Spain', time: '19:00', home: 'Real Madrid', away: 'Sevilla', homeMark: '⚪', awayMark: '🔴', odds: ['1.45', '4.60', '6.80'] },
-  { id: 3, league: 'Serie A', country: 'Italy', time: '20:45', home: 'Inter', away: 'Napoli', homeMark: '🔵', awayMark: '🔷', odds: ['2.10', '3.25', '3.40'] },
-  { id: 4, league: 'Bundesliga', country: 'Germany', time: '21:00', home: 'Dortmund', away: 'Leverkusen', homeMark: '🟡', awayMark: '🔴', odds: ['2.65', '3.50', '2.40'] },
-]
-
 const sports = ['Football', 'Basketball', 'Tennis', 'Ice Hockey', 'Volleyball']
 const leagues = ['All matches', 'Popular', 'England', 'Spain', 'Italy', 'Germany']
 
@@ -41,8 +34,8 @@ export default function App() {
   const [eventView, setEventView] = useState<'upcoming' | 'live' | 'results'>('upcoming')
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [showFavorites, setShowFavorites] = useState(false)
-  const [matches, setMatches] = useState<Match[]>(demoMatches)
-  const [usingDemoData, setUsingDemoData] = useState(true)
+  const [matches, setMatches] = useState<Match[]>([])
+  const usingDemoData = false
   const [league, setLeague] = useState('All matches')
   const [selected, setSelected] = useState<{ match: Match; label: string; odd: string; selectionId: string; marketId: string }[]>([])
   const [betStake, setBetStake] = useState('')
@@ -81,8 +74,7 @@ export default function App() {
 
       if (!supabase) {
         if (active) {
-          setMatches(sport === 'Football' && eventView === 'upcoming' ? demoMatches : [])
-          setUsingDemoData(sport === 'Football' && eventView === 'upcoming')
+          setMatches([])
           setLoadingMatches(false)
         }
         return
@@ -101,7 +93,6 @@ export default function App() {
         if (!sportRow) {
           if (active) {
             setMatches([])
-            setUsingDemoData(false)
           }
           return
         }
@@ -117,7 +108,10 @@ export default function App() {
           `)
           .eq('competitions.sport_id', sportRow.id)
         if (eventView === 'live') {
-          fixtureQuery = fixtureQuery.eq('status', 'live')
+          // Never label an old fixture as live when the upstream feed has gone stale.
+          fixtureQuery = fixtureQuery
+            .eq('status', 'live')
+            .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
         } else if (eventView === 'results') {
           fixtureQuery = fixtureQuery.eq('status', 'finished')
         } else {
@@ -164,18 +158,12 @@ export default function App() {
 
         if (mapped.length) {
           setMatches(mapped)
-          setUsingDemoData(false)
-        } else if (!userEmail && sport === 'Football' && eventView === 'upcoming') {
-          setMatches(demoMatches)
-          setUsingDemoData(true)
         } else {
           setMatches([])
-          setUsingDemoData(false)
         }
       } catch (caught) {
         if (active) {
           setMatches([])
-          setUsingDemoData(false)
           setMatchLoadError(caught instanceof Error ? caught.message : 'Could not load sports data.')
         }
       } finally {
@@ -254,7 +242,7 @@ export default function App() {
         <div className="top-actions"><label className="language-picker" aria-label={t("language")}><Globe2 size={14}/><select value={language} onChange={event=>setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="wallet-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> {t("wallet")}</button><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>Admin</button></> : <button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? t('signout') : t('join')} <ArrowRight size={16}/></button><button className="menu-btn" aria-label={t("menu")} onClick={() => setMobileMoreOpen(true)}><Menu/></button></div>
       </header>
 
-      <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {usingDemoData ? t("preview_mode") : t("sports_data_connected")}</span></div>
+      <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
 
       <main className="layout">
         <aside className="left-rail">
@@ -304,8 +292,8 @@ export default function App() {
             {betMessage && <p className="bet-slip-message">{betMessage}</p>}
             <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||!betStake}>{betBusy?t("submitting"):userEmail?t("place_bet"):t("sign_in_to_bet")} <ArrowRight size={15}/></button>
           </div>
-          <div className="help-card"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><a href="#help">Get support <ArrowRight size={13}/></a></div></div>
-          <div className="responsible-card"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
+          <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><a href="#help">Get support <ArrowRight size={13}/></a></div></div>
+          <div className="responsible-card" id="responsible"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
         </aside>
       </main>
 
