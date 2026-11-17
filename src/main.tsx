@@ -7,6 +7,7 @@ import './mobile-app.css'
 import './betnova-next-ui.css'
 import './betnova-native-shell.css'
 import './public-landing.css'
+import './betnova-premium-theme.css'
 import { LanguageProvider } from './i18n'
 
 if ('serviceWorker' in navigator) {
