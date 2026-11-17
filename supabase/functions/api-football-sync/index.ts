@@ -105,7 +105,7 @@ Deno.serve(async (req: Request) => {
 
     let oddsFixtures = 0, marketCount = 0, selectionCount = 0;
     // Pre-match odds are refreshed for the next three calendar days. No odds are generated locally.
-    for (const offset of [1, 2, 3]) {
+    for (const offset of [0, 1, 2]) {
       const oddsRows = await providerGet(`/odds?date=${day(offset)}&page=1`, apiKey);
       for (const row of oddsRows) {
         const externalFixtureId = Number(row.fixture?.id);
@@ -162,8 +162,10 @@ Deno.serve(async (req: Request) => {
               for (const pick of picks) {
                 const { data: old } = await supabase.from("market_selections").select("id,result_status").eq("market_id", marketId).eq("selection_key", pick.key).maybeSingle();
                 if (old?.result_status !== "pending") continue;
-                if (old) await supabase.from("market_selections").update({ name: pick.name, odds: pick.odds, status: "active", updated_at: new Date().toISOString() }).eq("id", old.id);
-                else await supabase.from("market_selections").insert({ market_id: marketId, name: pick.name, selection_key: pick.key, odds: pick.odds, status: "active" });
+                await supabase.from("market_selections").upsert({
+                  market_id: marketId, name: pick.name, selection_key: pick.key, odds: pick.odds,
+                  status: "active", result_status: "pending", updated_at: new Date().toISOString(),
+                }, { onConflict: "market_id,selection_key" });
                 selectionCount++;
               }
               fixtureHadOdds = true;
@@ -190,8 +192,10 @@ Deno.serve(async (req: Request) => {
           for (const pick of accepted) {
             const { data: old } = await supabase.from("market_selections").select("id,result_status").eq("market_id", marketId).eq("selection_key", pick.key).maybeSingle();
             if (old?.result_status !== "pending") continue;
-            if (old) await supabase.from("market_selections").update({ name: pick.name, odds: pick.odds, status: "active", updated_at: new Date().toISOString() }).eq("id", old.id);
-            else await supabase.from("market_selections").insert({ market_id: marketId, name: pick.name, selection_key: pick.key, odds: pick.odds, status: "active" });
+            await supabase.from("market_selections").upsert({
+              market_id: marketId, name: pick.name, selection_key: pick.key, odds: pick.odds,
+              status: "active", result_status: "pending", updated_at: new Date().toISOString(),
+            }, { onConflict: "market_id,selection_key" });
             selectionCount++;
           }
           fixtureHadOdds = true;
