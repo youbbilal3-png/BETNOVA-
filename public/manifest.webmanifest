@@ -1,0 +1,20 @@
+{
+  "name": "BETNOVA Sportsbook",
+  "short_name": "BETNOVA",
+  "description": "BETNOVA — A smarter way to follow the game.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f7f1",
+  "theme_color": "#103d30",
+  "categories": ["sports", "entertainment"],
+  "icons": [
+    {
+      "src": "/betnova-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
