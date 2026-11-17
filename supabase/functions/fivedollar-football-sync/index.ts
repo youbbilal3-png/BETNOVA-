@@ -187,17 +187,17 @@ Deno.serve(async (req: Request) => {
 
   async function syncEvents(item: any, fixtureId: string) {
     if (!Array.isArray(item?.events)) {
-      await supabase.rpc("betnova_set_fixture_settlement_hold", {
+      const { error: holdError } = await supabase.rpc("betnova_set_fixture_settlement_hold", {
         p_fixture_id: fixtureId, p_provider: PROVIDER,
         p_reason: "Provider event timeline is missing from the live fixture snapshot", p_hold: true,
       });
+      if (holdError) throw new Error("Could not protect fixture with a settlement hold");
       errors.push("fixture held: live event timeline missing");
       return;
     }
     const homeId = String(item?.teams?.home?.id ?? "");
     const awayId = String(item?.teams?.away?.id ?? "");
     const currentGoalIds = new Set<string>();
-    const currentEventIds = new Set<string>();
     const events = item.events;
     const occurrences = new Map<string, number>();
     let eventTimelineChanged = false;
@@ -211,7 +211,6 @@ Deno.serve(async (req: Request) => {
         ? Number(event.count) : (occurrences.get(base) ?? 0) + 1;
       occurrences.set(base, Math.max(occurrences.get(base) ?? 0, occurrence));
       const providerEventId = String(item.id) + ":" + base + ":" + occurrence;
-      currentEventIds.add(providerEventId);
       if (type === "goal") currentGoalIds.add(providerEventId);
       const teamId = side === "home" ? homeId : side === "away" ? awayId : null;
       const teamUuid = teamId
@@ -241,7 +240,6 @@ Deno.serve(async (req: Request) => {
     let newFullTimeEvent = false;
     if (item?.status === "finished") {
       const fullTimeId = String(item.id) + ":full_time";
-      currentEventIds.add(fullTimeId);
       const priorFullTime = await supabase.from("fixture_events").select("id")
         .eq("provider", PROVIDER).eq("provider_event_id", fullTimeId).maybeSingle();
       if (priorFullTime.error) throw new Error("Could not inspect full-time event");
@@ -281,10 +279,11 @@ Deno.serve(async (req: Request) => {
     if (existingHold.error) throw new Error("Could not inspect settlement hold");
 
     if (!scoreConsistent) {
-      await supabase.rpc("betnova_set_fixture_settlement_hold", {
+      const { error: holdError } = await supabase.rpc("betnova_set_fixture_settlement_hold", {
         p_fixture_id: fixtureId, p_provider: PROVIDER,
         p_reason: "Live score and confirmed event list do not agree", p_hold: true,
       });
+      if (holdError) throw new Error("Could not protect fixture with a settlement hold");
       errors.push("fixture held: score/event mismatch; waiting for a consistent provider snapshot");
       return;
     }
@@ -295,17 +294,19 @@ Deno.serve(async (req: Request) => {
       const priorPending = Array.isArray(link?.pending_retraction_ids) ? link.pending_retraction_ids : [];
       const sameMissingSet = JSON.stringify(priorPending.slice().sort()) === JSON.stringify(removedIds);
       const observations = sameMissingSet ? Number(link?.pending_retraction_observations ?? 0) + 1 : 1;
-      await supabase.rpc("betnova_set_fixture_settlement_hold", {
+      const { error: holdError } = await supabase.rpc("betnova_set_fixture_settlement_hold", {
         p_fixture_id: fixtureId, p_provider: PROVIDER,
         p_reason: "A previously confirmed goal is missing from the provider event feed", p_hold: true,
       });
-      await supabase.from("fivedollar_fixture_links").upsert({
+      if (holdError) throw new Error("Could not pause new bets while confirming a goal retraction");
+      const { error: pendingError } = await supabase.from("fivedollar_fixture_links").upsert({
         provider_fixture_id: String(item.id), fixture_id: fixtureId,
         processed_goal_snapshot: previousSnapshot,
         pending_retraction_ids: removedIds,
         pending_retraction_observations: observations,
         last_event_sync_at: now.toISOString(), updated_at: now.toISOString(),
       }, { onConflict: "provider_fixture_id" });
+      if (pendingError) throw new Error("Could not store pending goal retraction checkpoint");
       if (observations < 2) {
         errors.push("goal retraction awaiting a second consistent provider observation");
         return;
@@ -330,10 +331,11 @@ Deno.serve(async (req: Request) => {
         p_reason: correctionConfirmed ? "Confirmed provider goal retraction" : "Provider event timeline update",
       });
       if (replayError || !replay?.ok) {
-        await supabase.rpc("betnova_set_fixture_settlement_hold", {
+        const { error: holdError } = await supabase.rpc("betnova_set_fixture_settlement_hold", {
           p_fixture_id: fixtureId, p_provider: PROVIDER,
           p_reason: "Automatic event replay failed and requires safe retry", p_hold: true,
         });
+        if (holdError) throw new Error("Replay failed and the fixture could not be protected from new bets");
         errors.push("automatic event replay failed; new bets remain paused for this match");
         return;
       }
