@@ -117,7 +117,10 @@ export default function App() {
           `)
           .eq('competitions.sport_id', sportRow.id)
         if (eventView === 'live') {
-          fixtureQuery = fixtureQuery.eq('status', 'live')
+          // Never label an old fixture as live when the upstream feed has gone stale.
+          fixtureQuery = fixtureQuery
+            .eq('status', 'live')
+            .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
         } else if (eventView === 'results') {
           fixtureQuery = fixtureQuery.eq('status', 'finished')
         } else {
