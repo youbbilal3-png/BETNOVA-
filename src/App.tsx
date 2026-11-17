@@ -229,7 +229,8 @@ export default function App() {
       setSelected([])
       setBetStake('')
     } catch (caught) {
-      setBetMessage(caught instanceof Error ? caught.message : 'Bet could not be placed.')
+      const message = caught instanceof Error ? caught.message : 'Bet could not be placed.'
+      setBetMessage(/outstanding wallet recovery/i.test(message) ? t('recovery_blocks_withdrawal') : message)
     } finally { setBetBusy(false) }
   }
 
