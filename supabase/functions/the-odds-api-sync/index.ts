@@ -32,10 +32,6 @@ function validOdd(value: unknown): number | null {
   const n = Number(value);
   return Number.isFinite(n) && n > 1 && n < 1000 ? n : null;
 }
-function validTimestamp(value: unknown): string {
-  const date = new Date(String(value ?? ""));
-  return Number.isFinite(date.getTime()) ? date.toISOString() : new Date().toISOString();
-}
 function normalize(value: unknown): string {
   return String(value ?? "").trim().toLocaleLowerCase();
 }
@@ -143,8 +139,6 @@ Deno.serve(async (req: Request) => {
         away_team_id: away.data.id,
         starts_at: startsAt.toISOString(),
         status: startsAt.getTime() <= Date.now() ? "live" : "scheduled",
-        home_score: null,
-        away_score: null,
         source_provider: PROVIDER,
         external_id: eventId,
         updated_at: new Date().toISOString(),
