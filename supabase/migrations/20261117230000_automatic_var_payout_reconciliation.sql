@@ -110,7 +110,7 @@ $$;
 
 drop trigger if exists wallet_recovery_guard on public.wallet_accounts;
 create trigger wallet_recovery_guard
-before update of available_balance, recovery_balance on public.wallet_accounts
+before update of available_balance, reserved_balance, recovery_balance on public.wallet_accounts
 for each row execute function public.betnova_guard_wallet_recovery();
 
 revoke all on function public.betnova_guard_wallet_recovery() from public, anon, authenticated;
