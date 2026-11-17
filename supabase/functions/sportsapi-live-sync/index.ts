@@ -173,17 +173,19 @@ Deno.serve(async (req: Request) => {
     const country = String(item?.tournament?.country ?? item?.competition?.country ?? "").trim() || null;
     const competitionName = String(item?.tournament?.name ?? item?.competition?.name ?? item?.league?.name ?? "Live Matches").trim();
     const competitionExternal = String(item?.tournament?.id ?? item?.competition?.id ?? item?.league?.id ?? "live-feed");
+    const resolveTeam = async (name: string, side: any, externalId: string) => {
+      const { data: branded } = await supabase.from("teams").select("id")
+        .eq("name", name).not("logo_url", "is", null).limit(1).maybeSingle();
+      if (branded?.id) return { data: { id: branded.id }, error: null };
+      return await supabase.from("teams").upsert({
+        name, short_name: String(side?.shortName ?? name.slice(0, 3)).slice(0, 12),
+        country: String(side?.country ?? country ?? "").trim() || null,
+        source_provider: PROVIDER, external_id: externalId,
+      }, { onConflict: "source_provider,external_id" }).select("id").single();
+    };
     const [home, away, competition] = await Promise.all([
-      supabase.from("teams").upsert({
-        name: homeName, short_name: String(item?.home?.shortName ?? homeName.slice(0, 3)).slice(0, 12),
-        country: String(item?.home?.country ?? country ?? "").trim() || null,
-        source_provider: PROVIDER, external_id: homeExternal,
-      }, { onConflict: "source_provider,external_id" }).select("id").single(),
-      supabase.from("teams").upsert({
-        name: awayName, short_name: String(item?.away?.shortName ?? awayName.slice(0, 3)).slice(0, 12),
-        country: String(item?.away?.country ?? country ?? "").trim() || null,
-        source_provider: PROVIDER, external_id: awayExternal,
-      }, { onConflict: "source_provider,external_id" }).select("id").single(),
+      resolveTeam(homeName, item?.home, homeExternal),
+      resolveTeam(awayName, item?.away, awayExternal),
       supabase.from("competitions").upsert({
         sport_id: football.id, name: competitionName, country,
         season: String(startTime.getUTCFullYear()), is_active: true,
