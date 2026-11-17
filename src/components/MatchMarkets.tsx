@@ -104,7 +104,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
           const updatedMs = new Date(market.last_updated_at).getTime()
           const maxAgeMs = market.is_live ? 3 * 60 * 1000 : 24 * 60 * 60 * 1000
           const priceFresh = Number.isFinite(updatedMs) && clock - updatedMs <= maxAgeMs && updatedMs <= clock + 30000
-          const canBet = market.status === "open" && priceFresh
+          const canBet = market.status === "open" && priceFresh && (live ? market.is_live : !market.is_live)
           return <article className="market-item" key={market.id}>
           <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> LIVE</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">Price expired</span>}</div>
           <div className="market-outcomes">{market.market_selections.map(selection => {
