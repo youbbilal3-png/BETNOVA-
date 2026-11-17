@@ -238,3 +238,5 @@ body{background:var(--bn-paper)}
   .detail-market-heading{margin-inline:-11px;padding-inline:11px}
 }
 @media(prefers-reduced-motion:reduce){.hero-ball{animation:none}}
+
+/* Mobile layout tuned for touch-first navigation and safe-area devices. */
