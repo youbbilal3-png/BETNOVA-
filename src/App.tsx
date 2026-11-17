@@ -35,7 +35,7 @@ export default function App() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [showFavorites, setShowFavorites] = useState(false)
   const [matches, setMatches] = useState<Match[]>([])
-  const [usingDemoData, setUsingDemoData] = useState(false)
+  const usingDemoData = false
   const [league, setLeague] = useState('All matches')
   const [selected, setSelected] = useState<{ match: Match; label: string; odd: string; selectionId: string; marketId: string }[]>([])
   const [betStake, setBetStake] = useState('')
@@ -75,7 +75,6 @@ export default function App() {
       if (!supabase) {
         if (active) {
           setMatches([])
-          setUsingDemoData(false)
           setLoadingMatches(false)
         }
         return
@@ -94,7 +93,6 @@ export default function App() {
         if (!sportRow) {
           if (active) {
             setMatches([])
-            setUsingDemoData(false)
           }
           return
         }
@@ -160,15 +158,12 @@ export default function App() {
 
         if (mapped.length) {
           setMatches(mapped)
-          setUsingDemoData(false)
         } else {
           setMatches([])
-          setUsingDemoData(false)
         }
       } catch (caught) {
         if (active) {
           setMatches([])
-          setUsingDemoData(false)
           setMatchLoadError(caught instanceof Error ? caught.message : 'Could not load sports data.')
         }
       } finally {
@@ -247,7 +242,7 @@ export default function App() {
         <div className="top-actions"><label className="language-picker" aria-label={t("language")}><Globe2 size={14}/><select value={language} onChange={event=>setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="wallet-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> {t("wallet")}</button><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>Admin</button></> : <button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? t('signout') : t('join')} <ArrowRight size={16}/></button><button className="menu-btn" aria-label={t("menu")} onClick={() => setMobileMoreOpen(true)}><Menu/></button></div>
       </header>
 
-      <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {usingDemoData ? t("preview_mode") : t("sports_data_connected")}</span></div>
+      <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
 
       <main className="layout">
         <aside className="left-rail">
