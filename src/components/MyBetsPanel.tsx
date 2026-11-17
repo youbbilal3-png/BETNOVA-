@@ -37,7 +37,7 @@ export default function MyBetsPanel({onClose}:Props) {
    <h2 id="my-bets-title">{t('my_bets')}</h2>
    <div className="bets-filters">{['all','pending','won','lost','void'].map(v=><button key={v} className={filter===v?'active':''} onClick={()=>setFilter(v)}>{v==='all'?t('all'):t(v as 'pending'|'won'|'lost'|'void')}</button>)}</div>
    {loading?<div className="markets-loading">{t('loading_markets')}</div>:error?<div className="markets-empty">{error}</div>:visible.length===0?<div className="markets-empty"><Ticket size={22}/><b>{t('no_bets')}</b><span>{t('no_bets_desc')}</span></div>:<div className="bets-list">{visible.map(b=><article className="bet-history-card" key={b.id}>
-    <div className="bet-history-head"><span>#{b.id.slice(0,8)}</span><b className={'bet-status '+b.status}>{b.status}</b></div>
+    <div className="bet-history-head"><span>#{b.id.slice(0,8)}</span><b className={'bet-status '+b.status}>{['pending','won','lost','void'].includes(b.status) ? t(b.status as 'pending'|'won'|'lost'|'void') : b.status}</b></div>
     <div className="bet-history-numbers"><div><small>{t('stake')}</small><b>{money(Number(b.stake),b.currency)}</b></div><div><small>{t('odds')}</small><b>{Number(b.combined_odds).toFixed(2)}</b></div><div><small>{t('potential_return')}</small><b>{money(Number(b.potential_return),b.currency)}</b></div></div>
     <div className="bet-history-legs">{(b.bet_legs??[]).map((leg,i)=><div key={i}><span>{leg.market_label}: <b>{leg.selection_label}</b></span><strong>{Number(leg.odds_snapshot).toFixed(2)}</strong><small>{leg.result_status}</small></div>)}</div>
     <small className="bet-history-date"><Clock3 size={11}/> {new Date(b.created_at).toLocaleString()}</small>
