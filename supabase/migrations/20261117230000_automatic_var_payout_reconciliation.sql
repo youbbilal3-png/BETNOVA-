@@ -231,6 +231,15 @@ begin
         updated_at = now()
     where id = v_wallet.id
     returning * into v_wallet;
+
+    insert into public.wallet_ledger(
+      wallet_account_id,user_id,currency,entry_type,amount,balance_after,
+      reserved_after,reference_type,reference_id,idempotency_key,description
+    ) values (
+      v_wallet.id,v_bet.user_id,v_bet.currency,'adjustment',v_delta,
+      v_wallet.available_balance,v_wallet.reserved_balance,'bet',v_bet.id,v_key,
+      'Automatic VAR payout correction: additional winnings credited after authoritative result update'
+    );
   end if;
 
   update public.bets
