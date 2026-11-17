@@ -190,6 +190,16 @@ begin
   v_previous_payout := coalesce(v_bet.credited_payout, 0);
   v_delta := round(v_target_payout - v_previous_payout, 2);
 
+  -- Repeated event delivery must not create duplicate audit rows or wallet entries.
+  if v_delta = 0 and v_bet.status = v_status then
+    return jsonb_build_object(
+      'ok', true, 'already_applied', true,
+      'credited_payout', v_previous_payout,
+      'payout_delta', 0,
+      'bet_status', v_status
+    );
+  end if;
+
   select * into v_wallet
   from public.wallet_accounts
   where user_id = v_bet.user_id and currency = v_bet.currency
@@ -355,27 +365,49 @@ begin
   perform 1 from public.fixtures where id = p_fixture_id for update;
   if not found then raise exception 'Fixture not found'; end if;
 
-  update public.markets
-  set status = 'open', settled_at = null, last_updated_at = now()
-  where fixture_id = p_fixture_id and is_active = true
-    and status in ('settled','void','suspended','open');
-  get diagnostics v_count = row_count;
-
+  -- Only reopen markets that were actually settled/voided. Suspended markets
+  -- stay suspended and inactive markets stay inactive.
   update public.market_selections ms
   set status = 'active', result_status = 'pending', updated_at = now()
   from public.markets m
-  where m.id = ms.market_id and m.fixture_id = p_fixture_id and m.is_active = true;
+  where m.id = ms.market_id
+    and m.fixture_id = p_fixture_id
+    and m.is_active = true
+    and m.status in ('settled','void')
+    and ms.result_status in ('won','lost','void');
+
+  update public.markets
+  set status = 'open', settled_at = null, last_updated_at = now()
+  where fixture_id = p_fixture_id
+    and is_active = true
+    and status in ('settled','void');
+  get diagnostics v_count = row_count;
 
   update public.bet_legs
   set result_status = 'pending', settled_at = null
-  where fixture_id = p_fixture_id;
+  where fixture_id = p_fixture_id
+    and result_status in ('won','lost','void');
 
+  -- Keep bets lost if another leg is still lost; only reopen bets whose
+  -- previous terminal result may have depended on this fixture.
   update public.bets b
-  set status = 'pending', settled_at = null
-  where exists (
-    select 1 from public.bet_legs bl
-    where bl.bet_id = b.id and bl.fixture_id = p_fixture_id
-  );
+  set status = case
+        when exists (select 1 from public.bet_legs x where x.bet_id = b.id and x.result_status = 'lost')
+          then 'lost'
+        else 'pending'
+      end,
+      settled_at = case
+        when exists (select 1 from public.bet_legs x where x.bet_id = b.id and x.result_status = 'lost')
+          then now()
+        else null
+      end
+  where b.status in ('won','lost','void')
+    and exists (
+      select 1 from public.bet_legs bl
+      where bl.bet_id = b.id
+        and bl.fixture_id = p_fixture_id
+        and bl.result_status = 'pending'
+    );
 
   return v_count;
 end;
