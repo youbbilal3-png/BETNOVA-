@@ -307,8 +307,8 @@ export default function App() {
             {betMessage && <p className="bet-slip-message">{betMessage}</p>}
             <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||!betStake}>{betBusy?t("submitting"):userEmail?t("place_bet"):t("sign_in_to_bet")} <ArrowRight size={15}/></button>
           </div>
-          <div className="help-card"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><a href="#help">Get support <ArrowRight size={13}/></a></div></div>
-          <div className="responsible-card"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
+          <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><a href="#help">Get support <ArrowRight size={13}/></a></div></div>
+          <div className="responsible-card" id="responsible"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
         </aside>
       </main>
 
