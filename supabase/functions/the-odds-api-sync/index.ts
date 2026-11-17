@@ -67,6 +67,8 @@ async function providerGet(path: string, key: string) {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  const requestBody = await req.json().catch(() => ({}));
+  const mode = requestBody?.mode === "live" ? "live" : "prematch";
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -91,6 +93,9 @@ Deno.serve(async (req: Request) => {
       String(sport?.group ?? "").toLowerCase().includes("soccer") &&
       ALLOWED_SOCCER_KEYS.has(String(sport?.key ?? ""))
     );
+    const sportsToFetch = mode === "live"
+      ? [{ key: "upcoming", group: "soccer", title: "Soccer live and upcoming" }]
+      : selectedSports;
     const { data: football, error: footballError } = await supabase
       .from("sports").select("id").eq("slug", "football").eq("is_active", true).maybeSingle();
     if (footballError || !football) throw new Error("Football sport catalogue is not configured");
@@ -106,7 +111,7 @@ Deno.serve(async (req: Request) => {
       const homeName = String(event?.home_team ?? "").trim();
       const awayName = String(event?.away_team ?? "").trim();
       const startsAt = new Date(String(event?.commence_time ?? ""));
-      if (!eventId || !homeName || !awayName || !Number.isFinite(startsAt.getTime()) || startsAt.getTime() <= Date.now()) {
+      if (!eventId || !homeName || !awayName || !Number.isFinite(startsAt.getTime()) || startsAt.getTime() < Date.now() - 6 * 60 * 60 * 1000) {
         return null;
       }
       const cacheKey = String(sport.key) + ":" + eventId;
@@ -137,7 +142,7 @@ Deno.serve(async (req: Request) => {
         home_team_id: home.data.id,
         away_team_id: away.data.id,
         starts_at: startsAt.toISOString(),
-        status: "scheduled",
+        status: startsAt.getTime() <= Date.now() ? "live" : "scheduled",
         home_score: null,
         away_score: null,
         source_provider: PROVIDER,
@@ -163,34 +168,39 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // One daily pass across six selected leagues, two markets, one EU region:
-    // maximum planned consumption is 12 credits per day (about 360 per 30 days).
-    // When credits run out, do not close markets or overwrite their last stored odds.
-    for (const sport of selectedSports) {
-      if (remaining !== null && remaining < 2) {
+    // Pre-match mode uses the six selected leagues and two markets once daily (12 credits).
+    // Live mode uses the aggregate upcoming feed, one region and one market (1 credit per run).
+    // The live cron is deliberately quota-budgeted; stale markets remain visible but cannot be bet.
+    for (const sport of sportsToFetch) {
+      if (remaining !== null && remaining < (mode === "live" ? 1 : 2)) {
         quotaExhausted = true;
         break;
       }
       try {
         const { data: oddsEvents, remaining: nextRemaining } = await providerGet(
-          "/sports/" + encodeURIComponent(sport.key) + "/odds?regions=eu&markets=h2h,totals&oddsFormat=decimal&dateFormat=iso",
+          (mode === "live" ? "/sports/upcoming/odds?regions=eu&markets=h2h" : "/sports/" + encodeURIComponent(sport.key) + "/odds?regions=eu&markets=h2h,totals") + "&oddsFormat=decimal&dateFormat=iso",
           apiKey,
         );
         if (nextRemaining !== null) remaining = nextRemaining;
 
         for (const event of Array.isArray(oddsEvents) ? oddsEvents : []) {
-          const fixtureId = await storeEvent(event, sport);
+          const eventSport = mode === "live"
+            ? selectedSports.find((item: any) => item.key === String(event.sport_key ?? ""))
+            : sport;
+          if (!eventSport) continue;
+          const fixtureId = await storeEvent(event, eventSport);
           if (!fixtureId) continue;
           const bookmakers = Array.isArray(event.bookmakers) ? event.bookmakers : [];
           const bookmaker = bookmakers.find((book: any) =>
             Array.isArray(book.markets) && book.markets.some((m: any) => m.key === "h2h" || m.key === "totals")
           );
           if (!bookmaker) continue;
-          const updatedAt = validTimestamp(
-            bookmaker.markets?.find((m: any) => m.key === "h2h")?.last_update ??
-            bookmaker.markets?.find((m: any) => m.key === "totals")?.last_update ??
-            bookmaker.last_update
-          );
+          const rawUpdatedAt = bookmaker.markets?.find((m: any) => m.key === "h2h")?.last_update ??
+            bookmaker.markets?.find((m: any) => m.key === "totals")?.last_update;
+          const updateMs = Date.parse(String(rawUpdatedAt ?? ""));
+          const isLive = new Date(String(event.commence_time)).getTime() <= Date.now();
+          if (!Number.isFinite(updateMs) || updateMs > Date.now() + 30000 || (isLive && Date.now() - updateMs > 180000)) continue;
+          const updatedAt = new Date(updateMs).toISOString();
 
           const h2h = bookmaker.markets?.find((market: any) => market.key === "h2h");
           if (h2h) {
@@ -207,7 +217,7 @@ Deno.serve(async (req: Request) => {
               if (!existing || existing.status === "open") {
                 const payload = {
                   fixture_id: fixtureId, market_type: "match_result", market_key: "match_result",
-                  name, settlement_rule: {}, is_live: false, is_active: true, status: "open",
+                  name, settlement_rule: {}, is_live: isLive, is_active: true, status: "open",
                   source_provider: PROVIDER, external_id: String(event.id) + ":h2h:" + String(bookmaker.key),
                   last_updated_at: updatedAt,
                 };
@@ -238,7 +248,7 @@ Deno.serve(async (req: Request) => {
             }
           }
 
-          const totals = bookmaker.markets?.find((market: any) => market.key === "totals");
+          const totals = isLive ? null : bookmaker.markets?.find((market: any) => market.key === "totals");
           if (totals) {
             const byPoint = new Map<number, { over: number | null; under: number | null }>();
             for (const outcome of Array.isArray(totals.outcomes) ? totals.outcomes : []) {
@@ -259,7 +269,7 @@ Deno.serve(async (req: Request) => {
               if (existing && existing.status !== "open") continue;
               const payload = {
                 fixture_id: fixtureId, market_type: "total_goals", market_key: "total_goals",
-                name: marketName, settlement_rule: { line: point }, is_live: false, is_active: true,
+                name: marketName, settlement_rule: { line: point }, is_live: isLive, is_active: true,
                 status: "open", source_provider: PROVIDER,
                 external_id: String(event.id) + ":totals:" + String(point) + ":" + String(bookmaker.key),
                 last_updated_at: updatedAt,
@@ -301,13 +311,14 @@ Deno.serve(async (req: Request) => {
     return json({
       ok: true,
       provider: PROVIDER,
-      sports_checked: selectedSports.length,
+      mode,
+      sports_checked: mode === "live" ? selectedSports.length : selectedSports.length,
       fixtures_synced: fixturesSynced,
       markets_updated: marketsUpdated,
       selections_updated: selectionsUpdated,
       credits_remaining: remaining,
       quota_exhausted: quotaExhausted,
-      stored_odds_policy: "Existing odds remain stored and open after quota exhaustion; new bets use the recorded price snapshot and are rejected automatically once kickoff has passed. Live betting is not enabled by this provider.",
+      stored_odds_policy: "Pre-match markets remain stored across quota exhaustion. Live markets are written only from the aggregate in-play odds feed and fresh bookmaker timestamps; the database rejects stale live prices.",
       provider_errors: providerErrors.slice(0, 8),
     });
   } catch (error) {
