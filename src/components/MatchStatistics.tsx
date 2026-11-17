@@ -28,7 +28,7 @@ export default function MatchStatistics({ fixtureId }: { fixtureId: string }) {
         .select('statistics,updated_at').eq('fixture_id', fixtureId)
         .order('updated_at', { ascending: false }).limit(1).maybeSingle()
       if (!active) return
-      setSnapshot(data?.statistics as Snapshot ?? null)
+      setSnapshot(data?.statistics ? { ...(data.statistics as Snapshot), updated_at: data.updated_at } : null)
       setLoading(false)
     }
     void load()
