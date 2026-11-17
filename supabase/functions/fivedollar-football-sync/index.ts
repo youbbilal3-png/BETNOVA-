@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
   if (!apiKey) return json({ error: "Add fivedollarfootball_api_key to Supabase Vault" }, 503);
 
   const body = await req.json().catch(() => ({}));
-  const mode = body?.mode === "prematch" ? "prematch" : "live";
+  const mode = body?.mode === "prematch" || body?.mode === "finalize" ? body.mode : "live";
   let requests = 0;
   let rateLimited = false;
   const errors: string[] = [];
@@ -146,30 +146,38 @@ Deno.serve(async (req: Request) => {
 
   function normalizeStatistics(raw: any): { home: Array<{key:string;label:string;value:any}>; away: Array<{key:string;label:string;value:any}> } | null {
     if (!raw) return null;
-    const clean = (rows: any) => {
-      if (!Array.isArray(rows)) return [];
-      return rows.map((row: any) => {
-        const label = String(row?.name ?? row?.type ?? row?.label ?? row?.statistic ?? "").trim();
-        const value = row?.value ?? row?.display ?? row?.total ?? null;
-        const key = normalized(label).replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
-        return label && key ? { key, label, value } : null;
-      }).filter(Boolean);
+    const source = raw.statistics ?? raw;
+    const home: Array<{key:string;label:string;value:any}> = [];
+    const away: Array<{key:string;label:string;value:any}> = [];
+    const add = (label: string, pair: any, prefix = "") => {
+      if (!pair || typeof pair !== "object" || Array.isArray(pair)) return;
+      const key = (prefix + label).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+      if (!key || (!("home" in pair) && !("away" in pair))) return;
+      const display = (side: "home" | "away") => label.toLowerCase().includes("possession") && pair[side] != null
+        ? String(pair[side]) + "%" : pair[side] ?? null;
+      if (pair.home !== undefined && pair.home !== null) home.push({ key, label: prefix + label.replace(/_/g," "), value: display("home") });
+      if (pair.away !== undefined && pair.away !== null) away.push({ key, label: prefix + label.replace(/_/g," "), value: display("away") });
     };
-    if (Array.isArray(raw)) {
-      const home = clean(raw.filter((x:any) => x?.side === "home" || x?.team === "home" || x?.team_side === "home"));
-      const away = clean(raw.filter((x:any) => x?.side === "away" || x?.team === "away" || x?.team_side === "away"));
-      return home.length || away.length ? { home, away } : null;
+    if (Array.isArray(source)) {
+      for (const row of source) {
+        const label = String(row?.name ?? row?.type ?? row?.label ?? "").trim();
+        if (label) add(label, { home: row?.home ?? row?.home_value, away: row?.away ?? row?.away_value });
+      }
+    } else if (typeof source === "object") {
+      for (const [label, value] of Object.entries(source)) {
+        if (value && typeof value === "object" && !Array.isArray(value) && ("home" in value || "away" in value)) {
+          add(label, value);
+        } else if (value && typeof value === "object" && !Array.isArray(value)) {
+          const prefix = label === "first_half" ? "1st half · " : label === "second_half" ? "2nd half · " : label.replace(/_/g," ") + " · ";
+          for (const [nestedLabel, pair] of Object.entries(value as Record<string,any>)) add(nestedLabel, pair, prefix);
+        }
+      }
     }
-    const homeRaw = raw.home ?? raw.teams?.home?.statistics ?? raw.teams?.home ?? raw.home_team ?? [];
-    const awayRaw = raw.away ?? raw.teams?.away?.statistics ?? raw.teams?.away ?? raw.away_team ?? [];
-    const home = clean(Array.isArray(homeRaw) ? homeRaw : Object.entries(homeRaw).map(([name,value]) => ({name,value})));
-    const away = clean(Array.isArray(awayRaw) ? awayRaw : Object.entries(awayRaw).map(([name,value]) => ({name,value})));
     return home.length || away.length ? { home, away } : null;
   }
 
   async function syncStatistics(item: any, fixtureId: string) {
-    const raw = item?.statistics ?? item?.stats ?? item?.team_statistics ?? null;
-    const statistics = normalizeStatistics(raw);
+    const statistics = normalizeStatistics(item?.statistics ?? item?.stats ?? item?.team_statistics);
     if (!statistics) return;
     const { error } = await supabase.from("fixture_statistics").upsert({
       fixture_id: fixtureId, provider: PROVIDER, statistics, updated_at: now.toISOString(),
@@ -178,7 +186,14 @@ Deno.serve(async (req: Request) => {
   }
 
   async function syncEvents(item: any, fixtureId: string) {
-    if (!Array.isArray(item?.events)) return;
+    if (!Array.isArray(item?.events)) {
+      await supabase.rpc("betnova_set_fixture_settlement_hold", {
+        p_fixture_id: fixtureId, p_provider: PROVIDER,
+        p_reason: "Provider event timeline is missing from the live fixture snapshot", p_hold: true,
+      });
+      errors.push("fixture held: live event timeline missing");
+      return;
+    }
     const homeId = String(item?.teams?.home?.id ?? "");
     const awayId = String(item?.teams?.away?.id ?? "");
     const currentGoalIds = new Set<string>();
@@ -416,6 +431,9 @@ Deno.serve(async (req: Request) => {
     if (mode === "live") {
       const data = await get("/fixtures?status=live&include=events,stats&per_page=500");
       fixtures = Array.isArray(data) ? data : [];
+    } else if (mode === "finalize") {
+      const data = await get("/fixtures?status=finished&include=events,stats&per_page=100");
+      fixtures = Array.isArray(data) ? data : [];
     } else {
       const start = Math.floor(Date.now() / 1000);
       const end = start + 24 * 60 * 60;
@@ -429,14 +447,14 @@ Deno.serve(async (req: Request) => {
       if (!id) continue;
       stored.push({ item, id });
       await syncStatistics(item, id);
-      if (mode === "live") await syncEvents(item, id);
+      if (mode === "live" || mode === "finalize") await syncEvents(item, id);
     }
 
     // Free plan provides odds per fixture. Keep each 5-minute live cycle to two
     // matches (plus the fixture list) to stay under the account-wide 60/hour cap.
     const oddsTargets = mode === "live"
       ? stored.slice(0, MAX_ODDS_FIXTURES)
-      : stored.slice(0, 8);
+      : mode === "prematch" ? stored.slice(0, 8) : [];
     for (const target of oddsTargets) {
       try { await syncOdds(target.item, target.id, mode === "live"); }
       catch (error) { errors.push("odds " + target.item.id + ": " + (error instanceof Error ? error.message : "unknown").slice(0, 150)); }
