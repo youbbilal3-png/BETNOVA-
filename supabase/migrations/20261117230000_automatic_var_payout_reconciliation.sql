@@ -161,16 +161,15 @@ begin
     );
   end if;
 
-  if exists (
-    select 1 from public.bet_legs
-    where bet_id = p_bet_id and result_status = 'pending'
-  ) or not exists (select 1 from public.bet_legs where bet_id = p_bet_id) then
-    raise exception 'All bet legs must have authoritative final results before payout reconciliation';
+  if not exists (select 1 from public.bet_legs where bet_id = p_bet_id) then
+    raise exception 'Bet has no selections to reconcile';
   end if;
 
   if exists (select 1 from public.bet_legs where bet_id = p_bet_id and result_status = 'lost') then
     v_status := 'lost';
     v_target_payout := 0;
+  elsif exists (select 1 from public.bet_legs where bet_id = p_bet_id and result_status = 'pending') then
+    raise exception 'Bet still has unresolved selections';
   elsif exists (select 1 from public.bet_legs where bet_id = p_bet_id and result_status = 'won') then
     v_status := 'won';
     select round(v_bet.stake * exp(coalesce(sum(ln(odds_snapshot)),0)),2)
@@ -293,3 +292,170 @@ drop trigger if exists wallet_recovery_ledger_immutable on public.wallet_recover
 create trigger wallet_recovery_ledger_immutable
 before update or delete on public.wallet_recovery_ledger
 for each row execute function public.betnova_reject_recovery_audit_mutation();
+
+
+-- Record all initial settlement credits in the same cumulative payout field used
+-- by corrections. The legacy settlement RPC remains compatible with this trigger.
+create or replace function public.betnova_track_initial_bet_return()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.entry_type = 'bet_return'
+     and new.reference_type = 'bet'
+     and new.reference_id is not null then
+    update public.bets
+    set credited_payout = credited_payout + new.amount
+    where id = new.reference_id;
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.betnova_track_initial_bet_return() from public, anon, authenticated;
+drop trigger if exists wallet_ledger_track_bet_return on public.wallet_ledger;
+create trigger wallet_ledger_track_bet_return
+after insert on public.wallet_ledger
+for each row execute function public.betnova_track_initial_bet_return();
+
+-- Re-open only the affected fixture's settlement graph. Historical wallet
+-- credits remain untouched; the subsequent replay applies payout deltas.
+create or replace function public.betnova_reopen_fixture_for_correction(p_fixture_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_role text := coalesce(current_setting('request.jwt.claims', true)::jsonb ->> 'role', '');
+  v_count integer := 0;
+begin
+  if v_role <> 'service_role' then
+    raise exception 'Trusted settlement processor only';
+  end if;
+  if p_fixture_id is null then raise exception 'Fixture is required'; end if;
+
+  perform 1 from public.fixtures where id = p_fixture_id for update;
+  if not found then raise exception 'Fixture not found'; end if;
+
+  update public.markets
+  set status = 'open', settled_at = null, last_updated_at = now()
+  where fixture_id = p_fixture_id and is_active = true
+    and status in ('settled','void','suspended','open');
+  get diagnostics v_count = row_count;
+
+  update public.market_selections ms
+  set status = 'active', result_status = 'pending', updated_at = now()
+  from public.markets m
+  where m.id = ms.market_id and m.fixture_id = p_fixture_id and m.is_active = true;
+
+  update public.bet_legs
+  set result_status = 'pending', settled_at = null
+  where fixture_id = p_fixture_id;
+
+  update public.bets b
+  set status = 'pending', settled_at = null
+  where exists (
+    select 1 from public.bet_legs bl
+    where bl.bet_id = b.id and bl.fixture_id = p_fixture_id
+  );
+
+  return v_count;
+end;
+$$;
+
+revoke all on function public.betnova_reopen_fixture_for_correction(uuid) from public, anon, authenticated;
+grant execute on function public.betnova_reopen_fixture_for_correction(uuid) to service_role;
+
+-- Recalculate each affected bet from its immutable odds snapshots. This replaces
+-- direct payout insertion with an idempotent payout-delta reconciliation.
+create or replace function public.betnova_settle_market(
+  p_market_id uuid,
+  p_winning_selection_ids uuid[],
+  p_void boolean default false
+)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_role text := coalesce(current_setting('request.jwt.claims', true)::jsonb ->> 'role', '');
+  v_market public.markets%rowtype;
+  v_bet_id uuid;
+  v_result integer := 0;
+  v_revision text;
+begin
+  if not ((v_user is not null and public.betnova_is_admin()) or v_role = 'service_role') then
+    raise exception 'Administrator or trusted event processor required';
+  end if;
+
+  select * into v_market
+  from public.markets
+  where id = p_market_id
+  for update;
+  if not found or v_market.status not in ('open','suspended') then
+    raise exception 'Market is not available for settlement';
+  end if;
+
+  if p_void is not true and (
+    coalesce(array_length(p_winning_selection_ids,1),0) = 0
+    or exists (
+      select 1 from unnest(p_winning_selection_ids) x
+      where not exists (
+        select 1 from public.market_selections ms
+        where ms.id = x and ms.market_id = p_market_id
+      )
+    )
+  ) then
+    raise exception 'Winning selections must belong to this market';
+  end if;
+
+  update public.market_selections ms
+  set result_status = case when p_void then 'void'
+                           when ms.id = any(p_winning_selection_ids) then 'won'
+                           else 'lost' end,
+      status = case when p_void then 'void'
+                    when ms.id = any(p_winning_selection_ids) then 'won'
+                    else 'lost' end,
+      updated_at = now()
+  where ms.market_id = p_market_id;
+
+  update public.markets
+  set status = case when p_void then 'void' else 'settled' end,
+      settled_at = now(), last_updated_at = now()
+  where id = p_market_id;
+
+  update public.bet_legs bl
+  set result_status = ms.result_status, settled_at = now()
+  from public.market_selections ms
+  where bl.selection_id = ms.id and bl.market_id = p_market_id;
+
+  for v_bet_id in
+    select distinct b.id
+    from public.bets b
+    join public.bet_legs bl on bl.bet_id = b.id
+    where bl.market_id = p_market_id
+      and b.status = 'pending'
+      and (
+        exists (select 1 from public.bet_legs x where x.bet_id = b.id and x.result_status = 'lost')
+        or not exists (select 1 from public.bet_legs x where x.bet_id = b.id and x.result_status = 'pending')
+      )
+    order by b.id
+  loop
+    v_revision := p_market_id::text || ':' || gen_random_uuid()::text;
+    perform public.betnova_reconcile_bet_payout(
+      v_bet_id, v_revision, 'Automatic market settlement'
+    );
+    v_result := v_result + 1;
+  end loop;
+
+  return v_result;
+end;
+$$;
+
+revoke all on function public.betnova_settle_market(uuid,uuid[],boolean) from public, anon;
+grant execute on function public.betnova_settle_market(uuid,uuid[],boolean) to authenticated, service_role;
