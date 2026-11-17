@@ -310,7 +310,40 @@ Deno.serve(async (req: Request) => {
     const fixture = await getFixture(fixtureId);
     if (!fixture) return false;
     const result = await processGoalList(providerFixtureId, fixture, link, events, finalScore, baselineOnly);
-    return result.ok;
+    if (!result.ok) return false;
+
+    // A VAR replay on an already-finished fixture must also replay the
+    // full-time event, otherwise match-result / BTTS / totals markets can stay open.
+    if (!baselineOnly && fixture.status === "finished") {
+      const checkedAt = new Date().toISOString();
+      const { data: fullTimeEvent, error: fullTimeError } = await supabase.from("fixture_events")
+        .upsert({
+          fixture_id: fixtureId,
+          provider: PROVIDER,
+          provider_event_id: providerFixtureId + ":full_time",
+          event_type: "full_time",
+          period: "full_time",
+          event_data: {
+            source: PROVIDER, confirmed: true, final: true,
+            home_score: finalScore.home, away_score: finalScore.away,
+            reconciled_after_provider_event_update: true,
+          },
+          occurred_at: checkedAt,
+        }, { onConflict: "provider,provider_event_id" })
+        .select("id").maybeSingle();
+      if (fullTimeError || !fullTimeEvent?.id) {
+        providerErrors.push("could not refresh the final-time event after VAR correction");
+        return false;
+      }
+      const { error: fullTimeSettleError } = await supabase.rpc(
+        "betnova_process_live_event", { p_event_id: fullTimeEvent.id },
+      );
+      if (fullTimeSettleError) {
+        providerErrors.push("final-time markets could not be replayed after VAR correction");
+        return false;
+      }
+    }
+    return true;
   }
 
   const liveScores = await providerGet("/livescores?sport=football");
