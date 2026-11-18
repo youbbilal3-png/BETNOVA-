@@ -616,3 +616,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
   #root .app-shell .team-matchup .team-logo-frame{width:50px!important;height:50px!important;padding:6px!important}
   #root .app-shell .team-matchup .team b{font-size:10px!important}
 }
+
+/* Country flag marker on each club badge */
+#root .app-shell .team-matchup .team-logo-frame{position:relative!important;overflow:visible!important}
+#root .app-shell .team-matchup .team-logo-image{border-radius:9px!important}
+#root .app-shell .team-matchup .team-country-flag{position:absolute!important;right:-7px!important;bottom:-6px!important;z-index:3!important;display:grid!important;place-items:center!important;min-width:25px!important;height:21px!important;padding:0 3px!important;border-radius:7px!important;background:#091321!important;border:1px solid #8cecdf!important;font-size:15px!important;line-height:1!important;box-shadow:0 4px 10px #0009!important}
+#root .app-shell .team-matchup .team-logo-fallback{font-size:29px!important;background:transparent!important}
+@media(max-width:760px){#root .app-shell .team-matchup .team-country-flag{right:-5px!important;bottom:-5px!important;min-width:22px!important;height:19px!important;font-size:13px!important}}
