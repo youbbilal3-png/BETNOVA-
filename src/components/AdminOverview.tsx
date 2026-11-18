@@ -37,13 +37,17 @@ export default function AdminOverview({ onClose }: Props) {
   const [methods, setMethods] = useState<PaymentMethod[]>([])
   const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null)
   const [providerHealthError, setProviderHealthError] = useState('')
-  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'payments' | 'providers'>('deposits')
+  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'payments' | 'providers' | 'wallet'>('deposits')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({})
   const [currencyDrafts, setCurrencyDrafts] = useState<Record<string, string[]>>({})
   const [payoutReferences, setPayoutReferences] = useState<Record<string, string>>({})
+  const [ownerCreditAmount, setOwnerCreditAmount] = useState('')
+  const [ownerCreditCurrency, setOwnerCreditCurrency] = useState('DZD')
+  const [ownerCreditNote, setOwnerCreditNote] = useState('Owner wallet top-up')
+  const [ownerWalletBalance, setOwnerWalletBalance] = useState<number | null>(null)
 
   const loadProviderHealth = useCallback(async () => {
     if (!supabase) {
@@ -117,6 +121,32 @@ export default function AdminOverview({ onClose }: Props) {
     return () => { active = false }
   }, [loadFinance, loadProviderHealth])
 
+  async function loadOwnerWallet() {
+    if (!supabase) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data, error: readError } = await supabase.from('wallet_accounts').select('available_balance').eq('user_id', user.id).eq('currency', ownerCreditCurrency).maybeSingle()
+    if (readError) { setError(readError.message); return }
+    setOwnerWalletBalance(Number(data?.available_balance ?? 0))
+  }
+
+  async function creditOwnerWallet() {
+    if (!supabase) return
+    const amount = Number(ownerCreditAmount)
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000 || !ownerCreditNote.trim()) { setError('Enter a valid amount and a reason for this credit.'); return }
+    setBusyId('owner-wallet'); setError(''); setNotice('')
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+      if (!user) throw new Error('Sign in again to continue.')
+      const { data, error: rpcError } = await supabase.rpc('betnova_admin_credit_wallet', { p_user_id: user.id, p_amount: amount, p_currency: ownerCreditCurrency, p_description: ownerCreditNote.trim(), p_idempotency_key: crypto.randomUUID() })
+      if (rpcError) throw rpcError
+      setOwnerCreditAmount('')
+      setNotice('Wallet credited successfully. New balance: ' + money(Number(data), ownerCreditCurrency))
+      await loadOwnerWallet()
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not credit owner wallet.') }
+    finally { setBusyId(null) }
+  }
   async function openDepositProof(path: string) {
     if (!supabase) return
     const tab = window.open('about:blank', '_blank')
@@ -228,6 +258,7 @@ export default function AdminOverview({ onClose }: Props) {
             <button className={tab === 'withdrawals' ? 'active' : ''} onClick={() => setTab('withdrawals')}><CreditCard size={14}/> Withdrawals <b>{withdrawals.length}</b></button>
             <button className={tab === 'payments' ? 'active' : ''} onClick={() => setTab('payments')}><ShieldCheck size={14}/> Methods</button>
             <button className={tab === 'providers' ? 'active' : ''} onClick={() => { setTab('providers'); void loadProviderHealth() }}><Activity size={14}/> Data health</button>
+            <button className={tab === 'wallet' ? 'active' : ''} onClick={() => { setTab('wallet'); void loadOwnerWallet() }}><Wallet size={14}/> My wallet</button>
             <button className="admin-refresh" onClick={() => void refreshFinance()} aria-label="Refresh finance"><RefreshCw size={14}/></button>
           </div>
           {error && <p className="admin-message error">{error}</p>}
@@ -249,6 +280,17 @@ export default function AdminOverview({ onClose }: Props) {
               <label className="admin-payout-reference">External transfer reference<input value={payoutReferences[item.id] ?? ''} onChange={event => setPayoutReferences(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Transaction / transfer ID" maxLength={160} /></label>
               <div className="admin-finance-actions"><button disabled={busyId === item.id || (payoutReferences[item.id] ?? '').trim().length < 4} onClick={() => void reviewWithdrawal(item.id, 'paid')}><CheckCircle2 size={14}/> Mark paid</button><button className="reject" disabled={busyId === item.id} onClick={() => void reviewWithdrawal(item.id, 'reject')}><XCircle size={14}/> Reject & release</button></div>
             </article>)}
+          </div>}
+          {tab === 'wallet' && <div className="admin-finance-list">
+            <article className="admin-finance-item">
+              <div className="admin-finance-top"><b>Owner wallet</b><span>Administrator only</span></div>
+              <p>Your personal BETNOVA wallet. Each new credit is a separate recorded transaction; the same submitted transaction cannot be duplicated.</p>
+              <label className="admin-payout-reference">Currency<select value={ownerCreditCurrency} onChange={event => { setOwnerCreditCurrency(event.target.value); setOwnerWalletBalance(null) }}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select></label>
+              <div className="admin-market-row"><span>Current available balance</span><b>{ownerWalletBalance === null ? '—' : money(ownerWalletBalance, ownerCreditCurrency)}</b></div>
+              <label className="admin-payout-reference">Amount to add<input type="number" min="0.01" step="0.01" value={ownerCreditAmount} onChange={event => setOwnerCreditAmount(event.target.value)} placeholder="Enter amount" /></label>
+              <label className="admin-payout-reference">Reason / note<input value={ownerCreditNote} onChange={event => setOwnerCreditNote(event.target.value)} maxLength={240} /></label>
+              <div className="admin-finance-actions"><button disabled={busyId === 'owner-wallet' || !ownerCreditAmount || !ownerCreditNote.trim()} onClick={() => void creditOwnerWallet()}><Wallet size={14}/> Add funds to my wallet</button><button onClick={() => void loadOwnerWallet()}><RefreshCw size={14}/> Refresh balance</button></div>
+            </article>
           </div>}
           {tab === 'providers' && <div className="admin-finance-list">
             {providerHealthError && <p className="admin-message error">{providerHealthError}</p>}
