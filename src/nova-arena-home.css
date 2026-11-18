@@ -1217,3 +1217,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
   .app-shell .league-filters{width:100%!important}
   .app-shell .league-select{width:100%!important}
 }
+/* Progressive match loading keeps the expanded catalogue smooth on phones */
+.app-shell .load-more-matches{
+  display:block!important;width:100%!important;min-height:44px!important;margin:12px 0 4px!important;
+  padding:10px 14px!important;border:1px solid #526b9e!important;border-radius:12px!important;
+  background:linear-gradient(120deg,#223f70,#3d3975)!important;color:#eef2ff!important;
+  font-size:11px!important;font-weight:850!important;letter-spacing:.2px!important;
+  box-shadow:0 8px 20px #0004,inset 0 1px #ffffff18!important;
+  cursor:pointer!important;touch-action:manipulation!important;
+}
+.app-shell .load-more-matches:hover{background:linear-gradient(120deg,#2b4d86,#4b4389)!important;border-color:#8198d1!important}
+.app-shell .load-more-matches:focus-visible{outline:2px solid #a7bcff!important;outline-offset:3px!important}
