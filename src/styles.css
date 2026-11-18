@@ -318,3 +318,10 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 /* Keep the Match Winner label directly beneath VS without changing the team row or odds buttons. */
 .versus-group{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:none}
 .versus-group .odds-caption{margin:0;white-space:nowrap;font-size:7px;letter-spacing:.55px}
+
+/* Match card date and full-card navigation affordance. */
+.match-card{cursor:pointer}
+.match-card:focus-visible{outline:2px solid #20a879;outline-offset:3px}
+.match-time{flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.match-date{display:inline-flex;align-items:center;gap:5px;color:#87998e;font-size:8px;font-weight:600;white-space:nowrap}
+@media(max-width:390px){.match-date{font-size:7px}}
