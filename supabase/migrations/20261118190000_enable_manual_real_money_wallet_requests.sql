@@ -88,3 +88,7 @@ grant execute on function public.betnova_place_bet(jsonb,numeric,text,uuid) to a
 
 -- Market settlement remains server-side only.
 revoke all on function public.betnova_settle_market(uuid,uuid[],boolean) from public, anon, authenticated;
+
+-- Prevent unsupported same-fixture combinations from being multiplied as independent odds.
+create unique index if not exists bet_legs_one_selection_per_fixture_idx
+  on public.bet_legs(bet_id,fixture_id);
