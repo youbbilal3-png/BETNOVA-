@@ -164,7 +164,7 @@ Deno.serve(async (req: Request) => {
           } else if (normalized.includes("double chance")) {
             marketKey = "double_chance"; marketName = "Double Chance";
             accepted = (bet.values ?? []).flatMap((v: any) => {
-              const label = String(v.value ?? "").trim().toLowerCase().replace(/\\s+/g, "");
+              const label = String(v.value ?? "").trim().toLowerCase().replace(/\s+/g, "");
               const key = ["1x","home/draw","homeordraw"].includes(label) ? "1X" :
                 ["x2","draw/away","draworaway"].includes(label) ? "X2" :
                 ["12","home/away","homeoraway"].includes(label) ? "12" : "";
