@@ -801,3 +801,84 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
   #root .app-shell .top-actions .language-picker select { width: 39px !important; max-width: 39px !important; }
   #root .app-shell .join-btn { padding-inline: 7px !important; font-size: 8px !important; }
 }
+
+
+/* Compact mobile hero so live fixtures enter the first viewport without changing the visual identity. */
+@media (max-width: 760px) {
+  #root .app-shell .nova-content { gap: 10px !important; }
+  #root .app-shell .hero {
+    min-height: 168px !important;
+    height: auto !important;
+    padding: 15px 15px !important;
+    border-radius: 20px !important;
+  }
+  #root .app-shell .hero-copy { max-width: 70% !important; }
+  #root .app-shell .hero .eyebrow { font-size: 7px !important; letter-spacing: 1.2px !important; }
+  #root .app-shell .hero h1 {
+    font-size: clamp(27px, 7.4vw, 35px) !important;
+    line-height: .98 !important;
+    letter-spacing: -1.3px !important;
+    margin: 8px 0 6px !important;
+  }
+  #root .app-shell .hero-copy > p {
+    max-width: 270px !important;
+    font-size: 9px !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+  }
+  #root .app-shell .hero-actions { margin-top: 9px !important; gap: 7px !important; }
+  #root .app-shell .hero-actions button {
+    min-height: 33px !important;
+    padding: 0 10px !important;
+    border-radius: 10px !important;
+    font-size: 8px !important;
+  }
+  #root .app-shell .hero-actions button svg { width: 12px !important; height: 12px !important; }
+  #root .app-shell .hero-actions > span { font-size: 7px !important; }
+  #root .app-shell .hero-art.nova-hero-scene {
+    right: -45px !important;
+    width: 165px !important;
+    height: 165px !important;
+    transform: translateY(-50%) scale(.72) !important;
+    transform-origin: center !important;
+  }
+  #root .app-shell .nova-core { width: 112px !important; height: 112px !important; }
+  #root .app-shell .nova-core-inner {
+    width: 65px !important; height: 65px !important;
+    font-size: 46px !important; border-radius: 19px !important;
+  }
+  #root .app-shell .nova-hero-scene .orbit-a { width: 185px !important; height: 78px !important; }
+  #root .app-shell .nova-hero-scene .orbit-b { width: 198px !important; height: 106px !important; }
+  #root .app-shell .nova-float-card { padding: 6px 7px !important; font-size: 5px !important; }
+  #root .app-shell .quick-stats {
+    gap: 5px !important;
+    margin: 0 !important;
+  }
+  #root .app-shell .quick-stats > div {
+    min-height: 52px !important;
+    padding: 6px 5px !important;
+    gap: 5px !important;
+    border-radius: 11px !important;
+  }
+  #root .app-shell .stat-icon,
+  #root .app-shell .stat-icon.teal,
+  #root .app-shell .stat-icon.lime {
+    width: 24px !important; height: 24px !important; border-radius: 8px !important;
+  }
+  #root .app-shell .quick-stats b { font-size: 7px !important; line-height: 1.15 !important; }
+  #root .app-shell .quick-stats small { display: none !important; }
+  #root .app-shell .events-section { padding: 12px 10px !important; }
+  #root .app-shell .section-heading { margin-bottom: 8px !important; gap: 6px !important; }
+  #root .app-shell .section-heading h2 { font-size: 19px !important; }
+  #root .app-shell .section-heading p { display: none !important; }
+  #root .app-shell .event-view-tabs { margin-bottom: 7px !important; }
+  #root .app-shell .sports-tabs { margin-bottom: 7px !important; }
+  #root .app-shell .filter-row { margin-bottom: 8px !important; }
+}
+@media (max-width: 380px) {
+  #root .app-shell .hero { min-height: 160px !important; padding: 13px 12px !important; }
+  #root .app-shell .hero-copy { max-width: 72% !important; }
+  #root .app-shell .hero-art.nova-hero-scene { right: -52px !important; transform: translateY(-50%) scale(.66) !important; }
+  #root .app-shell .hero h1 { font-size: clamp(25px, 7.2vw, 31px) !important; }
+  #root .app-shell .hero-copy > p { font-size: 8px !important; }
+}
