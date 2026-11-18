@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useLanguage } from '../i18n'
 
 const words: Record<string, string[]> = {
@@ -36,6 +37,7 @@ type Props = { markets: CatalogMarket[]; live: boolean; selectedIds: string[]; o
 export default function MarketCatalog({ markets, live, selectedIds, onSelect }: Props) {
  const { language } = useLanguage()
  const w = words[language] || words.en
+ const [expandedGroups, setExpandedGroups] = useState<string[]>(groups.map(group => String(group.title)))
  const option = (v: string | number) => typeof v === 'number' ? w[v] : v
  const findMarket = (key: string, line?: string) => markets.find(m => {
   if ((m.market_key || m.market_type) !== key || m.status !== 'open' || m.is_live !== live) return false
@@ -71,9 +73,14 @@ export default function MarketCatalog({ markets, live, selectedIds, onSelect }: 
  }
  return <section className="market-catalog">
   <header className="market-catalog-top"><div><span>{w[0]}</span><small>{w[1]}</small></div><i>BETNOVA</i></header>
-  {groups.map(group=><section className="market-catalog-group" key={group.title}>
-   <h4>{w[group.title]}</h4>
-   {group.items.map(item=><article className="market-catalog-item" key={item.name}>
+  {groups.map(group=>{
+   const groupKey = String(group.title)
+   const isExpanded = expandedGroups.includes(groupKey)
+   return <section className="market-catalog-group" key={group.title}>
+   <button type="button" className="market-catalog-group-toggle" aria-expanded={isExpanded} onClick={() => setExpandedGroups(current => current.includes(groupKey) ? current.filter(key => key !== groupKey) : [...current, groupKey])}>
+    <h4>{w[group.title]}</h4>{isExpanded ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+   </button>
+   {isExpanded && <div className="market-catalog-group-body">{group.items.map(item=><article className="market-catalog-item" key={item.name}>
     <div className="market-catalog-item-title">{w[item.name]}<span>{w[1]}</span></div>
     {item.choices.length && typeof item.choices[0] === 'string' && item.choices.every(v=>/^\\d+(\\.\\d+)?$/.test(String(v))) ?
      <div className="market-line-grid">{item.choices.map(line=>{
@@ -93,8 +100,8 @@ export default function MarketCatalog({ markets, live, selectedIds, onSelect }: 
       const picked=!!pick&&selectedIds.includes(pick.selectionId)
       return <button type="button" disabled={!pick} aria-pressed={picked} className={picked?'market-outcome picked':'market-outcome'} key={v} onClick={()=>handle(market,key)}><span>{choice}</span><b>{pick?.odds ?? '—'}</b></button>
      })}</div>}
-   </article>)}
-  </section>)}
+   </article>)}</div>}
+  </section>})}
   <p className="market-catalog-note">{w[25]}</p>
  </section>
 }
