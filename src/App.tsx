@@ -52,6 +52,7 @@ type Match = {
   score?: string
   kickoff?: string
   dateLabel?: string
+  startsAt?: string
 }
 
 
@@ -98,6 +99,19 @@ function countryFlagForCompetition(competition: string, country: string) {
     [/\b(poland|ekstraklasa)\b/, '🇵🇱'], [/\b(ukraine)\b/, '🇺🇦'], [/\b(russia)\b/, '🇷🇺'],
   ]
   return flags.find(([pattern]) => pattern.test(name))?.[1] ?? '🌍'
+}
+
+function canonicalCompetitionLabel(competition: string, country: string) {
+  const value = (String(competition) + ' ' + String(country)).toLowerCase()
+  if (/premier league/.test(value) && /england/.test(value) && !/women|u\\d|cup/.test(value)) return 'Premier League'
+  if (/la liga/.test(value) && !/2|women/.test(value)) return 'La Liga'
+  if (/serie a/.test(value) && /italy|italia/.test(value)) return 'Serie A'
+  if (/bundesliga/.test(value) && /germany|deutschland/.test(value) && !/2\\.? bundesliga|bundesliga 2|women/.test(value)) return 'Bundesliga'
+  if (/ligue 1/.test(value) && /france/.test(value) && !/women/.test(value)) return 'Ligue 1'
+  if (/champions league/.test(value) && !/women/.test(value)) return 'UEFA Champions League'
+  if (/europa league/.test(value) && !/conference/.test(value)) return 'UEFA Europa League'
+  if (/conference league/.test(value)) return 'UEFA Conference League'
+  return competition
 }
 
 function isInternationalCompetition(competition: string, country: string) {
@@ -366,11 +380,12 @@ export default function App() {
           const startsAt = new Date(row.starts_at)
           return {
             id: row.id,
-            league: competition?.name ?? 'Competition',
+            league: canonicalCompetitionLabel(competition?.name ?? 'Competition', competition?.country ?? ''),
             country: competition?.country ?? '',
             countryFlag: countryFlagForCompetition(competition?.name ?? '', competition?.country ?? ''),
             time: startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             kickoff: startsAt.toLocaleString([], { dateStyle: 'full', timeStyle: 'short' }),
+            startsAt: String(row.starts_at),
             dateLabel: startsAt.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }),
             home: home?.name ?? 'Home team',
             away: away?.name ?? 'Away team',
@@ -388,8 +403,30 @@ export default function App() {
           }
         })
 
-        if (mapped.length) {
-          setMatches(mapped)
+        // Different feeds sometimes store the same fixture under slightly
+        // different competition aliases. Collapse those visual duplicates only;
+        // keep the underlying database rows and their settlement records untouched.
+        const uniqueMatches = new Map<string, Match>()
+        const normalizeTeam = (value: string) => String(value ?? '')
+          .normalize('NFKD')
+          .replace(/[\\u0300-\\u036f]/g, '')
+          .toLowerCase()
+          .replace(/\\b(fc|cf|cd|sc|ac|fk|sk|afc|cfc|fbc|ca)\\b/g, '')
+          .replace(/[^a-z0-9]+/g, ' ')
+          .trim()
+        const matchQuality = (match: Match) =>
+          match.winnerPicks.filter(pick => pick && !pick.isDemo).length * 1000 +
+          Math.min(match.marketsCount, 100) * 10 +
+          (match.country ? 1 : 0)
+        for (const match of mapped) {
+          const minute = Math.floor(Date.parse(match.startsAt ?? '') / 60000)
+          const key = [normalizeTeam(match.home), normalizeTeam(match.away), minute].join('|')
+          const existing = uniqueMatches.get(key)
+          if (!existing || matchQuality(match) > matchQuality(existing)) uniqueMatches.set(key, match)
+        }
+        const deduplicatedMatches = Array.from(uniqueMatches.values())
+        if (deduplicatedMatches.length) {
+          setMatches(deduplicatedMatches)
         } else {
           setMatches([])
         }
