@@ -9,6 +9,7 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
   const [displayName, setDisplayName] = useState('')
   const [createdAt, setCreatedAt] = useState('')
   const [verified, setVerified] = useState(false)
+  const [accountBalances, setAccountBalances] = useState<{currency:string;available_balance:number;reserved_balance:number}[]>([])
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -27,6 +28,8 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
       setDisplayName(String(data.user.user_metadata?.display_name ?? data.user.user_metadata?.full_name ?? ''))
       setCreatedAt(data.user.created_at)
       setVerified(Boolean(data.user.email_confirmed_at))
+      const { data: balances } = await supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance').eq('user_id', data.user.id)
+      if (active) setAccountBalances((balances ?? []) as {currency:string;available_balance:number;reserved_balance:number}[])
     }
     void loadAccount().catch(caught => setError(caught instanceof Error ? caught.message : 'Could not load account details.'))
     return () => { active = false }
@@ -78,6 +81,15 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
       <button className="account-close" onClick={onClose} aria-label="Close"><X size={19}/></button>
       <div className="account-kicker"><ShieldCheck size={15}/> BETNOVA · ACCOUNT CENTRE</div>
       <div className="account-heading"><span className="account-avatar"><UserRound size={25}/></span><div><h2 id="account-title">My profile</h2><p>Manage your personal details and account security.</p></div></div>
+      <div className="account-wallet-summary">
+        <div className="account-wallet-summary-head"><span>WALLET BALANCE</span><button type="button" onClick={() => onOpenWallet('deposit')}>Add funds</button></div>
+        <div className="account-wallet-balance-grid">
+          {['DZD','USD','EUR'].map(currency => {
+            const balance = accountBalances.find(item => item.currency === currency)
+            return <div key={currency}><small>{currency}</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(balance?.available_balance ?? 0))}</strong>{Number(balance?.reserved_balance ?? 0) > 0 && <small>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(balance?.reserved_balance))} reserved</small>}</div>
+          })}
+        </div>
+      </div>
       <div className="account-wallet-actions"><button type="button" onClick={() => onOpenWallet('deposit')}><ArrowDownToLine size={17}/> Deposit</button><button type="button" onClick={() => onOpenWallet('withdraw')}><ArrowUpFromLine size={17}/> Withdraw</button></div>
       <div className="account-status-grid">
         <div><span>EMAIL STATUS</span><b className={verified ? 'verified' : 'unverified'}>{verified ? <><CheckCircle2 size={15}/> Verified</> : 'Not verified'}</b></div>
