@@ -230,7 +230,7 @@ export default function App() {
     <div className="app-shell">
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
       <header className="topbar">
-        <a className="brand" href="#"><span className="brand-symbol"><Trophy size={22} strokeWidth={2.5}/></span><span>NOVA <span className="brand-accent">ARENA</span><small>SPORTS · BY BETNOVA</small></span></a>
+        <a className="brand nova-brand-lockup" href="#"><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">N</span><i/></span><span className="nova-brand-word">NOVA<span className="brand-accent">ARENA</span><small>THE NEXT SPORTS EXPERIENCE</small></span></a>
         <nav className="desktop-nav"><a className="active" href="#events">{t('sports')}</a><button onClick={() => openEventView('live')}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => openEventView('results')}>{t('results')}</button></nav>
         <div className="top-actions"><label className="language-picker" aria-label={t("language")}><Globe2 size={14}/><select value={language} onChange={event=>setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="wallet-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> {t("wallet")}</button><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>Admin</button></> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button></>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? t('signout') : t('join')} <ArrowRight size={16}/></button><button className="menu-btn" aria-label={t("menu")} onClick={() => setMobileMoreOpen(true)}><Menu/></button></div>
       </header>
@@ -250,17 +250,9 @@ export default function App() {
         </aside>
 
         <section className="main-content nova-content">
-          <div className="nova-welcome-strip">
-            <div className="nova-welcome-copy">
-              <span className="nova-kicker">NOVA ARENA <i/> YOUR SPORTS HUB</span>
-              <h2>One arena. <em>Every moment.</em></h2>
-              <p>Follow the fixtures, explore the markets and stay close to every match.</p>
-            </div>
-            <div className="nova-welcome-mark"><div className="nova-mark-orbit"/><Trophy size={34}/><span>SPORTS<br/>CENTRE</span></div>
-          </div>
           <section className="hero">
             <div className="hero-copy"><div className="eyebrow"><span/> {t("game_starts")}</div><h1>{t("feel_every")}<br/><em>{t("moment")}</em></h1><p>{t("hero_subtitle")}</p><div className="hero-actions"><button onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}>{t("explore_events_btn")} <ArrowRight size={16}/></button><span><ShieldCheck size={15}/> {t("safer_experience")}</span></div></div>
-            <div className="hero-art"><div className="orbit orbit-a"/><div className="orbit orbit-b"/><div className="hero-ball">⚽</div><div className="art-tag tag-top"><span className="live-dot"/> MATCH DAY</div><div className="art-tag tag-bottom"><Trophy size={14}/> BIG MOMENTS AHEAD</div><div className="art-spark">✦</div></div>
+            <div className="hero-art nova-hero-scene"><div className="nova-scene-grid"/><div className="orbit orbit-a"/><div className="orbit orbit-b"/><div className="nova-core"><div className="nova-core-inner">N</div></div><div className="nova-float-card nova-float-live"><span className="live-dot"/> LIVE ARENA <b>01</b></div><div className="nova-float-card nova-float-signal"><Sparkles size={13}/> NEXT LEVEL <b>SPORTS</b></div><div className="nova-scene-spark nova-spark-one">✦</div><div className="nova-scene-spark nova-spark-two">✧</div></div>
             <div className="hero-index">01 <span>/</span> 04</div>
           </section>
 
