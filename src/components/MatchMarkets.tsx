@@ -85,7 +85,17 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       .order('name')
     if (queryError) { setError(t('could_not_load_markets')); setMarkets([]) }
     else {
-      setMarkets(((data ?? []) as Market[]).map(m => ({...m, market_selections: (m.market_selections ?? []).filter(s => s.status === 'active' && s.result_status === 'pending')})))
+      setMarkets(((data ?? []) as Market[]).map(m => {
+        const marketSelections = (m.market_selections ?? []).filter(s => s.status === 'active' && s.result_status === 'pending')
+        if (m.market_key === 'match_result' || m.market_type === 'match_result') {
+          const rank = (name: string) => {
+            const value = name.trim().toLowerCase()
+            return ['home','1','win 1'].includes(value) ? 0 : ['draw','x'].includes(value) ? 1 : ['away','2','win 2'].includes(value) ? 2 : 3
+          }
+          marketSelections.sort((left,right)=>rank(left.name)-rank(right.name))
+        }
+        return {...m, market_selections: marketSelections}
+      }))
       setLastUpdated(new Date())
     }
     setLoading(false)
