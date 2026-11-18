@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const API = "https://api.5dollarfootballapi.com/v1";
 const PROVIDER = "fivedollarfootballapi";
-const MAX_ODDS_FIXTURES = 5;
+const MAX_ODDS_FIXTURES = 8;
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, x-betnova-sync-secret",
@@ -413,7 +413,7 @@ Deno.serve(async (req: Request) => {
     const { data: existing, error: findError } = await supabase.from("markets").select("id,status")
       .eq("fixture_id", fixtureId).eq("market_key", marketKey).eq("name", name).maybeSingle();
     if (findError) throw findError;
-    if (existing && existing.status !== "open") return; // Never overwrite a settled market.
+    if (existing && !["open", "suspended"].includes(existing.status)) return; // Never overwrite a settled market; allow fresh live prices to reopen suspended markets.
     const timestamp = now.toISOString();
     const marketPayload = {
       fixture_id: fixtureId, market_type: marketKey, market_key: marketKey, name,
@@ -618,20 +618,32 @@ Deno.serve(async (req: Request) => {
       if (mode === "live" || mode === "finalize") await syncEvents(item, id);
     }
 
-    // Free plan returns each fixture's full Bet365 odds through a per-fixture call.
-    // Prematch batches contain five fixtures; ten runs per three-hour cycle cover
-    // up to 50 upcoming fixtures. Five live fixtures are repriced every 15 minutes.
-    // Together, the two schedules stay below the 50/hour local and 60/hour provider caps.
-    const oddsTargets = mode === "live"
-      ? stored.slice(0, MAX_ODDS_FIXTURES)
-      : mode === "prematch" ? stored : [];
+    // Free/Community plans expose live Bet365 prices per fixture. The live endpoint
+    // costs one request plus one request per selected fixture. Eight fixtures every
+    // ten minutes use at most 54 requests/hour, leaving headroom below the 60/hour cap.
+    // Rotate across the provider's live fixture list so later matches are not starved.
+    let oddsTargets: Array<{item:any;id:string}> = [];
+    if (mode === "live" && stored.length) {
+      const { data: cursorState, error: cursorReadError } = await supabase.from("fivedollar_live_odds_state")
+        .select("fixture_cursor").eq("id",1).maybeSingle();
+      if (cursorReadError) throw cursorReadError;
+      const cursor = Number(cursorState?.fixture_cursor ?? 0) % stored.length;
+      const count = Math.min(MAX_ODDS_FIXTURES, stored.length);
+      oddsTargets = Array.from({length:count},(_,i)=>stored[(cursor+i)%stored.length]);
+      const nextCursor = (cursor + count) % stored.length;
+      const { error: cursorWriteError } = await supabase.from("fivedollar_live_odds_state")
+        .upsert({id:1,fixture_cursor:nextCursor,last_run_at:now.toISOString(),last_selected:count},{onConflict:"id"});
+      if (cursorWriteError) throw cursorWriteError;
+    } else if (mode === "prematch") {
+      oddsTargets = stored;
+    }
     for (const target of oddsTargets) {
       try { await syncOdds(target.item, target.id, mode === "live"); }
       catch (error) { errors.push("odds " + target.item.id + ": " + (error instanceof Error ? error.message : "unknown").slice(0, 150)); }
     }
 
     if (mode === "live") {
-      const staleBefore = new Date(Date.now() - 180000).toISOString();
+      const staleBefore = new Date(Date.now() - 12 * 60 * 1000).toISOString();
       const { error } = await supabase.from("markets").update({ status: "suspended", suspended_at: now.toISOString() })
         .eq("source_provider", PROVIDER).eq("is_live", true).eq("status", "open").lt("last_updated_at", staleBefore);
       if (error) errors.push("stale live market suspension: " + error.message.slice(0, 120));
@@ -642,6 +654,7 @@ Deno.serve(async (req: Request) => {
       fixtures_received: fixtures.length, fixtures_selected: fixturesToProcess.length, fixtures_synced: fixturesSynced,
       events_synced: eventsSynced, retracted_goals_recorded: retractedGoals,
       markets_synced: marketsSynced, selections_synced: selectionsSynced,
+      live_odds_targets: oddsTargets.length,
       provider_requests: requests, local_rate_limited: rateLimited,
       prematch_league: prematchLeagueName, prematch_league_id: prematchLeagueId,
       prematch_window_days: mode === "prematch" ? 7 : null,
