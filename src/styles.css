@@ -332,3 +332,9 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .match-time{flex-wrap:wrap;justify-content:flex-end;gap:6px}
 .match-date{display:inline-flex;align-items:center;gap:5px;color:#87998e;font-size:8px;font-weight:600;white-space:nowrap}
 @media(max-width:390px){.match-date{font-size:7px}}
+
+/* Keep Match Result choices visually ordered left-to-right: Win 1, Draw, Win 2, including RTL languages. */
+.market-catalog-item[data-market-key="match_result"] .market-outcomes,
+.market-item[data-market-key="match_result"] .market-outcomes{direction:ltr;grid-template-columns:repeat(3,minmax(0,1fr))}
+.market-catalog-item[data-market-key="match_result"] .market-outcome,
+.market-item[data-market-key="match_result"] .market-outcome{direction:ltr}
