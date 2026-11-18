@@ -159,7 +159,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
         </article>})}
       </div>}
     </section>)}
-    <MarketCatalog />
+    <MarketCatalog markets={markets} live={live} selectedIds={selectedIds} onSelect={onSelect} />
     {live && <div className="markets-live-note"><Clock3 size={13}/> {t('live_prices_warning')}</div>}
   </div>
 }
