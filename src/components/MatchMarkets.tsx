@@ -11,7 +11,7 @@ type Props = {
   live: boolean
 }
 type Selection = { id: string; name: string; odds: number; status: string; result_status: string }
-type Market = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; market_selections: Selection[] }
+type Market = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; settlement_rule: Record<string, unknown> | null; market_selections: Selection[] }
 type LiveEvent = { id: string; event_type: string; period: string | null; minute: number | null; added_time: number | null; player_name: string | null; team: { name: string; short_name: string | null } | null }
 
 const categoryFor = (market: Market, t: (key: any) => string) => {
@@ -78,7 +78,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
     setError('')
     const { data, error: queryError } = await supabase
       .from('markets')
-      .select('id,market_key,market_type,name,status,is_live,last_updated_at,market_selections(id,name,odds,status,result_status)')
+      .select('id,market_key,market_type,name,status,is_live,last_updated_at,settlement_rule,market_selections(id,name,odds,status,result_status)')
       .eq('fixture_id', fixtureId)
       .eq('is_active', true)
       .in('status', ['open','suspended'])
@@ -126,7 +126,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   }, [markets, t])
 
   if (loading) return <div className="markets-loading"><LoaderCircle size={18}/> {t('loading_markets')}</div>
-  if (error) return <div><div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets() }}>{t('try_again')}</button></div><MarketCatalog /></div>
+  if (error) return <div><div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets() }}>{t('try_again')}</button></div><MarketCatalog markets={markets} live={live} selectedIds={selectedIds} onSelect={onSelect} /></div>
 
   const categories = grouped.map(([category]) => category)
   const visibleGroups = activeCategory === 'all' ? grouped : grouped.filter(([category]) => category === activeCategory)
