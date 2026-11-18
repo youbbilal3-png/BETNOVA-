@@ -89,7 +89,7 @@ Deno.serve(async (req: Request) => {
   const requestBody = await req.json().catch(() => ({}));
   const mode = requestBody?.mode === "live" ? "live" : requestBody?.mode === "events" ? "events" : "prematch";
   const requestedBatch = Number(requestBody?.batch ?? 0);
-  const batch = Number.isInteger(requestedBatch) ? Math.max(0, Math.min(mode === "events" ? 4 : 1, requestedBatch)) : 0;
+  const batch = Number.isInteger(requestedBatch) ? Math.max(0, Math.min(mode === "events" ? 9 : 1, requestedBatch)) : 0;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -127,7 +127,7 @@ Deno.serve(async (req: Request) => {
         })
         .slice(0, Math.max(0, MAX_EVENT_SPORTS - selectedSports.length)),
     ];
-    const eventSportsToFetch = eventSports.slice(batch * 10, batch * 10 + 10);
+    const eventSportsToFetch = eventSports.slice(batch * 5, batch * 5 + 5);
     const sportsToFetch = mode === "live"
       ? [{ key: "upcoming", group: "soccer", title: "Soccer live and upcoming" }]
       : mode === "prematch"
