@@ -1,0 +1,306 @@
+/* NOVA ARENA — homepage-only visual identity refresh.
+   Presentation layer only: no business logic, data, betting or wallet behavior changed. */
+:root{
+  --na-bg:#070d0b;--na-surface:#101b16;--na-surface-2:#14231b;--na-line:#263b2e;
+  --na-text:#f3f8f2;--na-muted:#9aafa0;--na-green:#18c982;--na-lime:#d5ff72;
+  --na-shadow:0 22px 54px rgba(0,0,0,.34);
+}
+html,body,#root{background:var(--na-bg);color:var(--na-text)}
+body{background:radial-gradient(ellipse at 14% 0%,#173b2b 0,transparent 34%),radial-gradient(ellipse at 92% 40%,#163225 0,transparent 28%),#070d0b}
+.app-shell{
+  color:var(--na-text);
+  background:radial-gradient(ellipse at 5% 10%,#173b2b88 0,transparent 32%),radial-gradient(ellipse at 96% 54%,#143c2a55 0,transparent 30%),linear-gradient(145deg,#080f0c 0%,#09120e 55%,#07100c 100%);
+}
+.app-shell .ambient-one{background:#19c982;opacity:.12}
+.app-shell .ambient-two{background:#c5fa64;opacity:.07}
+.app-shell>.topbar{
+  min-height:82px;height:auto;padding:12px clamp(16px,4vw,62px);
+  background:linear-gradient(105deg,#09130e 0%,#10251a 58%,#0d1b14 100%);
+  border-bottom:1px solid #c7f7d51c;box-shadow:0 14px 38px #0007;
+  backdrop-filter:blur(22px);
+}
+.app-shell .brand{gap:12px;color:#f7fff8;font-size:25px;letter-spacing:-1.25px}
+.app-shell .brand>span:last-child{line-height:1.02}
+.app-shell .brand-accent{color:var(--na-lime)}
+.app-shell .brand small{margin-top:5px;color:#91ad9b;font-size:8px;letter-spacing:2.05px}
+.app-shell .brand-symbol{
+  width:45px;height:45px;border-radius:15px;position:relative;overflow:hidden;
+  background:linear-gradient(145deg,#d8ff83 0%,#4de39a 48%,#0a8c5b 100%);
+  color:#092619;border:1px solid #e6ffb866;
+  box-shadow:0 10px 24px #19c98245,inset 0 2px 2px #ffffffa8,inset 0 -7px 12px #07563766;
+  transform:perspective(180px) rotateY(-12deg) rotateX(7deg);
+}
+.app-shell .brand-symbol:after{content:"";position:absolute;inset:3px;border:1px solid #ffffff55;border-radius:12px;pointer-events:none}
+.app-shell .brand-symbol svg{filter:drop-shadow(0 2px 2px #064b2d55)}
+.app-shell .desktop-nav{gap:clamp(16px,2.3vw,34px)}
+.app-shell .desktop-nav a,.app-shell .desktop-nav button{color:#a9c1b0;font-size:12px;font-weight:750}
+.app-shell .desktop-nav a.active{color:var(--na-lime)}
+.app-shell .desktop-nav a.active:after{height:3px;background:linear-gradient(90deg,var(--na-green),var(--na-lime));box-shadow:0 0 14px #a6f86c77}
+.app-shell .top-actions{gap:8px}
+.app-shell .top-actions .icon-btn,.app-shell .menu-btn{
+  width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,#1a3023,#102017);
+  color:#d8eddd;border:1px solid #b8eac329;box-shadow:0 5px 13px #0004,inset 0 1px #ffffff12;
+}
+.app-shell .top-actions .language-picker{min-height:42px;border-radius:13px;background:#102017;border:1px solid #b8eac329;color:#d8eddd}
+.app-shell .top-actions .language-picker select{color:#effff1}
+.app-shell .top-actions .login-btn,.app-shell .join-btn,.app-shell .wallet-open-btn,.app-shell .my-bets-open-btn,.app-shell .admin-open-btn{
+  min-height:42px;padding:0 16px;border-radius:13px;font-size:11px;font-weight:850;
+}
+.app-shell .top-actions .login-btn{background:#ffffff08;border:1px solid #b8eac333;color:#e9f7ed}
+.app-shell .join-btn{background:linear-gradient(125deg,#d9ff83,#6fe5a0 65%,#24c984);color:#092718;border:1px solid #e5ffb766;box-shadow:0 9px 22px #19c98235,inset 0 1px #ffffffa8}
+.app-shell .guest-preview-label{border-color:#67d99a55;background:#1ac98214;color:#a9efc1;padding:9px 12px}
+.app-shell>.ticker{
+  min-height:39px;height:auto;padding:8px clamp(16px,4vw,62px);gap:11px;
+  background:linear-gradient(90deg,#10251a,#0c1a12 60%,#10251a);
+  border-bottom:1px solid #b9edc31a;color:#9db7a5;font-size:10px;
+}
+.app-shell .ticker strong{color:var(--na-lime);letter-spacing:1.3px}
+.app-shell .ticker-divider{background:#42634c}
+.app-shell .ticker-right{color:#a7bcae}
+.app-shell .live-dot{background:#5df0a2;box-shadow:0 0 0 4px #5df0a222,0 0 13px #5df0a2}
+.app-shell>.layout{
+  max-width:1500px;padding:30px clamp(16px,3.2vw,48px) 54px;
+  grid-template-columns:205px minmax(0,1fr) 285px;gap:23px;
+}
+.app-shell .left-rail,.app-shell .right-rail{padding-top:0}
+.app-shell .left-rail{
+  padding:17px 13px 18px;border:1px solid #b9edc31b;border-radius:22px;
+  background:linear-gradient(155deg,#13251aee,#0d1912ee 75%);
+  box-shadow:0 18px 44px #0004,inset 0 1px #ffffff0b;height:max-content;
+}
+.app-shell .rail-heading{color:#819b88;font-size:9px;letter-spacing:1.7px;margin:12px 9px}
+.app-shell .rail-item,.app-shell .sport-item{min-height:43px;padding:10px 12px;border-radius:12px;color:#b2c8b8;font-size:11px}
+.app-shell .rail-item.selected,.app-shell .sport-item.chosen{
+  background:linear-gradient(105deg,#1c4830,#173523);color:#e5ffb6;
+  box-shadow:inset 3px 0 var(--na-lime),0 7px 16px #0002;
+}
+.app-shell .rail-count{background:#254a32;color:#d6f79a}
+.app-shell .live-count{color:#64efaa}
+.app-shell .rail-separator{background:#ffffff14}
+.app-shell .rail-promo{
+  margin:25px 2px 0;padding:17px;border-radius:17px;
+  background:radial-gradient(circle at 90% 0%,#b4f66c22,transparent 50%),linear-gradient(145deg,#1a3d29,#102319);
+  border:1px solid #a9e77c33;box-shadow:0 12px 28px #0003,inset 0 1px #ffffff12;
+}
+.app-shell .promo-orb{width:39px;height:39px;border-radius:13px;background:linear-gradient(145deg,#d7ff82,#36d58e);color:#10331f;box-shadow:0 7px 15px #1bd18b33,inset 0 1px #fff}
+.app-shell .rail-promo b{color:#f0ffe8;font-size:12px}
+.app-shell .rail-promo p{color:#a3bba8;font-size:10px}
+.app-shell .rail-promo>span{color:var(--na-lime)}
+.app-shell .hero{
+  min-height:315px;padding:38px 40px;border-radius:27px;isolation:isolate;overflow:hidden;
+  border:1px solid #a5efb94d;
+  background:radial-gradient(circle at 77% 46%,#4cf09c30 0,transparent 25%),radial-gradient(circle at 95% 0%,#d9ff7224 0,transparent 34%),linear-gradient(116deg,#10291b 0%,#145033 48%,#0d3828 100%);
+  box-shadow:0 28px 65px #0008,inset 0 1px #ffffff35,inset 0 -30px 70px #020a0666;
+}
+.app-shell .hero:before{background:linear-gradient(130deg,#ffffff16,transparent 34%,transparent 65%,#d7ff7212)}
+.app-shell .hero:after{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.48;
+  background:repeating-linear-gradient(125deg,transparent 0 34px,#ffffff08 35px 36px,transparent 37px 70px);
+  mask-image:linear-gradient(90deg,transparent,#000 45%,#000);
+}
+.app-shell .hero-copy{max-width:57%}
+.app-shell .hero h1{font-size:clamp(39px,4.2vw,57px);line-height:.99;letter-spacing:-2.4px;text-shadow:0 7px 22px #0008}
+.app-shell .hero h1 em{color:var(--na-lime);text-shadow:0 0 28px #c9ff7044}
+.app-shell .hero-copy>p{max-width:390px;color:#c1d9c8;font-size:12px;line-height:1.7}
+.app-shell .eyebrow{font-size:9px;letter-spacing:1.8px;color:#b9eac7}
+.app-shell .eyebrow>span{background:var(--na-lime);box-shadow:0 0 12px #d5ff72}
+.app-shell .hero-actions{gap:17px;margin-top:24px}
+.app-shell .hero-actions button{
+  min-height:48px;padding:0 19px;border-radius:14px;font-size:11px;
+  background:linear-gradient(125deg,#e0ff91,#a7ef6a 55%,#55db93);color:#102b1b;
+  box-shadow:0 7px 0 #28663e,0 13px 25px #0005,inset 0 1px #ffffffc9;
+  border:1px solid #eaffb6;transition:transform .18s,filter .18s;
+}
+.app-shell .hero-actions button:active{transform:translateY(3px);box-shadow:0 3px 0 #28663e,0 7px 13px #0004}
+.app-shell .hero-actions>span{color:#c1d9c8;font-size:10px}
+.app-shell .hero-art{right:5%;width:255px;height:245px;perspective:850px;transform-style:preserve-3d}
+.app-shell .hero-ball{font-size:118px;filter:drop-shadow(0 28px 22px #020c0788);transform:translateZ(40px) rotate(-18deg)}
+.app-shell .orbit{border-color:#b8ffd16e;box-shadow:0 0 26px #55e89c22}
+.app-shell .orbit-a{width:225px;height:98px;transform:rotate(-25deg) rotateY(30deg) translateZ(12px)}
+.app-shell .orbit-b{width:260px;height:142px;transform:rotate(45deg) rotateX(34deg) translateZ(-12px)}
+.app-shell .art-tag{padding:9px 12px;border-radius:11px;background:#0b1c13d9;border:1px solid #a9e9bd55;color:#e9ffed;font-size:8px;box-shadow:0 10px 24px #0005,inset 0 1px #ffffff20;backdrop-filter:blur(12px)}
+.app-shell .tag-bottom{background:linear-gradient(120deg,#1d7448,#2da967);color:#efffe6}
+.app-shell .hero-index{color:#c3e4c9}
+.app-shell .quick-stats{gap:12px;margin:17px 0 34px}
+.app-shell .quick-stats>div{
+  min-height:82px;padding:15px;border-radius:17px;gap:12px;
+  background:linear-gradient(145deg,#17291d,#101d15);border:1px solid #c0edca20;
+  box-shadow:0 15px 34px #0004,inset 0 1px #ffffff12;
+}
+.app-shell .stat-icon,.app-shell .stat-icon.teal,.app-shell .stat-icon.lime{
+  width:39px;height:39px;border-radius:13px;background:linear-gradient(145deg,#2c6440,#173c28);color:#d5ff82;
+  box-shadow:0 7px 15px #0003,inset 0 1px #ffffff22;
+}
+.app-shell .quick-stats b{font-size:11px;color:#eff9ef}
+.app-shell .quick-stats small{font-size:9px;color:#9bb4a0}
+.app-shell .section-heading{margin-bottom:17px}
+.app-shell .eyebrow.dark{color:#8fb29a}
+.app-shell .section-heading h2{font-size:27px;letter-spacing:-1px;color:#f3fff3}
+.app-shell .heading-star{color:var(--na-lime);text-shadow:0 0 14px #d5ff7255}
+.app-shell .section-heading p{font-size:11px;color:#9bb2a0}
+.app-shell .view-all{min-height:40px;padding:0 12px;border-radius:11px;background:#14281b;border:1px solid #a8e5b72b;color:#d6ff8c;font-size:10px}
+.app-shell .event-view-tabs{display:flex;gap:7px;padding:5px;border-radius:15px;background:#0c1911;border:1px solid #b9edc31a;width:max-content;max-width:100%}
+.app-shell .event-view,.app-shell .tab,.app-shell .filter{
+  min-height:39px;border-radius:11px;background:#122219;border:1px solid #ffffff12;color:#adc3b3;
+  padding:9px 13px;font-size:10px;font-weight:800;
+}
+.app-shell .event-view.active,.app-shell .tab.active-tab,.app-shell .filter.active-filter{
+  color:#102818;background:linear-gradient(125deg,#d8ff82,#73e5a0);border-color:#e2ff9a;
+  box-shadow:0 5px 13px #7be69a30,inset 0 1px #ffffffa6;
+}
+.app-shell .sports-tabs{gap:8px;border-color:#ffffff18;padding:10px 0 13px}
+.app-shell .tab{background:transparent;border-color:transparent}
+.app-shell .tab.active-tab{background:linear-gradient(125deg,#234d31,#1b3b28);color:#e4ffb0;border-color:#6dbd784d;box-shadow:inset 0 1px #ffffff12}
+.app-shell .filter-row{margin:15px 0;gap:12px}
+.app-shell .league-filters{gap:6px}
+.app-shell .filter{min-height:34px;padding:7px 11px;background:#102017;border-color:#ffffff0e}
+.app-shell .filter.active-filter{background:#264a30;color:#e4ffad;border-color:#a9d96c55;box-shadow:inset 0 1px #ffffff18}
+.app-shell .search-field{min-height:43px;padding:9px 13px;border-radius:13px;background:#0e1b13;border:1px solid #b5e9c22b;color:#9fc5a9}
+.app-shell .search-field input{font-size:11px;color:#effff0}
+.app-shell .search-field input::placeholder{color:#779180}
+.app-shell .match-list{gap:12px}
+.app-shell .match-card{
+  position:relative;padding:16px 17px 14px;border-radius:18px;overflow:hidden;
+  background:linear-gradient(145deg,#17291d,#0f1c14 72%);border:1px solid #b7e9c324;
+  box-shadow:0 16px 35px #0005,inset 0 1px #ffffff12;transition:transform .2s,border-color .2s,box-shadow .2s;
+}
+.app-shell .match-card:before{content:"";position:absolute;left:0;top:15px;bottom:15px;width:3px;border-radius:0 5px 5px 0;background:linear-gradient(var(--na-lime),var(--na-green))}
+.app-shell .match-card:hover{transform:translateY(-3px);border-color:#79cf8b88;box-shadow:0 22px 42px #0007,inset 0 1px #ffffff18}
+.app-shell .match-meta{color:#8fa996;font-size:10px}
+.app-shell .league-name{color:#bdd3c1}
+.app-shell .league-ball{color:var(--na-lime)}
+.app-shell .match-time{color:#b4cdb8}
+.app-shell .team b{font-size:12px;color:#f0fbf1}
+.app-shell .team-mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#2b5637,#173b27);border:1px solid #5a8d5b66;color:#e5ffb0;box-shadow:0 8px 17px #0004,inset 0 1px #ffffff2c}
+.app-shell .team-crest{clip-path:polygon(50% 0,92% 13%,87% 66%,50% 100%,13% 66%,8% 13%)}
+.app-shell .versus{color:#7f9a85}
+.app-shell .odds-caption{color:#94ad9a;font-size:9px}
+.app-shell .odd{
+  min-height:45px;padding:8px 11px;border-radius:11px;background:linear-gradient(145deg,#203b29,#15291c);
+  border:1px solid #42664a;color:#e7f5e7;box-shadow:0 5px 12px #0003,inset 0 1px #ffffff12;
+}
+.app-shell .odd small{color:#a8bea9;font-size:9px}
+.app-shell .odd b{color:var(--na-lime);font-size:13px}
+.app-shell .odd:hover:not(:disabled){transform:translateY(-2px);border-color:#a4e66e;background:linear-gradient(145deg,#31583a,#1c3d29);box-shadow:0 10px 20px #0005}
+.app-shell .match-footer{border-color:#ffffff15;color:#8fa895}
+.app-shell .match-footer button,.app-shell .favorite-toggle,.app-shell .details-trigger{color:#c8f27e;font-size:10px}
+.app-shell .details-trigger{padding:8px 11px;border-radius:10px;background:#1b3a26;border:1px solid #a7db7833}
+.app-shell .demo-note{margin-top:15px;padding:12px 14px;border-radius:13px;background:#102017;border:1px solid #b4e7c01d;color:#9eb8a4;font-size:10px}
+.app-shell .demo-note svg{color:var(--na-lime)}
+.app-shell .slip-card{
+  position:sticky;top:112px;padding:20px;border-radius:21px;
+  background:linear-gradient(155deg,#192d20,#101c14);border:1px solid #b8edc52b;
+  box-shadow:0 22px 48px #0006,inset 0 1px #ffffff14;
+}
+.app-shell .slip-head h3{font-size:21px;color:#f2fff2}
+.app-shell .slip-head h3 span{background:#2b4b30;color:#dcff91}
+.app-shell .slip-empty{padding:28px 8px}
+.app-shell .slip-empty-icon{width:54px;height:54px;border-radius:17px;background:linear-gradient(145deg,#2a5738,#183c28);color:#d8ff87;box-shadow:0 8px 18px #0004,inset 0 1px #ffffff26}
+.app-shell .slip-empty b{color:#eff9ee}
+.app-shell .slip-empty p{color:#9db39f}
+.app-shell .slip-cta{min-height:46px;border-radius:13px;background:linear-gradient(125deg,#d8ff82,#70e3a0);color:#102819;font-size:11px;font-weight:900;box-shadow:0 8px 19px #0004,inset 0 1px #ffffffa8}
+.app-shell .help-card,.app-shell .responsible-card{border-radius:17px;background:linear-gradient(145deg,#172a1d,#101b14);border:1px solid #b9edc31c;box-shadow:0 14px 30px #0004}
+.app-shell .help-card b,.app-shell .responsible-card b{color:#f0fff1}
+.app-shell .help-card p,.app-shell .responsible-card p{color:#a0b6a5}
+.app-shell .footer{border-color:#ffffff16;color:#819989;padding:22px clamp(16px,4vw,62px);font-size:9px}
+.app-shell .footer a{color:#c9f47d}
+.app-shell .mobile-nav{
+  background:linear-gradient(100deg,#0c1a11,#14271a);border-top:1px solid #b9edc32b;
+  box-shadow:0 -15px 38px #0008;backdrop-filter:blur(20px)
+}
+.app-shell .mobile-nav button{min-height:54px;color:#9ab29f}
+.app-shell .mobile-nav button.mobile-active{color:#dcff91}
+.app-shell .mobile-nav button i{background:linear-gradient(145deg,#d8ff82,#57dc98);color:#102819;box-shadow:0 4px 12px #0004}
+.app-shell .mobile-more-panel,.app-shell .mobile-sheet,.app-shell .notification-panel{
+  background:linear-gradient(155deg,#1a3021,#0d1912);border:1px solid #b9edc32b;color:#eff9ef
+}
+.app-shell .mobile-more-header{color:#f1fff2}
+.app-shell .mobile-more-panel>button{min-height:52px;color:#d5e6d6;border-color:#ffffff14}
+.app-shell .mobile-more-language{color:#b3c8b6}
+.app-shell .mobile-more-language select{background:#0c1a11;color:#f0fff1;border:1px solid #ffffff22}
+.app-shell .empty-state{border-radius:16px;background:linear-gradient(145deg,#15281b,#0e1a13);border:1px solid #b9edc31e;color:#a9c1ad;padding:28px 18px}
+@media(max-width:1050px){
+  .app-shell>.layout{grid-template-columns:minmax(0,1fr) 275px;gap:17px;padding-inline:18px}
+  .app-shell .left-rail{display:none}
+  .app-shell .hero{min-height:280px}
+}
+@media(max-width:760px){
+  .app-shell{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+  .app-shell>.topbar{height:68px;min-height:68px;padding:0 13px;position:sticky;top:0;z-index:50}
+  .app-shell .brand{font-size:20px;gap:8px}
+  .app-shell .brand-symbol{width:38px;height:38px;border-radius:13px}
+  .app-shell .brand small{font-size:7px;letter-spacing:1.35px;margin-top:4px}
+  .app-shell .top-actions{gap:6px}
+  .app-shell .top-actions .icon-btn,.app-shell .menu-btn{width:37px;height:37px;border-radius:12px}
+  .app-shell .top-actions .language-picker{min-height:35px;padding:0 7px}
+  .app-shell .top-actions .language-picker select{font-size:9px;max-width:49px}
+  .app-shell .join-btn{min-height:37px;padding:0 11px;border-radius:11px;font-size:10px;gap:5px}
+  .app-shell>.ticker{min-height:33px;padding:7px 13px;font-size:9px;gap:7px}
+  .app-shell .ticker-right{font-size:8px;gap:5px}
+  .app-shell>.layout{display:block;width:100%;max-width:none;margin:0;padding:13px 12px 25px}
+  .app-shell .main-content{width:100%;min-width:0}
+  .app-shell .hero{min-height:224px;padding:24px 19px;border-radius:22px}
+  .app-shell .hero-copy{max-width:69%}
+  .app-shell .hero h1{font-size:clamp(32px,9vw,42px);letter-spacing:-1.7px;margin:13px 0 9px}
+  .app-shell .hero-copy>p{max-width:100%;font-size:10px;line-height:1.55}
+  .app-shell .hero-actions{margin-top:15px;gap:8px;flex-wrap:wrap}
+  .app-shell .hero-actions button{min-height:43px;padding:0 13px;font-size:10px;border-radius:12px}
+  .app-shell .hero-actions>span{font-size:8px}
+  .app-shell .hero-art{right:-20px;width:155px;height:155px;transform:translateY(-50%) scale(.76);transform-origin:center}
+  .app-shell .hero-ball{font-size:100px;animation:none;transform:translateZ(24px) rotate(-18deg)}
+  .app-shell .art-tag{font-size:6px;padding:6px 7px}
+  .app-shell .tag-top{right:0;top:8px}
+  .app-shell .tag-bottom{left:-6px;bottom:8px}
+  .app-shell .hero-index{right:12px;bottom:9px;font-size:7px}
+  .app-shell .quick-stats{gap:7px;margin:11px 0 25px}
+  .app-shell .quick-stats>div{min-height:70px;padding:9px 7px;gap:6px;border-radius:13px}
+  .app-shell .stat-icon,.app-shell .stat-icon.teal,.app-shell .stat-icon.lime{width:29px;height:29px;border-radius:10px;flex:none}
+  .app-shell .quick-stats b{font-size:9px;line-height:1.2}
+  .app-shell .quick-stats small{font-size:7px;line-height:1.3}
+  .app-shell .section-heading{align-items:center;gap:8px;margin:0 2px 13px}
+  .app-shell .section-heading h2{font-size:22px;line-height:1.15}
+  .app-shell .section-heading p{font-size:9px}
+  .app-shell .view-all{min-height:36px;padding:0 9px;font-size:8px;white-space:nowrap}
+  .app-shell .event-view-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:5px;margin-bottom:12px}
+  .app-shell .event-view{min-height:42px;padding:8px 5px;font-size:10px}
+  .app-shell .sports-tabs{gap:5px;padding:8px 0 11px}
+  .app-shell .tab{min-height:38px;padding:8px 10px;font-size:9px}
+  .app-shell .filter-row{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0}
+  .app-shell .league-filters{padding-bottom:2px}
+  .app-shell .filter{min-height:34px;padding:7px 9px;font-size:8px}
+  .app-shell .search-field{min-height:43px;width:100%}
+  .app-shell .search-field input{font-size:12px}
+  .app-shell .match-list{gap:10px}
+  .app-shell .match-card{padding:13px 12px 11px;border-radius:16px}
+  .app-shell .match-meta{font-size:9px}
+  .app-shell .match-body{grid-template-columns:minmax(0,1fr);gap:12px;padding:12px 0}
+  .app-shell .teams{justify-content:space-between;gap:7px}
+  .app-shell .team{gap:7px}
+  .app-shell .team b{font-size:10px;white-space:normal;line-height:1.25}
+  .app-shell .team-mark{width:36px;height:36px;border-radius:11px;flex:none}
+  .app-shell .versus{font-size:8px}
+  .app-shell .odds-caption{font-size:8px}
+  .app-shell .odds-grid{gap:6px}
+  .app-shell .odd{min-height:44px;padding:7px 9px}
+  .app-shell .odd small{font-size:8px}
+  .app-shell .odd b{font-size:12px}
+  .app-shell .match-footer{padding-top:9px;font-size:8px}
+  .app-shell .match-footer button{font-size:8px}
+  .app-shell .right-rail{display:none}
+  .app-shell .footer{padding:18px 14px;gap:9px;flex-wrap:wrap}
+}
+@media(max-width:380px){
+  .app-shell>.topbar{padding-inline:10px}
+  .app-shell .brand{font-size:17px;gap:6px}
+  .app-shell .brand-symbol{width:34px;height:34px}
+  .app-shell .brand small{font-size:6px;letter-spacing:1px}
+  .app-shell .top-actions .icon-btn{width:33px;height:33px}
+  .app-shell .join-btn{padding-inline:8px}
+  .app-shell .hero{padding-inline:15px}
+  .app-shell .hero-copy{max-width:72%}
+  .app-shell .hero-art{right:-30px;transform:translateY(-50%) scale(.68)}
+  .app-shell .quick-stats small{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .app-shell *, .app-shell *:before,.app-shell *:after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
