@@ -440,7 +440,7 @@ export default function App() {
             </div>
             <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>
             <div className="filter-row"><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("search")}/></label></div>
-            {eventView === 'upcoming' && !showFavorites && <div className="competition-browser" aria-label="Browse upcoming competitions">
+            {!showFavorites && <div className="competition-browser" aria-label="Browse upcoming competitions">
               <div className="competition-browser-top"><span>Browse by competition</span><small>{competitionOptions.length} competitions · {matches.length} matches</small></div>
               <div className="competition-chip-list competition-all-row">
                 <button type="button" className={league === 'All matches' ? 'competition-chip selected' : 'competition-chip'} onClick={() => setLeague('All matches')}>All competitions <b>{matches.length}</b></button>
