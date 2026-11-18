@@ -114,7 +114,7 @@ Deno.serve(async(req:Request)=>{
    const candidates=local.map((f:any)=>{const dt=Math.abs(new Date(f.starts_at).getTime()-start.getTime());return {f,dt,hs:similarity(h,f.homeNorm),as:similarity(a,f.awayNorm)};})
     .filter((x:any)=>x.dt<=120*60000&&x.hs>=0.78&&x.as>=0.78)
     .sort((x:any,y:any)=>(y.hs+y.as-x.hs-x.as)||x.dt-y.dt);
-   if(!candidates.length|| (candidates.length>1&&Math.abs((candidates[0].hs+candidates[0].as)-(candidates[1].hs+candidates[1].as))<0.08&&Math.abs(candidates[0].dt-candidates[1].dt)>30000)){unmatched++;continue;}
+   if(!candidates.length|| (candidates.length>1&&Math.abs((candidates[0].hs+candidates[0].as)-(candidates[1].hs+candidates[1].as))<0.08&&Math.abs(candidates[0].dt-candidates[1].dt)<15*60000)){unmatched++;continue;}
    const fixture=candidates[0].f;matched++;
    const {error:linkError}=await sb.from("oddspapi_fixture_links").upsert({provider_fixture_id:String(event.fixtureId),fixture_id:fixture.id,provider_start_time:start.toISOString(),last_seen_at:now.toISOString(),match_confidence:Number(((candidates[0].hs+candidates[0].as)/2).toFixed(3))},{onConflict:"provider_fixture_id"});
    if(linkError){errors.push("fixture link: "+linkError.message.slice(0,100));continue;}
