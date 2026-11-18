@@ -1125,3 +1125,81 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
 .settings-note svg{flex:none;color:#b9cce0}
 .settings-done{width:100%;min-height:46px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;background:linear-gradient(110deg,#435c78,#30465f);color:#fff;font-weight:850;cursor:pointer}
 @media(max-width:700px){.settings-panel{padding:24px 19px}.account-wallet-actions button{min-height:46px}}
+ 
+/* BETNOVA admin control center — navy / blue / violet, responsive and fully scrollable */
+.admin-backdrop{
+  z-index:120!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  padding:12px!important;overflow-y:auto!important;background:#020716eF!important;
+}
+.admin-panel{
+  width:min(100%,760px)!important;max-height:calc(100dvh - 24px)!important;min-height:0!important;
+  overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;
+  scrollbar-color:#536da8 #101b35!important;padding:30px!important;
+  background:linear-gradient(155deg,#172748 0%,#111d3a 58%,#171b3e 100%)!important;
+  border:1px solid #536b9b!important;border-radius:22px!important;color:#edf2ff!important;
+  box-shadow:0 30px 100px #000c!important;
+}
+.admin-panel h2{color:#f4f6ff!important}
+.admin-kicker{color:#9bb8ff!important}
+.admin-close{background:#24365d!important;border:1px solid #526994!important;color:#edf2ff!important}
+.admin-count-grid>div,.admin-market-row{
+  background:linear-gradient(145deg,#1b2d51,#14213f)!important;border:1px solid #344a76!important;color:#b9c9ee!important;
+}
+.admin-count-grid>div>svg{color:#91aaff!important}
+.admin-count-grid b,.admin-market-row b,.admin-finance-top>b{color:#f0f3ff!important}
+.admin-count-grid span,.admin-intro,.admin-message{color:#a7b7d9!important}
+.admin-finance-tabs{gap:7px!important;overflow-x:auto!important;overscroll-behavior-x:contain!important;scrollbar-width:thin!important;scrollbar-color:#536da8 transparent!important;padding:3px 2px 9px!important}
+.admin-finance-tabs button{
+  flex:0 0 auto!important;min-height:39px!important;padding:8px 11px!important;
+  background:#101d3a!important;border:1px solid #354a76!important;color:#c0cdef!important;
+  font-size:10px!important;cursor:pointer!important;touch-action:manipulation!important;
+}
+.admin-finance-tabs button.active{background:linear-gradient(120deg,#315a9c,#51428e)!important;border-color:#819cf0!important;color:#fff!important}
+.admin-finance-tabs button b{background:#263c68!important;color:#edf2ff!important}
+.admin-finance-tabs .admin-refresh{margin-left:auto!important}
+.admin-finance-list{
+  max-height:min(42vh,430px)!important;overflow:auto!important;padding:3px!important;
+  overscroll-behavior:contain!important;scrollbar-width:thin!important;scrollbar-color:#536da8 #101b35!important;
+}
+.admin-finance-item{background:linear-gradient(145deg,#182849,#111e3a)!important;border:1px solid #344a73!important;color:#edf2ff!important}
+.admin-finance-item p{color:#bdcbed!important}
+.admin-finance-item small,.admin-finance-top>span{color:#9eafd4!important}
+.admin-finance-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+.admin-finance-actions button,.admin-method-toggle{
+  min-height:40px!important;padding:9px 12px!important;border:1px solid #526da6!important;
+  border-radius:10px!important;background:linear-gradient(120deg,#294b83,#3d3b79)!important;
+  color:#f5f7ff!important;font-size:10px!important;font-weight:800!important;cursor:pointer!important;
+  touch-action:manipulation!important;
+}
+.admin-finance-actions button.reject{background:#482d50!important;border-color:#805080!important;color:#ffd9e7!important}
+.admin-finance-actions button:disabled,.admin-method-toggle:disabled{opacity:.48!important;cursor:not-allowed!important}
+.admin-safety-note{background:#172748!important;border:1px solid #354b77!important;color:#b7c7e9!important}
+.admin-safety-note svg{color:#9cb5ff!important}
+.admin-message.success{background:#193c54!important;border:1px solid #39708f!important;color:#b7eaff!important}
+.admin-message.error{background:#482b42!important;border:1px solid #805070!important;color:#ffd0df!important}
+.admin-payout-reference{display:grid!important;gap:7px!important;margin-top:12px!important;color:#b9c9eb!important;font-size:10px!important}
+.admin-payout-reference input,.admin-instructions-editor{
+  width:100%!important;min-width:0!important;background:#0b1630!important;color:#f1f4ff!important;
+  border:1px solid #3d527e!important;border-radius:10px!important;padding:10px!important;
+}
+.admin-currency-options{display:flex!important;flex-wrap:wrap!important;gap:12px!important;margin:12px 0!important;color:#d6e0fa!important}
+.admin-panel button:focus-visible,.admin-panel input:focus-visible,.admin-panel textarea:focus-visible{
+  outline:2px solid #9bb8ff!important;outline-offset:2px!important;
+}
+@media(max-width:600px){
+  .admin-backdrop{align-items:flex-start!important;padding:7px!important}
+  .admin-panel{width:100%!important;max-height:calc(100dvh - 14px)!important;padding:25px 14px 18px!important;border-radius:17px!important}
+  .admin-panel h2{font-size:22px!important;margin-right:38px!important}
+  .admin-count-grid{gap:7px!important;margin:15px 0 10px!important}
+  .admin-count-grid>div{padding:11px!important}
+  .admin-count-grid b{font-size:19px!important}
+  .admin-finance-tabs{margin:13px -2px 9px!important}
+  .admin-finance-list{max-height:44vh!important}
+  .admin-finance-top{align-items:flex-start!important;flex-direction:column!important}
+  .admin-finance-actions button{flex:1 1 auto!important}
+}
+@media(max-width:360px){
+  .admin-panel{padding:22px 11px 15px!important}
+  .admin-count-grid>div{padding:9px!important}
+  .admin-finance-tabs button{font-size:9px!important;padding:7px 9px!important}
+}
