@@ -1,0 +1,5 @@
+/* Lightweight install prompt and performance-focused shell */
+.bn-install-prompt{position:fixed;z-index:120;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(94vw,420px);display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #394b70;border-radius:16px;background:#101a32;color:#f3f5ff;box-shadow:0 12px 32px #0005}
+.bn-install-prompt>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.bn-install-prompt small{color:#a7b4d4;font-size:11px}
+.bn-install-prompt button{border:0;border-radius:11px;padding:10px 13px;background:linear-gradient(135deg,#5479e6,#7c58dc);color:#fff;font-weight:700;display:flex;align-items:center;gap:7px}.bn-install-prompt .bn-install-close{padding:8px;background:transparent;color:#a9b4cf}
+@media(max-width:480px){.bn-install-prompt{bottom:calc(12px + env(safe-area-inset-bottom));padding:10px 11px}}
