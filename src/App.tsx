@@ -48,25 +48,48 @@ type Match = {
 
 
 function countryFlagForCompetition(competition: string, country: string) {
-  const value = `${country} ${competition}`.toLowerCase()
+  const normalize = (value: string) => value.trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+  const countryName = normalize(country || '')
+  const countryFlags: Record<string, string> = {
+    algeria: '🇩🇿', dz: '🇩🇿', 'algerie': '🇩🇿',
+    france: '🇫🇷', fr: '🇫🇷', england: '🇬🇧', 'united kingdom': '🇬🇧', uk: '🇬🇧', gb: '🇬🇧',
+    spain: '🇪🇸', espana: '🇪🇸', italy: '🇮🇹', italia: '🇮🇹', germany: '🇩🇪', deutschland: '🇩🇪',
+    portugal: '🇵🇹', netherlands: '🇳🇱', holland: '🇳🇱', turkey: '🇹🇷', turkiye: '🇹🇷',
+    'saudi arabia': '🇸🇦', morocco: '🇲🇦', maroc: '🇲🇦', egypt: '🇪🇬', brazil: '🇧🇷',
+    argentina: '🇦🇷', colombia: '🇨🇴', 'united states': '🇺🇸', usa: '🇺🇸', mexico: '🇲🇽',
+    japan: '🇯🇵', 'south korea': '🇰🇷', india: '🇮🇳', australia: '🇦🇺', scotland: '🇬🇧',
+    wales: '🇬🇧', ireland: '🇮🇪', belgium: '🇧🇪', switzerland: '🇨🇭', austria: '🇦🇹',
+    greece: '🇬🇷', denmark: '🇩🇰', sweden: '🇸🇪', norway: '🇳🇴', poland: '🇵🇱',
+    ukraine: '🇺🇦', russia: '🇷🇺',
+  }
+  if (countryFlags[countryName]) return countryFlags[countryName]
+  if (/^(world|europe|africa|asia|oceania|international)$/.test(countryName)) return '🌍'
+
+  const name = normalize(competition || '')
   const flags: [RegExp, string][] = [
-    [/england|premier league|championship|league one|league two|fa cup|efl|epl/, '🇬🇧'],
-    [/spain|españa|espana|la liga|laliga|primera división|primera division|copa del rey/, '🇪🇸'], [/italy|serie a|serie b|coppa italia/, '🇮🇹'],
-    [/germany|bundesliga|dfb/, '🇩🇪'], [/france|ligue 1|ligue 2/, '🇫🇷'],
-    [/portugal|primeira liga|liga portugal/, '🇵🇹'], [/netherlands|eredivisie|holland/, '🇳🇱'],
-    [/turkey|super lig|süper lig/, '🇹🇷'], [/saudi|pro league/, '🇸🇦'],
-    [/algeria|ligue 1 alg|algerian/, '🇩🇿'], [/morocco|botola/, '🇲🇦'],
-    [/egypt|premier league egypt/, '🇪🇬'], [/brazil|brasileiro|serie a brazil|brasileirao|gaucho|paraense|pernambucano|sergipano/, '🇧🇷'],
-    [/argentina/, '🇦🇷'], [/colombia|primera a colombia/, '🇨🇴'], [/usa|united states|mls|major league soccer/, '🇺🇸'], [/mexico|liga mx/, '🇲🇽'],
-    [/japan|j-league/, '🇯🇵'], [/south korea|korea|k league/, '🇰🇷'],
-    [/india|indian super/, '🇮🇳'], [/australia|a-league/, '🇦🇺'],
-    [/scotland|premiership scotland/, '🇬🇧'], [/wales/, '🇬🇧'], [/ireland/, '🇮🇪'],
-    [/belgium|jupiler/, '🇧🇪'], [/switzerland|super league switzerland/, '🇨🇭'],
-    [/austria|bundesliga austria/, '🇦🇹'], [/greece|super league greece/, '🇬🇷'],
-    [/denmark|superliga/, '🇩🇰'], [/sweden|allsvenskan/, '🇸🇪'], [/norway|eliteserien/, '🇳🇴'],
-    [/poland|ekstraklasa/, '🇵🇱'], [/ukraine/, '🇺🇦'], [/russia/, '🇷🇺'],
+    [/\b(algeria|algerian|algerie|dz)\b|^ligue 1$/, '🇩🇿'],
+    [/\b(france|french|ligue 1 - france|ligue 2 - france)\b/, '🇫🇷'],
+    [/\b(england|english|premier league - england|epl|fa cup|efl)\b|championship - england/, '🇬🇧'],
+    [/\b(spain|spanish|la liga|laliga|copa del rey)\b/, '🇪🇸'],
+    [/\b(italy|italian|serie a - italy|serie b - italy|coppa italia)\b/, '🇮🇹'],
+    [/\b(germany|german|bundesliga - germany|dfb)\b/, '🇩🇪'],
+    [/\b(portugal|primeira liga|liga portugal)\b/, '🇵🇹'],
+    [/\b(netherlands|eredivisie|holland)\b/, '🇳🇱'],
+    [/\b(turkey|turkish|super lig|super league - turkey)\b/, '🇹🇷'],
+    [/\b(saudi|saudi arabia|pro league - saudi)\b/, '🇸🇦'],
+    [/\b(morocco|botola)\b/, '🇲🇦'], [/\b(egypt|egyptian)\b/, '🇪🇬'],
+    [/\b(brazil|brasileiro|brasileirao|gaucho|paraense|pernambucano|sergipano)\b/, '🇧🇷'],
+    [/\b(argentina)\b/, '🇦🇷'], [/\b(colombia)\b/, '🇨🇴'],
+    [/\b(usa|united states|mls|major league soccer)\b/, '🇺🇸'], [/\b(mexico|liga mx)\b/, '🇲🇽'],
+    [/\b(japan|j-league)\b/, '🇯🇵'], [/\b(south korea|k league)\b/, '🇰🇷'],
+    [/\b(india|indian super)\b/, '🇮🇳'], [/\b(australia|a-league)\b/, '🇦🇺'],
+    [/\b(scotland|premiership - scotland)\b/, '🇬🇧'], [/\b(wales)\b/, '🇬🇧'], [/\b(ireland)\b/, '🇮🇪'],
+    [/\b(belgium|jupiler)\b/, '🇧🇪'], [/\b(switzerland|swiss superleague)\b/, '🇨🇭'],
+    [/\b(austria|austrian bundesliga)\b/, '🇦🇹'], [/\b(greece|super league - greece)\b/, '🇬🇷'],
+    [/\b(denmark|superliga)\b/, '🇩🇰'], [/\b(sweden|allsvenskan)\b/, '🇸🇪'], [/\b(norway|eliteserien)\b/, '🇳🇴'],
+    [/\b(poland|ekstraklasa)\b/, '🇵🇱'], [/\b(ukraine)\b/, '🇺🇦'], [/\b(russia)\b/, '🇷🇺'],
   ]
-  return flags.find(([pattern]) => pattern.test(value))?.[1] ?? '🌍'
+  return flags.find(([pattern]) => pattern.test(name))?.[1] ?? '🌍'
 }
 
 function isInternationalCompetition(competition: string, country: string) {
