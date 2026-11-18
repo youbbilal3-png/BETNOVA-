@@ -42,7 +42,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState('')
-  const [activeCategory, setActiveCategory] = useState('')
+  const [activeCategory, setActiveCategory] = useState('all')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [clock, setClock] = useState(Date.now())
   const [categoryOrder, setCategoryOrder] = useState<string[]>(() => {
