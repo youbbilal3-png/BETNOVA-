@@ -489,6 +489,26 @@ Deno.serve(async (req: Request) => {
       ]);
     }
 
+    const firstHalfHandicap = priceSet(odds.asian_handicap_half);
+    if (firstHalfHandicap && Number.isFinite(Number(firstHalfHandicap.line)) && Math.round(Number(firstHalfHandicap.line) * 2) === Number(firstHalfHandicap.line) * 2) {
+      const line = Number(firstHalfHandicap.line);
+      const formatLine = (value: number) => (value > 0 ? "+" : "") + value.toFixed(1);
+      await saveMarket(fixtureId, isLive, "asian_handicap", "1st Half Asian Handicap · " + formatLine(line) + " · Bet365", line, [
+        { name: "Home " + formatLine(line), key: "home", price: firstHalfHandicap.home },
+        { name: "Away " + formatLine(-line), key: "away", price: firstHalfHandicap.away },
+      ], "first_half");
+    }
+
+    const cornerHandicap = priceSet(odds.corner_asian);
+    if (cornerHandicap && Number.isFinite(Number(cornerHandicap.line)) && Math.round(Number(cornerHandicap.line) * 2) === Number(cornerHandicap.line) * 2) {
+      const line = Number(cornerHandicap.line);
+      const formatLine = (value: number) => (value > 0 ? "+" : "") + value.toFixed(1);
+      await saveMarket(fixtureId, isLive, "corner_asian", "Asian Handicap Corners · " + formatLine(line) + " · Bet365", line, [
+        { name: "Home " + formatLine(line), key: "home", price: cornerHandicap.home },
+        { name: "Away " + formatLine(-line), key: "away", price: cornerHandicap.away },
+      ]);
+    }
+
     const btts = priceSet(odds.btts);
     if (btts) {
       await saveMarket(fixtureId, isLive, "both_teams_score", "Both Teams To Score · Bet365", null, [
@@ -505,6 +525,16 @@ Deno.serve(async (req: Request) => {
         { name: "Over " + line, key: "over_" + key, price: corners.over },
         { name: "Under " + line, key: "under_" + key, price: corners.under },
       ]);
+    }
+
+    const firstHalfCorners = priceSet(odds.corner_line_half);
+    if (firstHalfCorners && Number.isFinite(Number(firstHalfCorners.line)) && Math.round(Number(firstHalfCorners.line) * 2) === Number(firstHalfCorners.line) * 2) {
+      const line = Number(firstHalfCorners.line);
+      const key = line.toFixed(1).replace(".", "_");
+      await saveMarket(fixtureId, isLive, "total_corners", "1st Half Total Corners · " + line + " · Bet365", line, [
+        { name: "Over " + line, key: "over_" + key, price: firstHalfCorners.over },
+        { name: "Under " + line, key: "under_" + key, price: firstHalfCorners.under },
+      ], "first_half");
     }
 
     // Card markets are deliberately withheld until the provider's card-count
