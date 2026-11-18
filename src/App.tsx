@@ -22,7 +22,7 @@ function teamInitials(name: string) {
   return chars.join('').toLocaleUpperCase().slice(0, 2)
 }
 
-type MarketPick = { selectionId: string; marketId: string; marketLabel: string; selectionLabel: string; odds: string }
+type MarketPick = { selectionId: string; marketId: string; marketKey: string; marketLabel: string; selectionLabel: string; odds: string }
 type Match = {
   id: string | number
   league: string
