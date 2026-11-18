@@ -405,7 +405,7 @@ export default function App() {
         const combinedOdds = selected.reduce((total, item) => total * Number(item.odd), 1)
         const potentialReturn = Math.max(0, Number(betStake) || 0) * combinedOdds
         return <div className="quick-slip-bar" role="status" aria-live="polite">
-          <div className="quick-slip-status"><span className="quick-slip-check">✓</span><div><b>Added to bet slip</b><small>{selected.length} / 20 selections · max 2 per match</small></div></div>
+          <div className="quick-slip-status"><span className="quick-slip-check">✓</span><div><b>Added to bet slip</b><small>{selected.length} / 20 selections · one selection per match</small></div></div>
           <div className="quick-slip-picks" aria-label="Current bet selections">
             {selected.map(item => <div className="quick-slip-pick" key={item.selectionId}>
               <span>{item.match.home} – {item.match.away}</span><small>{item.label}</small><b>@ {item.odd}</b>
