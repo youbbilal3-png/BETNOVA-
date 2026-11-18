@@ -14,14 +14,24 @@ type Selection = { id: string; name: string; odds: number; status: string; resul
 type Market = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; settlement_rule: Record<string, unknown> | null; market_selections: Selection[] }
 type LiveEvent = { id: string; event_type: string; period: string | null; minute: number | null; added_time: number | null; player_name: string | null; team: { name: string; short_name: string | null } | null }
 
-const categoryFor = (market: Market, t: (key: any) => string) => {
+const categoryFor = (market: Market, t: (key: any) => string, language: string) => {
   const key = (market.market_key || market.market_type || '').toLowerCase()
   const name = market.name.toLowerCase()
-  if (/goal|score|scorer/.test(key + ' ' + name)) return t('goals')
-  if (/corner/.test(key + ' ' + name)) return t('corners')
-  if (/card|booking|foul/.test(key + ' ' + name)) return t('cards_fouls')
-  if (/player|shot|assist/.test(key + ' ' + name)) return t('player_markets')
-  if (/half|period|result|winner|handicap/.test(key + ' ' + name)) return t('match_result')
+  const value = key + ' ' + name
+  const labels: Record<string, Record<string, string>> = {
+    btts: {en:'Both Teams To Score',ar:'كلا الفريقين يسجلان',fr:'Les deux équipes marquent',es:'Ambos equipos marcan',pt:'Ambas as equipas marcam',de:'Beide Teams treffen',it:'Entrambe le squadre segnano',tr:'İki takım da gol atar',nl:'Beide teams scoren',ru:'Обе команды забьют',zh:'双方均进球',ja:'両チーム得点',ko:'양 팀 득점',id:'Kedua tim mencetak gol',hi:'दोनों टीमें स्कोर करेंगी',ur:'دونوں ٹیمیں گول کریں'},
+    double: {en:'Double Chance',ar:'الفرصة المزدوجة',fr:'Double chance',es:'Doble oportunidad',pt:'Dupla hipótese',de:'Doppelte Chance',it:'Doppia chance',tr:'Çifte şans',nl:'Dubbele kans',ru:'Двойной шанс',zh:'双重机会',ja:'ダブルチャンス',ko:'더블 찬스',id:'Peluang ganda',hi:'डबल चांस',ur:'ڈبل چانس'},
+    events: {en:'Match Events',ar:'أحداث المباراة',fr:'Événements du match',es:'Eventos del partido',pt:'Eventos da partida',de:'Spielereignisse',it:'Eventi della partita',tr:'Maç olayları',nl:'Wedstrijdgebeurtenissen',ru:'События матча',zh:'比赛事件',ja:'試合イベント',ko:'경기 이벤트',id:'Peristiwa pertandingan',hi:'मैच की घटनाएँ',ur:'میچ کے واقعات'}
+  }
+  const label = (group: keyof typeof labels) => labels[group][language] || labels[group].en
+  if (/both.?teams.?to.?score|btts/.test(value)) return label('btts')
+  if (/double.?chance|double_chance/.test(value)) return label('double')
+  if (/corner/.test(value)) return t('corners')
+  if (/yellow.?card|red.?card|card|booking/.test(value)) return t('cards_fouls')
+  if (/shot|player|assist/.test(value)) return t('player_markets')
+  if (/offside|foul|penalt|var|substitution/.test(value)) return label('events')
+  if (/goal|scorer|total_score|over.?under/.test(value)) return t('goals')
+  if (/half|period|result|winner|handicap|match.?outcome/.test(value)) return t('match_result')
   return t('match_markets')
 }
 
@@ -139,7 +149,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   const grouped = useMemo(() => {
     const groups = new Map<string, Market[]>()
     for (const market of markets) {
-      const category = categoryFor(market, t)
+      const category = categoryFor(market, t, language)
       groups.set(category, [...(groups.get(category) ?? []), market])
     }
     const entries = Array.from(groups.entries()).map(([category, items]) => ({
