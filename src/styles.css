@@ -314,3 +314,20 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .market-outcome.picked{border-color:#16a777!important;background:#ddf5e5!important;color:#08734e!important;box-shadow:inset 0 0 0 1px #16a777}
 .market-outcome.picked b{color:#08734e!important}
 @media(max-width:480px){.detail-winner-odds{gap:5px}.detail-winner-pick{padding:10px 7px;gap:4px}.detail-winner-pick span{font-size:9px}.detail-winner-pick b{font-size:11px}}
+
+
+/* Match winner layout: odds sit directly below their corresponding teams. */
+.match-body.match-winner-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(92px,.55fr) minmax(0,1fr);align-items:start;gap:10px}
+.winner-side,.winner-center{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.winner-side .team{min-height:42px;justify-content:center;flex-direction:column;gap:5px;text-align:center}
+.winner-side .team-logo-frame{width:34px;height:34px}
+.winner-side .team b{max-width:100%;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.winner-side .odd,.winner-center .odd{width:100%;min-height:34px;justify-content:space-between}
+.winner-center{align-self:start;padding-top:7px;text-align:center}
+.winner-center>.versus{font-size:10px;letter-spacing:1px;text-align:center}
+.winner-center .odds-caption{justify-content:center;white-space:nowrap;margin:0 0 1px;font-size:7px;letter-spacing:.7px}
+.winner-center .odds-caption svg{flex:none}
+.winner-home .odd{direction:ltr}
+.winner-away .odd{direction:ltr}
+@media(max-width:760px){.match-body.match-winner-layout{grid-template-columns:minmax(0,1fr) minmax(76px,.65fr) minmax(0,1fr);gap:7px}.winner-side,.winner-center{gap:7px}.winner-side .team{min-height:48px}.winner-side .team b{font-size:9px}.winner-side .odd,.winner-center .odd{padding:7px 5px}.winner-center{padding-top:6px}.winner-center .odds-caption{font-size:6px;letter-spacing:.2px}}
+@media(max-width:390px){.match-body.match-winner-layout{grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);gap:5px}.winner-side .team-logo-frame{width:29px;height:29px}.winner-side .team b{font-size:8px}.winner-center .odds-caption{white-space:normal;justify-content:center;text-align:center}}
