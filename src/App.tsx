@@ -420,8 +420,6 @@ export default function App() {
     if (!supabase) { setBetMessage('Betting service is unavailable. Please try again later.'); return }
     if (!selected.length) { setBetMessage('Choose at least one market.'); return }
     if (hasSameMatchBuilder) { setBetMessage('Choose only one selection per match for now.'); return }
-    const stake = Number(betStake)
-    if (!Number.isFinite(stake) || stake <= 0) { setBetMessage('Enter a valid stake.'); return }
     setBetBusy(true); setBetMessage('')
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -431,6 +429,8 @@ export default function App() {
         setBetMessage('Sign in to place a bet with your wallet balance.')
         return
       }
+      const stake = Number(betStake)
+      if (!Number.isFinite(stake) || stake <= 0) { setBetMessage('Enter a valid stake.'); return }
       const { data, error: betError } = await supabase.rpc('betnova_place_bet', {
         p_selections: selected.map(item => ({ selection_id: item.selectionId })),
         p_stake: stake,
