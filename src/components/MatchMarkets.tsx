@@ -26,7 +26,7 @@ const categoryFor = (market: Market, t: (key: any) => string) => {
 }
 
 export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }: Props) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [markets, setMarkets] = useState<Market[]>([])
   const [events, setEvents] = useState<LiveEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,6 +35,38 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   const [activeCategory, setActiveCategory] = useState('all')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [clock, setClock] = useState(Date.now())
+
+  const outcomeWords: Record<string, string[]> = {
+    en:['Win 1','Draw','Win 2','Over','Under','Yes','No'],
+    ar:['فوز 1','تعادل','فوز 2','أكثر من','أقل من','نعم','لا'],
+    fr:['Victoire 1','Nul','Victoire 2','Plus de','Moins de','Oui','Non'],
+    es:['Gana 1','Empate','Gana 2','Más de','Menos de','Sí','No'],
+    pt:['Vitória 1','Empate','Vitória 2','Mais de','Menos de','Sim','Não'],
+    de:['Sieg 1','Unentschieden','Sieg 2','Über','Unter','Ja','Nein'],
+    it:['Vittoria 1','Pareggio','Vittoria 2','Over','Under','Sì','No'],
+    tr:['1 Kazanır','Beraberlik','2 Kazanır','Üst','Alt','Evet','Hayır'],
+    nl:['Winst 1','Gelijkspel','Winst 2','Meer dan','Minder dan','Ja','Nee'],
+    ru:['Победа 1','Ничья','Победа 2','Больше','Меньше','Да','Нет'],
+    zh:['主队胜','平局','客队胜','大于','小于','是','否'],
+    ja:['ホーム勝利','引き分け','アウェイ勝利','オーバー','アンダー','はい','いいえ'],
+    ko:['홈 승','무승부','원정 승','오버','언더','예','아니요'],
+    id:['Menang 1','Seri','Menang 2','Lebih dari','Kurang dari','Ya','Tidak'],
+    hi:['जीत 1','ड्रॉ','जीत 2','से अधिक','से कम','हाँ','नहीं'],
+    ur:['جیت 1','برابری','جیت 2','سے زیادہ','سے کم','ہاں','نہیں']
+  }
+  const ow = outcomeWords[language] || outcomeWords.en
+  const displaySelection = (raw: string) => {
+    const value = raw.trim()
+    const normalized = value.toLowerCase()
+    if (normalized === 'home' || normalized === '1' || normalized === 'win 1') return ow[0]
+    if (normalized === 'draw' || normalized === 'x') return ow[1]
+    if (normalized === 'away' || normalized === '2' || normalized === 'win 2') return ow[2]
+    const total = value.match(/^(over|under)\\s*(.*)$/i)
+    if (total) return (total[1].toLowerCase() === 'over' ? ow[3] : ow[4]) + ' ' + total[2]
+    if (normalized === 'yes') return ow[5]
+    if (normalized === 'no') return ow[6]
+    return value
+  }
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(Date.now()), 15000)
@@ -122,7 +154,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
           <div className="market-outcomes">{market.market_selections.map(selection => {
             const picked = selectedIds.includes(selection.id)
             return <button key={selection.id} disabled={!canBet} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketLabel:market.name,selectionLabel:selection.name,odds:String(selection.odds)})}>
-              <span>{selection.name}</span><b>{Number(selection.odds).toFixed(2)}</b>
+              <span>{displaySelection(selection.name)}</span><b>{Number(selection.odds).toFixed(2)}</b>
             </button>
           })}</div>
         </article>})}
