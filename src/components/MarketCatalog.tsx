@@ -21,30 +21,80 @@ const words: Record<string, string[]> = {
 }
 const lines = ['1.5','2','2.5','3','3.5','4','4.5','5.5','6.5']
 const groups = [
- {title:2, items:[{name:2,choices:lines},{name:16, choices:[10,11]},{name:17,choices:[12,14,11]}]},
- {title:3, items:[{name:3,choices:[12,13,14]},{name:15,choices:['1X','X2','12']}]},
- {title:4, items:[{name:20, choices:['7.5','8.5','9.5','10.5','11.5','12.5']}]},
- {title:5, items:[{name:18,choices:['1.5','2.5','3.5','4.5','5.5','6.5']},{name:19,choices:['0.5','1.5']}]},
- {title:6, items:[{name:21,choices:['15.5','18.5','20.5','22.5','24.5','26.5']},{name:22,choices:['5.5','6.5','7.5','8.5','9.5']}]},
- {title:7, items:[{name:23,choices:[10,11]},{name:24,choices:[10,11]}]}
+ {title:2, items:[{name:2,key:'total_goals',choices:lines},{name:16,key:'both_teams_score',choices:[10,11]},{name:17,key:'first_team_to_score',choices:[12,14,11]}]},
+ {title:3, items:[{name:3,key:'match_result',choices:[12,13,14]},{name:15,key:'double_chance',choices:['1X','X2','12']}]},
+ {title:4, items:[{name:20,key:'total_corners', choices:['7.5','8.5','9.5','10.5','11.5','12.5']}]},
+ {title:5, items:[{name:18,key:'total_cards',choices:['1.5','2.5','3.5','4.5','5.5','6.5']},{name:19,key:'red_card',choices:['0.5','1.5']}]},
+ {title:6, items:[{name:21,key:'total_shots',choices:['15.5','18.5','20.5','22.5','24.5','26.5']},{name:22,key:'shots_on_target',choices:['5.5','6.5','7.5','8.5','9.5']}]},
+ {title:7, items:[{name:23,key:'var_decision',choices:[10,11]},{name:24,key:'penalty_awarded',choices:[10,11]}]}
 ]
-export default function MarketCatalog() {
+type CatalogSelection = { id: string; name: string; odds: number; status: string; result_status: string }
+type CatalogMarket = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; settlement_rule: Record<string, unknown> | null; market_selections: CatalogSelection[] }
+type CatalogPick = { selectionId: string; marketId: string; marketLabel: string; selectionLabel: string; odds: string }
+type Props = { markets: CatalogMarket[]; live: boolean; selectedIds: string[]; onSelect: (selection: CatalogPick) => void }
+
+export default function MarketCatalog({ markets, live, selectedIds, onSelect }: Props) {
  const { language } = useLanguage()
  const w = words[language] || words.en
- const [notice, setNotice] = useState('')
- const unavailable = () => setNotice(w[1] + ' — ' + w[25])
  const option = (v: string | number) => typeof v === 'number' ? w[v] : v
+ const findMarket = (key: string, line?: string) => markets.find(m => {
+  if ((m.market_key || m.market_type) !== key || m.status !== 'open' || m.is_live !== live) return false
+  const updated = Date.parse(m.last_updated_at)
+  const maxAge = live ? 7 * 60 * 1000 : 24 * 60 * 60 * 1000
+  if (!Number.isFinite(updated) || Date.now() - updated > maxAge || updated > Date.now() + 30000) return false
+  if (line === undefined) return true
+  const storedLine = Number(m.settlement_rule?.line ?? (m.name.match(/(?:goals|corners|cards|shots)[^0-9]*(\\d+(?:\\.\\d+)?)/i)?.[1]))
+  return Number.isFinite(storedLine) && Math.abs(storedLine - Number(line)) < 0.001
+ })
+ const pickFor = (market: CatalogMarket | undefined, choice: string) => {
+  if (!market) return null
+  const normalized = choice.trim().toLowerCase()
+  const selection = market.market_selections.find(s => {
+   if (s.status !== 'active' || s.result_status !== 'pending') return false
+   const name = s.name.trim().toLowerCase()
+   if (normalized === 'home' || normalized === 'win 1') return ['home','1','win 1'].includes(name)
+   if (normalized === 'away' || normalized === 'win 2') return ['away','2','win 2'].includes(name)
+   if (normalized === 'draw') return ['draw','x'].includes(name)
+   if (normalized === 'yes') return name === 'yes'
+   if (normalized === 'no') return name === 'no'
+   if (['1x','x2','12'].includes(normalized)) return name === normalized
+   return name === normalized || name.startsWith(normalized + ' ')
+  })
+  const odds = Number(selection?.odds)
+  return selection && Number.isFinite(odds) && odds > 1
+   ? { selectionId: selection.id, marketId: market.id, marketLabel: market.name, selectionLabel: selection.name, odds: odds.toFixed(2) }
+   : null
+ }
+ const handle = (market: CatalogMarket | undefined, choice: string) => {
+  const pick = pickFor(market, choice)
+  if (pick) onSelect(pick)
+ }
  return <section className="market-catalog">
   <header className="market-catalog-top"><div><span>{w[0]}</span><small>{w[1]}</small></div><i>BETNOVA</i></header>
-  {groups.map((group,i)=><section className="market-catalog-group" key={group.title}>
+  {groups.map(group=><section className="market-catalog-group" key={group.title}>
    <h4>{w[group.title]}</h4>
    {group.items.map(item=><article className="market-catalog-item" key={item.name}>
     <div className="market-catalog-item-title">{w[item.name]}<span>{w[1]}</span></div>
-    {item.choices.length && typeof item.choices[0] === 'string' && item.choices.every(v=>/^\d+(\.\d+)?$/.test(String(v))) ?
-     <div className="market-line-grid">{item.choices.map(line=><div className="market-line-row" key={line}><b>{line}</b><button type="button" onClick={unavailable}>{w[8]} {line}<strong>—</strong></button><button type="button" onClick={unavailable}>{w[9]} {line}<strong>—</strong></button></div>)}</div> :
-     <div className="market-outcomes">{item.choices.map(v=><button type="button" className="market-outcome market-unavailable-choice" key={v} onClick={unavailable}><span>{option(v)}</span><b>—</b></button>)}</div>}
+    {item.choices.length && typeof item.choices[0] === 'string' && item.choices.every(v=>/^\\d+(\\.\\d+)?$/.test(String(v))) ?
+     <div className="market-line-grid">{item.choices.map(line=>{
+      const market=findMarket(item.key,String(line))
+      const over=pickFor(market,w[8]+' '+line)
+      const under=pickFor(market,w[9]+' '+line)
+      return <div className="market-line-row" key={line}><b>{line}</b>
+       <button type="button" disabled={!over} aria-pressed={!!over&&selectedIds.includes(over.selectionId)} className={over&&selectedIds.includes(over.selectionId)?'catalog-picked':''} onClick={()=>handle(market,w[8]+' '+line)}>{w[8]} {line}<strong>{over?.odds ?? '—'}</strong></button>
+       <button type="button" disabled={!under} aria-pressed={!!under&&selectedIds.includes(under.selectionId)} className={under&&selectedIds.includes(under.selectionId)?'catalog-picked':''} onClick={()=>handle(market,w[9]+' '+line)}>{w[9]} {line}<strong>{under?.odds ?? '—'}</strong></button>
+      </div>
+     })}</div> :
+     <div className="market-outcomes">{item.choices.map(v=>{
+      const choice=option(v)
+      const key=item.key==='match_result'?(v===12?'home':v===13?'draw':'away'):choice
+      const market=findMarket(item.key)
+      const pick=pickFor(market,key)
+      const picked=!!pick&&selectedIds.includes(pick.selectionId)
+      return <button type="button" disabled={!pick} aria-pressed={picked} className={picked?'market-outcome picked':'market-outcome'} key={v} onClick={()=>handle(market,key)}><span>{choice}</span><b>{pick?.odds ?? '—'}</b></button>
+     })}</div>}
    </article>)}
   </section>)}
-  <p className="market-catalog-note">{notice || w[25]}</p>
+  <p className="market-catalog-note">{w[25]}</p>
  </section>
 }
