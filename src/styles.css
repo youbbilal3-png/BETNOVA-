@@ -331,3 +331,21 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .winner-away .odd{direction:ltr}
 @media(max-width:760px){.match-body.match-winner-layout{grid-template-columns:minmax(0,1fr) minmax(76px,.65fr) minmax(0,1fr);gap:7px}.winner-side,.winner-center{gap:7px}.winner-side .team{min-height:48px}.winner-side .team b{font-size:9px}.winner-side .odd,.winner-center .odd{padding:7px 5px}.winner-center{padding-top:6px}.winner-center .odds-caption{font-size:6px;letter-spacing:.2px}}
 @media(max-width:390px){.match-body.match-winner-layout{grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);gap:5px}.winner-side .team-logo-frame{width:29px;height:29px}.winner-side .team b{font-size:8px}.winner-center .odds-caption{white-space:normal;justify-content:center;text-align:center}}
+
+
+/* Corrected match card composition: keep both teams and VS in their familiar positions. */
+.match-body.match-winner-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(76px,.55fr) minmax(0,1fr);align-items:start;gap:12px}
+.winner-side,.winner-center{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.winner-side .team{min-height:38px;justify-content:flex-start;flex-direction:row;gap:8px;text-align:left}
+.winner-home .team{justify-content:flex-start}
+.winner-away .team{justify-content:flex-end}
+.winner-side .team-logo-frame{width:29px;height:29px;flex:none}
+.winner-side .team b{font-size:11px;max-width:calc(100% - 38px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:inherit}
+.winner-side .odd,.winner-center .odd{width:100%;min-height:34px;justify-content:space-between;direction:ltr}
+.winner-center{align-self:start;padding-top:4px;text-align:center}
+.winner-center>.versus{font-size:9px;letter-spacing:1px;text-align:center;padding:7px 0}
+.winner-center .odds-caption{justify-content:center;white-space:nowrap;margin:0;font-size:7px;letter-spacing:.5px}
+.winner-center .odds-caption svg{flex:none}
+.winner-center .odd{margin-top:0}
+@media(max-width:760px){.match-body.match-winner-layout{grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);gap:7px}.winner-side,.winner-center{gap:7px}.winner-side .team{min-height:38px;gap:5px}.winner-side .team-logo-frame{width:25px;height:25px}.winner-side .team b{font-size:9px;max-width:calc(100% - 30px)}.winner-side .odd,.winner-center .odd{padding:7px 5px}.winner-center{padding-top:4px}.winner-center>.versus{padding:7px 0}.winner-center .odds-caption{font-size:6px;letter-spacing:0}}
+@media(max-width:390px){.match-body.match-winner-layout{grid-template-columns:minmax(0,1fr) 68px minmax(0,1fr);gap:5px}.winner-side .team-logo-frame{width:22px;height:22px}.winner-side .team b{font-size:8px;max-width:calc(100% - 27px)}.winner-center .odds-caption{white-space:normal}}
