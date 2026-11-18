@@ -314,3 +314,7 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .market-outcome.picked{border-color:#16a777!important;background:#ddf5e5!important;color:#08734e!important;box-shadow:inset 0 0 0 1px #16a777}
 .market-outcome.picked b{color:#08734e!important}
 @media(max-width:480px){.detail-winner-odds{gap:5px}.detail-winner-pick{padding:10px 7px;gap:4px}.detail-winner-pick span{font-size:9px}.detail-winner-pick b{font-size:11px}}
+
+/* Keep the Match Winner label directly beneath VS without changing the team row or odds buttons. */
+.versus-group{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:none}
+.versus-group .odds-caption{margin:0;white-space:nowrap;font-size:7px;letter-spacing:.55px}
