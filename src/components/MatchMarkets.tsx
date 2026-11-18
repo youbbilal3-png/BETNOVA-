@@ -126,7 +126,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   }, [markets, t])
 
   if (loading) return <div className="markets-loading"><LoaderCircle size={18}/> {t('loading_markets')}</div>
-  if (error) return <div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets() }}>{t('try_again')}</button></div>
+  if (error) return <div><div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets() }}>{t('try_again')}</button></div><MarketCatalog /></div>
 
   const categories = grouped.map(([category]) => category)
   const visibleGroups = activeCategory === 'all' ? grouped : grouped.filter(([category]) => category === activeCategory)
