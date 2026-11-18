@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
   if (!apiKey) return json({ error: "Add fivedollarfootball_api_key to Supabase Vault" }, 503);
 
   const body = await req.json().catch(() => ({}));
-  const mode = body?.mode === "prematch" || body?.mode === "finalize" ? body.mode : "live";
+  const mode = body?.mode === "prematch" || body?.mode === "finalize" || body?.mode === "status" ? body.mode : "live";
   const requestedBatch = Number(body?.batch ?? 0);
   const batch = Number.isInteger(requestedBatch) ? Math.max(0, Math.min(9, requestedBatch)) : 0;
   let requests = 0;
@@ -96,6 +96,15 @@ Deno.serve(async (req: Request) => {
       throw new Error("FiveDollar API HTTP " + response.status + ": " + String(payload?.error?.message ?? payload?.message ?? raw).slice(0, 220));
     }
     return payload.data;
+  }
+
+  if (mode === "status") {
+    try {
+      const providerStatus = await get("/status");
+      return json({ ok: true, provider: PROVIDER, mode, provider_status: providerStatus, requests });
+    } catch (error) {
+      return json({ ok: false, provider: PROVIDER, mode, error: error instanceof Error ? error.message : "Status check failed" }, 502);
+    }
   }
 
   async function storeFixture(item: any): Promise<string | null> {
