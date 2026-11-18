@@ -23,7 +23,7 @@ const words: Record<string, string[]> = {
 const lines = ['1.5','2','2.5','3','3.5','4','4.5','5.5','6.5']
 const groups = [
  {title:2, items:[{name:2,key:'total_goals',choices:lines},{name:16,key:'both_teams_score',choices:[10,11]},{name:17,key:'first_team_to_score',choices:[12,14,11]}]},
- {title:3, items:[{name:3,key:'match_result',choices:[12,13,14]},{name:15,key:'double_chance',choices:['1X','X2','12']}]},
+ {title:3, items:[{name:3,key:'match_result',choices:[12,13,14]},{name:15,key:'double_chance',choices:['1X','12','X2']}]},
  {title:4, items:[{name:20,key:'total_corners', choices:['7.5','8.5','9.5','10.5','11.5','12.5']}]},
  {title:5, items:[{name:18,key:'total_cards',choices:['1.5','2.5','3.5','4.5','5.5','6.5']},{name:19,key:'red_card',choices:['0.5','1.5']}]},
  {title:6, items:[{name:21,key:'total_shots',choices:['15.5','18.5','20.5','22.5','24.5','26.5']},{name:22,key:'shots_on_target',choices:['5.5','6.5','7.5','8.5','9.5']}]},
