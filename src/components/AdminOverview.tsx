@@ -46,11 +46,18 @@ export default function AdminOverview({ onClose }: Props) {
   const [payoutReferences, setPayoutReferences] = useState<Record<string, string>>({})
 
   const loadProviderHealth = useCallback(async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setProviderHealthError('Supabase is not configured.')
+      return
+    }
     setProviderHealthError('')
-    const { data, error: rpcError } = await supabase.rpc('betnova_admin_provider_health')
-    if (rpcError) { setProviderHealthError('Provider health could not be loaded.'); return }
-    setProviderHealth(data as ProviderHealth)
+    try {
+      const { data, error: rpcError } = await supabase.rpc('betnova_admin_provider_health')
+      if (rpcError) throw rpcError
+      setProviderHealth(data as ProviderHealth)
+    } catch (caught) {
+      setProviderHealthError(caught instanceof Error ? caught.message : 'Provider health could not be loaded.')
+    }
   }, [])
 
   const loadFinance = useCallback(async () => {
@@ -67,6 +74,16 @@ export default function AdminOverview({ onClose }: Props) {
     setWithdrawals((w.data ?? []) as Withdrawal[])
     setMethods((p.data ?? []) as PaymentMethod[])
   }, [])
+
+  async function refreshFinance() {
+    setError('')
+    setNotice('')
+    try {
+      await loadFinance()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not refresh administration data.')
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -211,7 +228,7 @@ export default function AdminOverview({ onClose }: Props) {
             <button className={tab === 'withdrawals' ? 'active' : ''} onClick={() => setTab('withdrawals')}><CreditCard size={14}/> Withdrawals <b>{withdrawals.length}</b></button>
             <button className={tab === 'payments' ? 'active' : ''} onClick={() => setTab('payments')}><ShieldCheck size={14}/> Methods</button>
             <button className={tab === 'providers' ? 'active' : ''} onClick={() => { setTab('providers'); void loadProviderHealth() }}><Activity size={14}/> Data health</button>
-            <button className="admin-refresh" onClick={() => void loadFinance()} aria-label="Refresh finance"><RefreshCw size={14}/></button>
+            <button className="admin-refresh" onClick={() => void refreshFinance()} aria-label="Refresh finance"><RefreshCw size={14}/></button>
           </div>
           {error && <p className="admin-message error">{error}</p>}
           {notice && <p className="admin-message success">{notice}</p>}
