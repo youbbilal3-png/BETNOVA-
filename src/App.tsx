@@ -12,8 +12,8 @@ import { supabase } from './lib/supabase'
 const CLUB_PREFIXES = new Set(['FC','CF','CD','SC','AC','FK','SK','AFC','CFC','FBC','CA','CLUB','FOOTBALL','DEPORTIVO','SPORTING'])
 
 function teamInitials(name: string) {
-  const words = String(name ?? '').trim().split(/[\\s-]+/).filter(Boolean)
-  const meaningful = words.filter(word => !CLUB_PREFIXES.has(word.replace(/[^\\p{L}]/gu, '').toUpperCase()))
+  const words = String(name ?? '').trim().split(/[\s-]+/).filter(Boolean)
+  const meaningful = words.filter(word => !CLUB_PREFIXES.has(word.replace(/[^\p{L}]/gu, '').toUpperCase()))
   const source = meaningful.length ? meaningful : words
   if (!source.length) return '??'
   const chars = source.length > 1
