@@ -107,7 +107,20 @@ Deno.serve(async(req:Request)=>{
   const callCount=Number(state?.call_count??0);
   const bookmaker=bookmakers[callCount%bookmakers.length];
   const ids=selected.map((x:any)=>Number(x.tournament_id));
-  const oddsData=await api("odds-by-tournaments?"+new URLSearchParams({bookmaker,tournamentIds:ids.join(","),language:"en",verbosity:"3"}).toString(),key);
+  let oddsData:any;
+  try{oddsData=await api("odds-by-tournaments?"+new URLSearchParams({bookmaker,tournamentIds:ids.join(","),language:"en",verbosity:"3"}).toString(),key);}
+  catch(e){
+   const detail=e instanceof Error?e.message:JSON.stringify(e);
+   if(String(detail).includes("OddsPapi HTTP 404")){
+    const nextCursor=(cursor+selected.length)%prioritized.length;
+    const {error:skipError}=await sb.from("oddspapi_sync_state").upsert({id:1,tournament_cursor:nextCursor,call_count:callCount+1,last_sync_at:new Date().toISOString(),last_bookmaker:bookmaker},{onConflict:"id"});
+    if(skipError)throw skipError;
+    const afterSkip=await api("account",key),skipSub=(Array.isArray(afterSkip?.subscriptions)?afterSkip.subscriptions:[]).find((x:any)=>x.is_active);
+    const skipRemaining=skipSub?Math.max(0,Number(skipSub.request_limit??0)-Number(skipSub.request_count??0)):null;
+    return reply({ok:true,provider:PROVIDER,mode,bookmaker,tournament_ids:ids,tournaments:selected.map((x:any)=>({name:x.tournament_name,local_fixtures:localPriority.get(Number(x.tournament_id))??0})),no_odds:true,provider_events:0,markets_saved:0,selections_saved:0,remaining_requests:skipRemaining,message:"No odds for this bookmaker/tournament batch; rotated to the next batch."});
+   }
+   throw e;
+  }
   const events=Array.isArray(oddsData)?oddsData:Array.isArray(oddsData?.data)?oddsData.data:[];
   const now=new Date();
   const {data:fixtures,error:fError}=await sb.from("fixtures").select("id,starts_at,status,home_team_id,away_team_id").eq("status","scheduled").gte("starts_at",now.toISOString()).lte("starts_at",new Date(now.getTime()+14*86400000).toISOString()).order("starts_at",{ascending:true}).limit(1200);
