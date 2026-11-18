@@ -150,10 +150,11 @@ export default function App() {
   const [betsOpen, setBetsOpen] = useState(false)
 
   useEffect(() => {
-    if (!supabase) return
-    const checkAdmin = async (userId?: string) => { if (!userId) { setIsAdminUser(false); return } const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle(); setIsAdminUser(data?.role === 'admin') }
-    supabase.auth.getSession().then(({ data }) => { const user=data.session?.user; setUserEmail(user?.email ?? null); void checkAdmin(user?.id) })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const client = supabase
+    if (!client) return
+    const checkAdmin = async (userId?: string) => { if (!userId) { setIsAdminUser(false); return } const { data } = await client.from('profiles').select('role').eq('id', userId).maybeSingle(); setIsAdminUser(data?.role === 'admin') }
+    client.auth.getSession().then(({ data }) => { const user=data.session?.user; setUserEmail(user?.email ?? null); void checkAdmin(user?.id) })
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
       const user=session?.user; setUserEmail(user?.email ?? null); void checkAdmin(user?.id)
     })
     return () => subscription.unsubscribe()
