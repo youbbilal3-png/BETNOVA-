@@ -254,11 +254,17 @@ export default function App() {
         } else {
           fixtureQuery = fixtureQuery.eq('status', 'scheduled').gte('starts_at', new Date().toISOString())
         }
-        const { data, error } = await fixtureQuery
-          .order('starts_at', { ascending: eventView !== 'results' })
-          .limit(1000)
-
-        if (error) throw error
+        // Supabase may cap a single response at 1,000 rows. Page through the
+        // full fixture window so the European leagues are not hidden behind that cap.
+        const orderedFixtureQuery = fixtureQuery.order('starts_at', { ascending: eventView !== 'results' })
+        const allFixtureRows: any[] = []
+        for (let from = 0; ; from += 1000) {
+          const { data: pageRows, error } = await orderedFixtureQuery.range(from, from + 999)
+          if (error) throw error
+          allFixtureRows.push(...(pageRows ?? []))
+          if (!pageRows || pageRows.length < 1000) break
+        }
+        const data = allFixtureRows
         if (!active || requestId !== latestRequest) return
 
         const mapped: Match[] = (data ?? []).map((row: any) => {
@@ -422,8 +428,25 @@ export default function App() {
         international: isInternationalCompetition(match.league, match.country),
       })
     }
+    const priority = (name: string, country: string) => {
+      const value = (name + ' ' + country).toLowerCase()
+      if (/premier league/.test(value) && /england/.test(value)) return 0
+      if (/la liga/.test(value)) return 1
+      if (/serie a/.test(value) && /italy/.test(value)) return 2
+      if (/bundesliga/.test(value) && /germany/.test(value)) return 3
+      if (/ligue 1/.test(value) && /france/.test(value)) return 4
+      if (/uefa champions league|champions league/.test(value)) return 5
+      if (/uefa europa league|europa league/.test(value)) return 6
+      if (/conference league/.test(value)) return 7
+      if (/championship/.test(value) && /england/.test(value)) return 8
+      if (/eredivisie/.test(value)) return 9
+      if (/primeira liga/.test(value)) return 10
+      return 100
+    }
     return Array.from(byName.values()).sort((a, b) =>
-      Number(b.international) - Number(a.international) || a.name.localeCompare(b.name)
+      priority(a.name, a.country) - priority(b.name, b.country) ||
+      Number(b.international) - Number(a.international) ||
+      a.name.localeCompare(b.name)
     )
   }, [matches])
   const internationalCompetitions = competitionOptions.filter(item => item.international)
