@@ -360,7 +360,7 @@ export default function App() {
               cardCaption = cleanMarketDisplayName(String(fallback.name || 'Available odds'))
             }
           }
-          if (!cardPicks.length && sportSlug === 'football' && row.status !== 'finished') {
+          if (!cardPicks.length && sportSlug === 'football' && row.status === 'scheduled') {
             // Clearly labelled practice-only prices. These are never inserted into the
             // real markets tables and cannot reach the cash-wallet betting RPC.
             const trainingPrices = ['2.60', '3.20', '2.80']
