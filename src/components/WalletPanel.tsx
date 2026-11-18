@@ -61,6 +61,8 @@ export default function WalletPanel({ onClose }: Props) {
 
   async function submitDeposit(event: FormEvent) {
     event.preventDefault()
+    setNotice('Preview only: deposits are disabled until legal authorization and payment compliance are verified.')
+    return
     if (!supabase || !userId || !selectedMethod) return
     const value = Number(amount)
     if (!Number.isFinite(value) || value <= 0) { setError(t('valid_deposit_amount')); return }
@@ -91,6 +93,8 @@ export default function WalletPanel({ onClose }: Props) {
 
   async function submitWithdrawal(event: FormEvent) {
     event.preventDefault()
+    setNotice('Preview only: withdrawals are disabled until legal authorization and payment compliance are verified.')
+    return
     if (!supabase) return
     const value = Number(amount)
     if (!Number.isFinite(value) || value <= 0 || !method || !destination.trim()) { setError(t('complete_withdrawal')); return }
@@ -117,6 +121,7 @@ export default function WalletPanel({ onClose }: Props) {
       <button className="wallet-close" onClick={onClose} aria-label={t('close')}><X size={19}/></button>
       <div className="wallet-kicker"><Wallet size={15}/> BETNOVA WALLET</div>
       <h2 id="wallet-title">{t('wallet')}</h2>
+      <div className="wallet-recovery-notice"><b>Preview wallet</b><span>Balances are illustrative. Deposits and withdrawals are disabled until licensing, legal compliance, and secure payment controls are verified.</span></div>
       <div className="wallet-currency-row">{currencies.map(code => <button key={code} className={currency === code ? 'active' : ''} onClick={() => { setCurrency(code); setMethod('') }}>{code}</button>)}</div>
       <div className="wallet-balance-card">
         <span>{t('available_balance')}</span>
@@ -141,14 +146,14 @@ export default function WalletPanel({ onClose }: Props) {
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min="0.01" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('payment_proof')}<input id="wallet-proof-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>
         <label>{t('transfer_reference')}<input value={reference} onChange={event => setReference(event.target.value)} placeholder={t('transaction_reference')}/></label>
-        <button className="wallet-submit" disabled={busy || !selectedMethod}>{busy ? t('submitting') : t('sent_transfer')}</button>
+        <button className="wallet-submit" disabled={true}>Preview only</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('balance_after_verification')}</p>
       </form>}
       {tab === 'withdraw' && <form className="wallet-form" onSubmit={submitWithdrawal}>
         <label>{t('withdrawal_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min="0.01" max={account?.available_balance ?? 0} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
-        <button className="wallet-submit" disabled={busy || methods.length === 0 || Number(account?.recovery_balance ?? 0) > 0}>{busy ? t('submitting') : t('request_withdrawal')}</button>
+        <button className="wallet-submit" disabled={true}>Preview only</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('withdrawal_reserved')}</p>
       </form>}
       {tab === 'history' && <div className="wallet-history">
