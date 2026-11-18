@@ -205,12 +205,54 @@ export default function App() {
   useEffect(() => {
     const client = supabase
     if (!client) return
-    const checkAdmin = async (userId?: string) => { if (!userId) { setIsAdminUser(false); return } const { data } = await client.from('profiles').select('role').eq('id', userId).maybeSingle(); setIsAdminUser(data?.role === 'admin') }
-    client.auth.getSession().then(({ data }) => { const user=data.session?.user; setUserEmail(user?.email ?? null); void checkAdmin(user?.id) })
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      const user=session?.user; setUserEmail(user?.email ?? null); void checkAdmin(user?.id)
+    let active = true
+    let walletChannel: ReturnType<typeof client.channel> | null = null
+    const loadWalletBalance = async (userId?: string) => {
+      if (!userId) {
+        setWalletBalance(0)
+        if (walletChannel) { void client.removeChannel(walletChannel); walletChannel = null }
+        return
+      }
+      const { data, error } = await client.from('wallet_accounts')
+        .select('available_balance')
+        .eq('user_id', userId)
+        .eq('currency', 'DZD')
+        .maybeSingle()
+      if (!active) return
+      if (error) {
+        console.error('Could not refresh header wallet balance:', error.message)
+        return
+      }
+      setWalletBalance(Number(data?.available_balance ?? 0))
+      if (walletChannel) void client.removeChannel(walletChannel)
+      walletChannel = client.channel('header-wallet-' + userId)
+        .on('postgres_changes', {event:'*',schema:'public',table:'wallet_accounts',filter:'user_id=eq.' + userId}, () => {
+          void loadWalletBalance(userId)
+        })
+        .subscribe()
+    }
+    const checkAdmin = async (userId?: string) => {
+      if (!userId) { setIsAdminUser(false); return }
+      const { data } = await client.from('profiles').select('role').eq('id', userId).maybeSingle()
+      if (active) setIsAdminUser(data?.role === 'admin')
+    }
+    client.auth.getSession().then(({ data }) => {
+      const user=data.session?.user
+      setUserEmail(user?.email ?? null)
+      void checkAdmin(user?.id)
+      void loadWalletBalance(user?.id)
     })
-    return () => subscription.unsubscribe()
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+      const user=session?.user
+      setUserEmail(user?.email ?? null)
+      void checkAdmin(user?.id)
+      void loadWalletBalance(user?.id)
+    })
+    return () => {
+      active = false
+      subscription.unsubscribe()
+      if (walletChannel) void client.removeChannel(walletChannel)
+    }
   }, [])
 
   useEffect(() => {
