@@ -61,12 +61,68 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
 
   async function submitDeposit(event: FormEvent) {
     event.preventDefault()
-    setNotice('Preview only: deposits are disabled until legal authorization and payment compliance are verified.')
+    if (!supabase || !userId || !selectedMethod) return
+    if (!proofFile) { setError('Upload your transfer receipt before submitting.'); return }
+    if (!reference.trim()) { setError('Enter the transfer reference.'); return }
+    if (proofFile.size > 5 * 1024 * 1024) { setError('The receipt must be 5 MB or smaller.'); return }
+    if (!['image/jpeg','image/png','image/webp','application/pdf'].includes(proofFile.type)) {
+      setError('Use a JPG, PNG, WEBP or PDF receipt.'); return
+    }
+    const numericAmount = Number(amount)
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) { setError('Enter a valid deposit amount.'); return }
+
+    setBusy(true); setError(''); setNotice('')
+    const extension = proofFile.name.split('.').pop()?.toLowerCase() || 'bin'
+    const proofPath = `${userId}/${crypto.randomUUID()}.${extension}`
+    try {
+      const { error: uploadError } = await supabase.storage.from('deposit-proofs').upload(proofPath, proofFile, {
+        contentType: proofFile.type, upsert: false
+      })
+      if (uploadError) throw uploadError
+      const { error: requestError } = await supabase.rpc('betnova_request_deposit', {
+        p_payment_method: selectedMethod.code,
+        p_amount: numericAmount,
+        p_currency: currency,
+        p_sender_reference: reference.trim(),
+        p_proof_path: proofPath
+      })
+      if (requestError) {
+        await supabase.storage.from('deposit-proofs').remove([proofPath])
+        throw requestError
+      }
+      setNotice('Deposit request submitted. Your wallet will be credited after the transfer is verified.')
+      setAmount(''); setReference(''); setProofFile(null)
+      const fileInput = document.getElementById('wallet-proof-input') as HTMLInputElement | null
+      if (fileInput) fileInput.value = ''
+      await refresh()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not submit your deposit request.')
+    } finally { setBusy(false) }
   }
 
   async function submitWithdrawal(event: FormEvent) {
     event.preventDefault()
-    setNotice('Preview only: withdrawals are disabled until legal authorization and payment compliance are verified.')
+    if (!supabase || !selectedMethod) return
+    const numericAmount = Number(amount)
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) { setError('Enter a valid withdrawal amount.'); return }
+    if (!destination.trim() || destination.trim().length < 4) { setError('Enter valid receiving account details.'); return }
+    if (numericAmount > Number(account?.available_balance ?? 0)) { setError('Insufficient available balance.'); return }
+
+    setBusy(true); setError(''); setNotice('')
+    try {
+      const { error: requestError } = await supabase.rpc('betnova_request_withdrawal', {
+        p_payment_method: selectedMethod.code,
+        p_amount: numericAmount,
+        p_currency: currency,
+        p_destination_details: destination.trim()
+      })
+      if (requestError) throw requestError
+      setNotice('Withdrawal request submitted. The amount is reserved while the administrator processes your transfer.')
+      setAmount(''); setDestination('')
+      await refresh()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not submit your withdrawal request.')
+    } finally { setBusy(false) }
   }
 
   const instructions = selectedMethod?.instructions ?? {}
@@ -79,7 +135,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
       <button className="wallet-close" onClick={onClose} aria-label={t('close')}><X size={19}/></button>
       <div className="wallet-kicker"><Wallet size={15}/> BETNOVA WALLET</div>
       <h2 id="wallet-title">{t('wallet')}</h2>
-      <div className="wallet-recovery-notice"><b>Preview wallet</b><span>Balances are illustrative. Deposits and withdrawals are disabled until licensing, legal compliance, and secure payment controls are verified.</span></div>
+      <div className="wallet-recovery-notice"><b>Real-money wallet</b><span>Deposits are credited after manual verification. Withdrawals are sent manually by the administrator.</span></div>
       <div className="wallet-currency-row">{currencies.map(code => <button key={code} className={currency === code ? 'active' : ''} onClick={() => { setCurrency(code); setMethod('') }}>{code}</button>)}</div>
       <div className="wallet-balance-card">
         <span>{t('available_balance')}</span>
@@ -104,14 +160,14 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min="0.01" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('payment_proof')}<input id="wallet-proof-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>
         <label>{t('transfer_reference')}<input value={reference} onChange={event => setReference(event.target.value)} placeholder={t('transaction_reference')}/></label>
-        <button className="wallet-submit" disabled={true}>Preview only</button>
+        <button className="wallet-submit" disabled={busy || !selectedMethod}>{busy ? 'Submitting…' : 'Submit deposit request'}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('balance_after_verification')}</p>
       </form>}
       {tab === 'withdraw' && <form className="wallet-form" onSubmit={submitWithdrawal}>
         <label>{t('withdrawal_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min="0.01" max={account?.available_balance ?? 0} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
-        <button className="wallet-submit" disabled={true}>Preview only</button>
+        <button className="wallet-submit" disabled={busy || !selectedMethod || !account || Number(account.available_balance) <= 0}>{busy ? 'Submitting…' : 'Request withdrawal'}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('withdrawal_reserved')}</p>
       </form>}
       {tab === 'history' && <div className="wallet-history">
