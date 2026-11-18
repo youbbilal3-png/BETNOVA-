@@ -398,7 +398,6 @@ export default function App() {
       setBetMessage('A bet slip can contain up to 20 selections.')
       return
     }
-    const sameMatchPicks = selected.filter(item => String(item.match.id) === matchKey)
     // Replacing an outcome in the same market is allowed. Multiple markets from one match
     // are blocked until a verified same-match combined price is available.
     const afterMarketReplacement = selected.filter(item => !(String(item.match.id) === matchKey && item.marketKey === selection.marketKey))
