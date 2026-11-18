@@ -1203,3 +1203,17 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
   .admin-count-grid>div{padding:9px!important}
   .admin-finance-tabs button{font-size:9px!important;padding:7px 9px!important}
 }
+/* Competition selector follows BETNOVA navy / blue / violet controls */
+.app-shell .league-filters{min-width:0;max-width:100%}
+.app-shell .league-select{
+  min-height:40px!important;max-width:100%!important;padding:8px 34px 8px 12px!important;
+  border:1px solid #405782!important;border-radius:11px!important;
+  background:linear-gradient(135deg,#17294b,#202044)!important;color:#e7edff!important;
+  font-size:10px!important;font-weight:800!important;cursor:pointer!important;
+}
+.app-shell .league-select option{background:#111d3a!important;color:#edf2ff!important}
+@media(max-width:600px){
+  .app-shell .filter-row{align-items:stretch!important}
+  .app-shell .league-filters{width:100%!important}
+  .app-shell .league-select{width:100%!important}
+}
