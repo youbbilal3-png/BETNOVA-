@@ -945,3 +945,85 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
 .account-primary:disabled,.account-secondary:disabled{opacity:.55;cursor:not-allowed}
 .account-panel button:focus-visible,.mobile-more-panel button:focus-visible{outline:2px solid #dafa88;outline-offset:3px}
 @media(max-width:520px){.account-backdrop{padding:0;align-items:stretch}.account-panel{width:100%;max-height:100dvh;border-radius:0;padding:24px 17px calc(25px + env(safe-area-inset-bottom))}.account-heading h2{font-size:24px}.account-status-grid>div{padding:11px}.account-readonly{flex-wrap:wrap}.account-readonly span{margin-left:0;width:100%}}
+
+/* Match detail refinement: compact odds, the same club-badge treatment as the outer card,
+   and a clearer non-sticky markets heading. */
+#root .app-shell .detail-teams .detail-mark.team-crest{
+  width:58px!important;height:58px!important;min-width:58px!important;
+  padding:7px!important;display:grid!important;place-items:center!important;
+  border-radius:16px!important;clip-path:none!important;overflow:hidden!important;
+  background:linear-gradient(145deg,#243d55,#111d30)!important;
+  border:1px solid #83e8df72!important;
+  box-shadow:0 10px 24px #0008,inset 0 1px 0 #ffffff35,0 0 20px #5de6d01c!important;
+}
+#root .app-shell .detail-teams .detail-mark.team-crest img{
+  display:block!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center!important;
+  filter:drop-shadow(0 3px 5px #0008)!important;
+}
+#root .app-shell .detail-teams .detail-mark.team-crest>span{
+  color:#c6fff6!important;font-size:18px!important;font-weight:950!important;
+}
+#root .app-shell .detail-winner-odds{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;margin:12px 0 14px!important;
+}
+#root .app-shell .detail-winner-pick{
+  min-width:0!important;min-height:40px!important;height:40px!important;
+  flex-direction:row!important;align-items:center!important;justify-content:center!important;
+  gap:6px!important;padding:6px 8px!important;border-radius:999px!important;
+  background:linear-gradient(145deg,#203b29,#15291c)!important;
+  border:1px solid #42664a!important;color:#e7f5e7!important;
+  box-shadow:0 3px 0 #0b1b12,0 5px 10px #0003,inset 0 1px #ffffff18!important;
+}
+#root .app-shell .detail-winner-pick span{
+  min-width:0!important;font-size:9px!important;font-weight:850!important;
+  letter-spacing:0!important;color:#a8bea9!important;white-space:nowrap!important;
+}
+#root .app-shell .detail-winner-pick b{
+  font-size:12px!important;font-weight:950!important;color:#c8f27e!important;
+  font-variant-numeric:tabular-nums!important;
+}
+#root .app-shell .detail-winner-pick:hover:not(:disabled){
+  transform:translateY(-1px)!important;border-color:#a4e66e!important;
+  background:linear-gradient(145deg,#31583a,#1c3d29)!important;
+  box-shadow:0 4px 0 #0b1b12,0 8px 13px #0004!important;
+}
+#root .app-shell .detail-winner-pick:active:not(:disabled){
+  transform:translateY(2px)!important;box-shadow:0 1px 0 #0b1b12,0 3px 6px #0003!important;
+}
+#root .app-shell .detail-winner-pick.picked{
+  background:linear-gradient(145deg,#1b9d73,#12654e)!important;
+  border-color:#70e5c0!important;color:#fff!important;
+  box-shadow:0 3px 0 #083d31,0 6px 12px #0004,inset 0 1px #ffffff30!important;
+}
+#root .app-shell .detail-winner-pick.picked span,
+#root .app-shell .detail-winner-pick.picked b{color:#fff!important}
+#root .app-shell .detail-market-heading{
+  position:static!important;top:auto!important;z-index:auto!important;
+  margin:18px 0 10px!important;padding:14px 0 0!important;
+  background:transparent!important;backdrop-filter:none!important;
+  border-top:1px solid #8ba5c326!important;
+}
+#root .app-shell .detail-market-heading .eyebrow{display:none!important}
+#root .app-shell .detail-market-heading h3{
+  margin:0!important;color:#8cecdf!important;font-size:17px!important;
+  font-weight:900!important;letter-spacing:.2px!important;
+}
+#root .app-shell .detail-market-heading>span{
+  color:#8cecdf!important;background:#193849!important;
+  border:1px solid #5de6d044!important;
+}
+@media(max-width:480px){
+  #root .app-shell .detail-teams .detail-mark.team-crest{
+    width:50px!important;height:50px!important;min-width:50px!important;
+    padding:6px!important;border-radius:14px!important;
+  }
+  #root .app-shell .detail-winner-odds{gap:6px!important;margin:10px 0 12px!important}
+  #root .app-shell .detail-winner-pick{height:38px!important;min-height:38px!important;padding:5px 5px!important;gap:4px!important}
+  #root .app-shell .detail-winner-pick span{font-size:8px!important}
+  #root .app-shell .detail-winner-pick b{font-size:11px!important}
+  #root .app-shell .detail-market-heading{position:static!important;margin:15px 0 9px!important;padding:12px 0 0!important}
+  #root .app-shell .detail-market-heading h3{font-size:16px!important}
+}
+
