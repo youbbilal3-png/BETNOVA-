@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Activity, ChevronDown, ChevronUp, Clock3, LoaderCircle, Radio, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
+import MarketCatalog from './MarketCatalog'
 
 type Props = {
   fixtureId: string | number
@@ -94,7 +95,6 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
 
   if (loading) return <div className="markets-loading"><LoaderCircle size={18}/> {t('loading_markets')}</div>
   if (error) return <div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets() }}>{t('try_again')}</button></div>
-  if (!markets.length) return <div className="markets-empty"><Activity size={22}/><b>{t('no_verified_odds')}</b><span>{t('markets_will_appear')}</span></div>
 
   const categories = grouped.map(([category]) => category)
   const visibleGroups = activeCategory === 'all' ? grouped : grouped.filter(([category]) => category === activeCategory)
@@ -106,6 +106,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       <button className={activeCategory === 'all' ? 'active' : ''} onClick={() => { setActiveCategory('all'); setExpanded('') }}>{t('all_markets')}</button>
       {categories.map(category => <button key={category} className={activeCategory === category ? 'active' : ''} onClick={() => { setActiveCategory(category); setExpanded(category) }}>{category}</button>)}
     </div>
+    <MarketCatalog />
     {visibleGroups.map(([category, items]) => <section className="market-group" key={category}>
       <button className="market-group-head" onClick={() => setExpanded(expanded === category ? '' : category)}>
         <span>{category}</span><small>{items.length} {t('markets_count')}</small>{expanded === category ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
