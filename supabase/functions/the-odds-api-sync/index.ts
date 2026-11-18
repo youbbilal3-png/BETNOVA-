@@ -306,7 +306,7 @@ Deno.serve(async (req: Request) => {
             }
           }
 
-          const totals = isLive ? null : bookmaker.markets?.find((market: any) => market.key === "totals");
+          const totals = bookmaker.markets?.find((market: any) => market.key === "totals");
           if (totals) {
             const byPoint = new Map<number, { over: number | null; under: number | null }>();
             for (const outcome of Array.isArray(totals.outcomes) ? totals.outcomes : []) {
@@ -321,10 +321,10 @@ Deno.serve(async (req: Request) => {
             }
             for (const [point, picks] of byPoint) {
               if (!picks.over || !picks.under) continue;
-              const marketName = "Total Goals " + point + " · " + String(bookmaker.title ?? bookmaker.key ?? "EU bookmaker");
+              const marketName = (isLive ? "Live Total Goals " : "Total Goals ") + point + " · " + String(bookmaker.title ?? bookmaker.key ?? "EU bookmaker");
               const { data: existing } = await supabase.from("markets").select("id,status")
                 .eq("fixture_id", fixtureId).eq("market_key", "total_goals").eq("name", marketName).maybeSingle();
-              if (existing && existing.status !== "open") continue;
+              if (existing && !["open", "suspended"].includes(existing.status)) continue;
               const payload = {
                 fixture_id: fixtureId, market_type: "total_goals", market_key: "total_goals",
                 name: marketName, settlement_rule: { line: point }, is_live: isLive, is_active: true,
@@ -333,7 +333,7 @@ Deno.serve(async (req: Request) => {
                 last_updated_at: updatedAt,
               };
               const saved = existing
-                ? await supabase.from("markets").update(payload).eq("id", existing.id).eq("status", "open").select("id").single()
+                ? await supabase.from("markets").update(payload).eq("id", existing.id).in("status", ["open", "suspended"]).select("id").single()
                 : await supabase.from("markets").insert(payload).select("id").single();
               if (!saved.error && saved.data) {
                 marketsUpdated++;
