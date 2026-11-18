@@ -301,3 +301,16 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .market-catalog-note{margin:0;padding:9px 11px;border-left:3px solid #6eaa83;border-radius:7px;background:#f4f8f4;color:#7b8d80;font-size:8px;line-height:1.55}
 .market-catalog button:disabled{opacity:1;cursor:not-allowed}
 @media(max-width:480px){.market-line-grid{grid-template-columns:1fr}.market-catalog .market-outcomes{grid-template-columns:repeat(2,minmax(0,1fr))}.market-catalog-top{padding:11px 12px}}
+
+/* Match winner odds inside the match centre: always home, draw, away. */
+.detail-winner-odds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;direction:ltr;margin:16px 0 12px}
+.detail-winner-pick{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:12px 13px;border:1px solid #e1ebe2;border-radius:11px;background:#f7faf6;color:#315b4b;transition:background .16s,border-color .16s,box-shadow .16s,transform .16s}
+.detail-winner-pick span{font-size:11px;font-weight:700;white-space:nowrap}
+.detail-winner-pick b{font-size:13px}
+.detail-winner-pick:hover:not(:disabled){border-color:#83caa0;background:#edf8ef;transform:translateY(-1px)}
+.detail-winner-pick:disabled{cursor:not-allowed;opacity:.52}
+.detail-winner-pick.picked{border-color:#16a777;background:#ddf5e5;color:#08734e;box-shadow:inset 0 0 0 1px #16a777}
+.detail-winner-pick.picked span,.detail-winner-pick.picked b{color:#08734e}
+.market-outcome.picked{border-color:#16a777!important;background:#ddf5e5!important;color:#08734e!important;box-shadow:inset 0 0 0 1px #16a777}
+.market-outcome.picked b{color:#08734e!important}
+@media(max-width:480px){.detail-winner-odds{gap:5px}.detail-winner-pick{padding:10px 7px;gap:4px}.detail-winner-pick span{font-size:9px}.detail-winner-pick b{font-size:11px}}
