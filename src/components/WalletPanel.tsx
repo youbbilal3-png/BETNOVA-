@@ -3,7 +3,7 @@ import { ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, ShieldCheck, Walle
 import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
 
-type Props = { onClose: () => void }
+type Props = { onClose: () => void; initialTab?: 'deposit' | 'withdraw' | 'history' }
 type Method = { code: string; display_name: string; supported_currencies: string[]; instructions: Record<string, unknown> }
 type Account = { currency: string; available_balance: number; reserved_balance: number; recovery_balance: number }
 type RequestRow = { id: string; payment_method: string; amount: number; currency: string; status: string; created_at: string }
@@ -11,7 +11,7 @@ type RequestRow = { id: string; payment_method: string; amount: number; currency
 const currencies = ['DZD', 'USD', 'EUR']
 const formatMoney = (amount: number, currency: string) => new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
 
-export default function WalletPanel({ onClose }: Props) {
+export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) {
   const { t } = useLanguage()
   const [userId, setUserId] = useState('')
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -24,7 +24,7 @@ export default function WalletPanel({ onClose }: Props) {
   const [reference, setReference] = useState('')
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [destination, setDestination] = useState('')
-  const [tab, setTab] = useState<'deposit' | 'withdraw' | 'history'>('deposit')
+  const [tab, setTab] = useState<'deposit' | 'withdraw' | 'history'>(initialTab)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
