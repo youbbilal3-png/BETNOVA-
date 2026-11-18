@@ -103,10 +103,10 @@ function countryFlagForCompetition(competition: string, country: string) {
 
 function canonicalCompetitionLabel(competition: string, country: string) {
   const value = (String(competition) + ' ' + String(country)).toLowerCase()
-  if (/premier league/.test(value) && /england/.test(value) && !/women|u\\d|cup/.test(value)) return 'Premier League'
+  if (/premier league/.test(value) && /england/.test(value) && !/women|u\d|cup/.test(value)) return 'Premier League'
   if (/la liga/.test(value) && !/2|women/.test(value)) return 'La Liga'
   if (/serie a/.test(value) && /italy|italia/.test(value)) return 'Serie A'
-  if (/bundesliga/.test(value) && /germany|deutschland/.test(value) && !/2\\.? bundesliga|bundesliga 2|women/.test(value)) return 'Bundesliga'
+  if (/bundesliga/.test(value) && /germany|deutschland/.test(value) && !/2\.? bundesliga|bundesliga 2|women/.test(value)) return 'Bundesliga'
   if (/ligue 1/.test(value) && /france/.test(value) && !/women/.test(value)) return 'Ligue 1'
   if (/champions league/.test(value) && !/women/.test(value)) return 'UEFA Champions League'
   if (/europa league/.test(value) && !/conference/.test(value)) return 'UEFA Europa League'
@@ -409,9 +409,9 @@ export default function App() {
         const uniqueMatches = new Map<string, Match>()
         const normalizeTeam = (value: string) => String(value ?? '')
           .normalize('NFKD')
-          .replace(/[\\u0300-\\u036f]/g, '')
+          .replace(/[\u0300-\u036f]/g, '')
           .toLowerCase()
-          .replace(/\\b(fc|cf|cd|sc|ac|fk|sk|afc|cfc|fbc|ca)\\b/g, '')
+          .replace(/\b(fc|cf|cd|sc|ac|fk|sk|afc|cfc|fbc|ca)\b/g, '')
           .replace(/[^a-z0-9]+/g, ' ')
           .trim()
         const matchQuality = (match: Match) =>
