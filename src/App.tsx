@@ -37,6 +37,8 @@ type Match = {
   homeLogo: string | null
   awayLogo: string | null
   odds: string[]
+  oddsLabels: string[]
+  oddsCaption: string
   winnerPicks: (MarketPick | null)[]
   marketsCount: number
   featured?: boolean
@@ -290,6 +292,48 @@ export default function App() {
             findPick(['draw', 'x']),
             findPick(['away', '2']),
           ]
+          // If a bookmaker has not posted 1X2 for this fixture, still surface
+          // a real, currently open market (prefer O/U 2.5, then BTTS, then DC).
+          // Never fabricate or derive prices.
+          let cardPicks = winnerPicks
+          let cardLabels = ['Win 1', 'Draw', 'Win 2']
+          let cardCaption = t('match_winner')
+          if (!winnerPicks.some(Boolean)) {
+            const preferredMarkets = [...openMarkets].sort((a: any, b: any) => {
+              const rank = (market: any) => {
+                const key = String(market.market_key || market.market_type || '').toLowerCase()
+                const name = String(market.name || '').toLowerCase()
+                if (key === 'total_goals' && /2[.,]5/.test(name)) return 0
+                if (key === 'total_goals') return 1
+                if (key === 'both_teams_score' || key === 'btts') return 2
+                if (key === 'double_chance') return 3
+                return 4
+              }
+              return rank(a) - rank(b)
+            })
+            const fallback = preferredMarkets.find((market: any) =>
+              (market.market_selections ?? []).filter((selection: any) =>
+                selection.status === 'active' && selection.result_status === 'pending' &&
+                Number.isFinite(Number(selection.odds)) && Number(selection.odds) > 1
+              ).length >= 2
+            )
+            if (fallback) {
+              const selections = (fallback.market_selections ?? []).filter((selection: any) =>
+                selection.status === 'active' && selection.result_status === 'pending' &&
+                Number.isFinite(Number(selection.odds)) && Number(selection.odds) > 1
+              ).slice(0, 3)
+              cardPicks = selections.map((selection: any) => ({
+                selectionId: String(selection.id),
+                marketId: String(fallback.id),
+                marketKey: String(fallback.market_key || fallback.market_type),
+                marketLabel: String(fallback.name),
+                selectionLabel: String(selection.name),
+                odds: Number(selection.odds).toFixed(2),
+              }))
+              cardLabels = selections.map((selection: any) => String(selection.name))
+              cardCaption = String(fallback.name || 'Available odds').split('·')[0].trim()
+            }
+          }
           const startsAt = new Date(row.starts_at)
           return {
             id: row.id,
@@ -305,8 +349,10 @@ export default function App() {
             awayMark: teamInitials(away?.name ?? 'Away team'),
             homeLogo: home?.logo_url ?? null,
             awayLogo: away?.logo_url ?? null,
-            odds: winnerPicks.map(pick => pick?.odds ?? '—'),
-            winnerPicks,
+            odds: cardPicks.map(pick => pick?.odds ?? '—'),
+            oddsLabels: cardLabels,
+            oddsCaption: cardCaption,
+            winnerPicks: cardPicks,
             marketsCount: openMarkets.length,
             status: row.status,
             score: row.home_score !== null && row.away_score !== null ? `${row.home_score} – ${row.away_score}` : undefined,
@@ -507,7 +553,7 @@ export default function App() {
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => setDetailMatch(match)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setDetailMatch(match) } }}>
                 <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
-                <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} initials`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus-group"><span className="versus">VS</span>{eventView !== 'results' && <span className="odds-caption">{t('match_winner')} <CircleHelp size={12}/></span>}</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} initials`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><div className="odds-grid">{match.odds.map((odd,i)=>{const pick=match.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} onClick={event=>{event.stopPropagation();if(pick)toggleMarketSelection(match,pick)}} className={picked?'odd picked':'odd'}><small>{['Win 1','Draw','Win 2'][i]}</small><b>{odd}</b></button>})}</div></div>}</div>
+                <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} initials`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus-group"><span className="versus">VS</span>{eventView !== 'results' && <span className="odds-caption">{match.oddsCaption} <CircleHelp size={12}/></span>}</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} initials`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><div className="odds-grid">{match.odds.map((odd,i)=>{const pick=match.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} onClick={event=>{event.stopPropagation();if(pick)toggleMarketSelection(match,pick)}} className={picked?'odd picked':'odd'}><small>{match.oddsLabels[i] ?? ['Win 1','Draw','Win 2'][i]}</small><b>{odd}</b></button>})}</div></div>}</div>
                 <div className="match-footer"><button className="favorite-toggle" onClick={event => { event.stopPropagation(); toggleFavorite(match.id) }}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={event => { event.stopPropagation(); setDetailMatch(match) }}>{t("view_all_markets")} <span className="match-market-count">{match.marketsCount}</span><ArrowRight size={13}/></button></div>
               </article>) : <div className="empty-state">{query ? t('empty_search') : sport === 'Football' ? eventView === 'live' ? t('empty_live') : eventView === 'results' ? t('empty_results') : t('empty_football') : t('empty_sport')}</div>}
             </div>
