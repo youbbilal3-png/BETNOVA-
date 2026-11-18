@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const API = "https://api.5dollarfootballapi.com/v1";
 const PROVIDER = "fivedollarfootballapi";
-const MAX_ODDS_FIXTURES = 2;
+const MAX_ODDS_FIXTURES = 5;
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, x-betnova-sync-secret",
@@ -570,7 +570,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const fixturesToProcess = mode === "prematch"
-      ? fixtures.slice(batch * 10, batch * 10 + 10)
+      ? fixtures.slice(batch * 5, batch * 5 + 5)
       : fixtures;
     const stored: Array<{item:any;id:string}> = [];
     for (const item of fixturesToProcess) {
@@ -582,8 +582,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // Free plan returns each fixture's full Bet365 odds through a per-fixture call.
-    // Prematch batches contain ten fixtures; ten runs per three-hour cycle cover
-    // the full 100-row fixture window while staying below the 50/hour local budget.
+    // Prematch batches contain five fixtures; ten runs per three-hour cycle cover
+    // up to 50 upcoming fixtures. Five live fixtures are repriced every 15 minutes.
+    // Together, the two schedules stay below the 50/hour local and 60/hour provider caps.
     const oddsTargets = mode === "live"
       ? stored.slice(0, MAX_ODDS_FIXTURES)
       : mode === "prematch" ? stored : [];
