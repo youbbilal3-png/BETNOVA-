@@ -111,6 +111,38 @@ Deno.serve(async (req: Request) => {
       supabase.from("fixtures").select("id,home_score,away_score,status").eq("source_provider", PROVIDER).eq("external_id", externalId).maybeSingle(),
     ]);
     if (football.error || !football.data) throw new Error("Football catalogue unavailable");
+    if (oldFixture.error) throw new Error("Could not inspect existing FiveDollar fixture");
+    if (oldFixture.data?.id) {
+      fixtureCache.set(externalId, oldFixture.data.id);
+      return oldFixture.data.id;
+    }
+
+    // Reuse an already-imported fixture from another provider when both team names
+    // and kickoff match. This prevents duplicate match cards when odds providers overlap.
+    const teamKey = (value: unknown) => String(value ?? "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
+      .toLowerCase().replace(/\\b(fc|cf|sc|ac|afc|club|football club)\\b/g, "")
+      .replace(/[^a-z0-9]+/g, " ").trim().replace(/\\s+/g, " ");
+    const kickoffMs = new Date(kickoff).getTime();
+    const { data: candidates, error: candidateError } = await supabase.from("fixtures")
+      .select("id,starts_at,home_team:teams!fixtures_home_team_id_fkey(name),away_team:teams!fixtures_away_team_id_fkey(name)")
+      .gte("starts_at", new Date(kickoffMs - 15 * 60 * 1000).toISOString())
+      .lte("starts_at", new Date(kickoffMs + 15 * 60 * 1000).toISOString())
+      .neq("status", "cancelled").limit(100);
+    if (candidateError) throw new Error("Could not match provider fixture");
+    const matched = (candidates ?? []).find((candidate: any) => {
+      const home = Array.isArray(candidate.home_team) ? candidate.home_team[0] : candidate.home_team;
+      const away = Array.isArray(candidate.away_team) ? candidate.away_team[0] : candidate.away_team;
+      return teamKey(home?.name) === teamKey(homeName) && teamKey(away?.name) === teamKey(awayName);
+    });
+    if (matched?.id) {
+      const { error: linkError } = await supabase.from("fivedollar_fixture_links").upsert({
+        provider_fixture_id: externalId, fixture_id: matched.id, updated_at: now.toISOString(),
+      }, { onConflict: "provider_fixture_id" });
+      if (linkError) throw new Error("Could not link FiveDollar odds to the existing match");
+      fixtureCache.set(externalId, matched.id);
+      return matched.id;
+    }
+
     const country = String(item?.league?.country ?? "").trim() || null;
     const competitionName = String(item?.league?.name ?? "Football").trim();
     const season = String(item?.league?.season ?? "");
@@ -472,6 +504,18 @@ Deno.serve(async (req: Request) => {
         { name: "Under " + line, key: "under_" + key, price: corners.under },
       ]);
     }
+
+    // Bet365 publishes a combined total-card line. Keep the provider's actual
+    // line and prices; do not split it into yellow/red prices that are not supplied.
+    const cards = priceSet(odds.card_line);
+    if (cards && Number.isFinite(Number(cards.line)) && Math.round(Number(cards.line) * 2) === Number(cards.line) * 2) {
+      const line = Number(cards.line);
+      const key = line.toFixed(1).replace(".", "_");
+      await saveMarket(fixtureId, isLive, "total_cards", "Total Cards · " + line + " · Bet365", line, [
+        { name: "Over " + line, key: "over_" + key, price: cards.over },
+        { name: "Under " + line, key: "under_" + key, price: cards.under },
+      ]);
+    }
   }
 
   try {
@@ -486,7 +530,7 @@ Deno.serve(async (req: Request) => {
       fixtures = Array.isArray(data) ? data : [];
     } else {
       const start = Math.floor(Date.now() / 1000);
-      const end = start + 24 * 60 * 60;
+      const end = start + 7 * 24 * 60 * 60;
       const data = await get("/fixtures?status=scheduled&start_time=" + start + "&end_time=" + end + "&per_page=100");
       fixtures = Array.isArray(data) ? data : [];
     }
