@@ -6,7 +6,7 @@ const API="https://api.oddspapi.io/v4/";
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-betnova-sync-secret","Access-Control-Allow-Methods":"POST, OPTIONS","Content-Type":"application/json"};
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:cors});
 function safeEqual(a:string,b:string){const x=new TextEncoder().encode(a),y=new TextEncoder().encode(b);if(x.length!==y.length)return false;let d=0;for(let i=0;i<x.length;i++)d|=x[i]^y[i];return d===0;}
-async function api(path:string,key:string){const u=new URL(path,API);u.searchParams.set("apiKey",key);const r=await fetch(u,{headers:{accept:"application/json"},signal:AbortSignal.timeout(35000)});const t=await r.text();let data:any;try{data=t?JSON.parse(t):null;}catch{throw new Error("OddsPapi returned non-JSON response ("+r.status+")");}if(!r.ok)throw new Error("OddsPapi HTTP "+r.status+": "+String(data?.message??data?.error??"request failed").slice(0,250));return data;}
+async function api(path:string,key:string){const u=new URL(path,API);u.searchParams.set("apiKey",key);const r=await fetch(u,{headers:{accept:"application/json"},signal:AbortSignal.timeout(35000)});const t=await r.text();let data:any;try{data=t?JSON.parse(t):null;}catch{throw new Error("OddsPapi returned non-JSON response ("+r.status+")");}if(!r.ok){const detail=data?.message??data?.error??data??"request failed";throw new Error("OddsPapi HTTP "+r.status+": "+(typeof detail==="string"?detail:JSON.stringify(detail)).slice(0,250));}return data;}
 function norm(s:any){return String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\b(fc|cf|afc|sc|ac|as|fk|sv|club|the)\b/g," ").replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");}
 function similarity(a:string,b:string){if(a===b)return 1;const A=new Set(a.split(" ")),B=new Set(b.split(" "));const inter=[...A].filter(x=>B.has(x)).length;return inter/Math.max(1,new Set([...A,...B]).size);}
 function odd(v:any){const n=Number(v);return Number.isFinite(n)&&n>1&&n<1000?n:null;}
@@ -88,7 +88,7 @@ Deno.serve(async(req:Request)=>{
   const prioritized=all.slice(0,150);
   const cursor=Number(state?.tournament_cursor??0)%prioritized.length;
   const selected=[0,1,2].map(i=>prioritized[(cursor+i)%prioritized.length]).filter(Boolean);
-  const bookmakers=["1xbet","pinnacle","bet365"];
+  const bookmakers=["1xbet"];
   const callCount=Number(state?.call_count??0);
   const bookmaker=bookmakers[callCount%bookmakers.length];
   const ids=selected.map((x:any)=>Number(x.tournament_id));
