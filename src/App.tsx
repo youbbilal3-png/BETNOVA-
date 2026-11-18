@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Menu, Search, ShieldCheck, Sparkles, Star, Trophy, Wallet, X } from 'lucide-react'
+import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Menu, Search, Settings, ShieldCheck, Sparkles, Star, Trophy, UserRound, Wallet, X } from 'lucide-react'
 import AuthPanel from './components/AuthPanel'
+import AccountPanel from './components/AccountPanel'
 import AdminOverview from './components/AdminOverview'
 import WalletPanel from './components/WalletPanel'
 import MatchMarkets from './components/MatchMarkets'
@@ -132,6 +133,9 @@ export default function App() {
   const [mobileSlip, setMobileSlip] = useState(false)
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [walletInitialTab, setWalletInitialTab] = useState<'deposit' | 'withdraw' | 'history'>('deposit')
   const [query, setQuery] = useState('')
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
@@ -141,6 +145,7 @@ export default function App() {
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
   const [adminOpen, setAdminOpen] = useState(false)
   const [walletOpen, setWalletOpen] = useState(false)
+  function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') { setWalletInitialTab(tab); setWalletOpen(true); setAccountOpen(false); setMobileMoreOpen(false) }
   const [betsOpen, setBetsOpen] = useState(false)
 
   useEffect(() => {
@@ -363,7 +368,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand nova-brand-lockup" href="#"><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">N</span><i/></span><span className="nova-brand-word">NOVA<span className="brand-accent">ARENA</span><small>THE NEXT SPORTS EXPERIENCE</small></span></a>
         <nav className="desktop-nav"><a className="active" href="#events">{t('sports')}</a><button onClick={() => openEventView('live')}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => openEventView('results')}>{t('results')}</button></nav>
-        <div className="top-actions"><button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <button className="wallet-open-btn deposit-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> Deposit</button>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>{t('admin')}</button></> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); setAuthOpen(true) }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
+        <div className="top-actions"><button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <><button className="wallet-open-btn deposit-open-btn" onClick={() => openWallet('deposit')}><Wallet size={15}/> Deposit</button><button className="account-open-btn" onClick={() => setAccountOpen(true)}><UserRound size={15}/> My account</button></>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>{t('admin')}</button></> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); setAuthOpen(true) }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
       </header>
 
       <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
@@ -427,8 +432,10 @@ export default function App() {
           <div className="mobile-more-header"><div><b>NOVA ARENA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => setMobileMoreOpen(false)} aria-label={t("close")}><X size={18}/></button></div>
           <button onClick={() => { setMobileMoreOpen(false); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           {userEmail ? <>
-            <button onClick={() => { setMobileMoreOpen(false); setWalletOpen(true) }}><Wallet size={17}/>{t("wallet")}</button>
+            <button className="mobile-account-entry" onClick={() => { setMobileMoreOpen(false); setAccountOpen(true) }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
+            <button onClick={() => openWallet('deposit')}><Wallet size={17}/>Deposit</button>
             <button onClick={() => { setMobileMoreOpen(false); setBetsOpen(true) }}><Activity size={17}/>{t("my_bets")}</button>
+            <button onClick={() => { setMobileMoreOpen(false); setSettingsOpen(true) }}><Settings size={17}/>{t("settings")}</button>
             <button onClick={() => { setMobileMoreOpen(false); setNotificationsOpen(true) }}><Bell size={17}/>{t("notifications")}</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("responsible")?.scrollIntoView({behavior:"smooth"}) }}><ShieldCheck size={17}/>Responsible play</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("help")?.scrollIntoView({behavior:"smooth"}) }}><CircleHelp size={17}/>Help & support</button>
@@ -469,7 +476,9 @@ export default function App() {
         </div>
       })()}
       {adminOpen && <AdminOverview onClose={() => setAdminOpen(false)} />}
-      {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} />}
+      {accountOpen && <AccountPanel onClose={() => setAccountOpen(false)} onSignOut={() => { setAccountOpen(false); void supabase?.auth.signOut() }} onOpenWallet={openWallet} />}
+      {settingsOpen && <div className="settings-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setSettingsOpen(false) }}><section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><button className="settings-close" onClick={() => setSettingsOpen(false)} aria-label={t('close')}><X size={19}/></button><div className="settings-kicker"><Settings size={15}/> BETNOVA · PREFERENCES</div><h2 id="settings-title">{t('settings')}</h2><p>Personalise your BETNOVA experience.</p><label><span><Globe2 size={16}/> {t('language')}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><label><span><Wallet size={16}/> Preferred currency</span><select value={betCurrency} onChange={event => setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select></label><div className="settings-note"><ShieldCheck size={16}/> Preferences apply to this session. Wallet deposits and withdrawals remain in preview mode.</div><button className="settings-done" onClick={() => setSettingsOpen(false)}>Done <ArrowRight size={15}/></button></section></div>}
+      {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} initialTab={walletInitialTab} />}
       {betsOpen && <MyBetsPanel onClose={() => setBetsOpen(false)} />}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
       <footer className="footer"><span>© 2026 NOVA ARENA · BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span><span>Football data by <a href="https://5dollarfootballapi.com" target="_blank" rel="noreferrer">5DollarFootballAPI</a></span></footer>
