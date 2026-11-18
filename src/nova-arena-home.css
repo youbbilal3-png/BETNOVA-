@@ -1228,3 +1228,44 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
 }
 .app-shell .load-more-matches:hover{background:linear-gradient(120deg,#2b4d86,#4b4389)!important;border-color:#8198d1!important}
 .app-shell .load-more-matches:focus-visible{outline:2px solid #a7bcff!important;outline-offset:3px!important}
+
+
+/* Competition-first Upcoming browser — BETNOVA navy / blue / violet */
+.app-shell .competition-browser{
+  display:flex!important;flex-direction:column!important;gap:10px!important;
+  margin:10px 0 16px!important;padding:13px!important;max-height:270px!important;
+  overflow-y:auto!important;overflow-x:hidden!important;
+  border:1px solid #405782!important;border-radius:15px!important;
+  background:linear-gradient(145deg,#101c38f2,#171a3bf2 62%,#211a43f2)!important;
+  box-shadow:0 12px 28px #050b1c55,inset 0 1px #ffffff12!important;
+  scrollbar-width:thin!important;scrollbar-color:#6576b7 #111a31!important;
+}
+.app-shell .competition-browser-top{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;color:#edf2ff!important;font-size:11px!important;font-weight:900!important}
+.app-shell .competition-browser-top small{color:#9eafd8!important;font-size:9px!important;font-weight:700!important}
+.app-shell .competition-group{display:flex!important;flex-direction:column!important;gap:7px!important;min-width:0!important}
+.app-shell .competition-group-title{display:flex!important;align-items:center!important;gap:6px!important;color:#9eafff!important;font-size:9px!important;font-weight:900!important;text-transform:uppercase!important;letter-spacing:.75px!important}
+.app-shell .competition-chip-list{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px!important;min-width:0!important}
+.app-shell .competition-chip{
+  display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:6px!important;
+  min-height:32px!important;max-width:100%!important;padding:6px 9px!important;
+  border:1px solid #394e78!important;border-radius:9px!important;
+  background:linear-gradient(135deg,#17294a,#202044)!important;color:#dce6ff!important;
+  font-size:9px!important;font-weight:800!important;line-height:1.2!important;
+  cursor:pointer!important;touch-action:manipulation!important;box-shadow:inset 0 1px #ffffff0d!important;
+  transition:border-color .15s ease,background .15s ease,transform .15s ease!important;
+}
+.app-shell .competition-chip:hover{border-color:#8398d5!important;background:linear-gradient(135deg,#203c6b,#393267)!important}
+.app-shell .competition-chip.selected{border-color:#9baeff!important;background:linear-gradient(120deg,#315a9a,#55458c)!important;color:#fff!important;box-shadow:0 4px 12px #253b7655,inset 0 1px #ffffff25!important}
+.app-shell .competition-chip.international{border-color:#655c9b!important}
+.app-shell .competition-chip.international.selected{border-color:#b5a8ff!important;background:linear-gradient(120deg,#344e91,#654b9b)!important}
+.app-shell .competition-chip-flag{font-size:12px!important;line-height:1!important;flex:0 0 auto!important}
+.app-shell .competition-chip-name{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.app-shell .competition-chip b{flex:0 0 auto!important;min-width:17px!important;padding:2px 5px!important;border-radius:6px!important;background:#0c1730!important;color:#b8c8ff!important;font-size:8px!important;text-align:center!important}
+.app-shell .competition-chip.selected b{background:#ffffff20!important;color:#fff!important}
+@media(max-width:600px){
+  .app-shell .competition-browser{max-height:230px!important;margin:9px 0 13px!important;padding:10px!important}
+  .app-shell .competition-browser-top{align-items:flex-start!important;flex-direction:column!important;gap:3px!important}
+  .app-shell .competition-chip-list{gap:5px!important}
+  .app-shell .competition-chip{min-height:34px!important;padding:7px 8px!important;font-size:9px!important;max-width:100%!important}
+}
+@media(max-width:360px){.app-shell .competition-chip{font-size:8px!important;padding:6px 7px!important}}
