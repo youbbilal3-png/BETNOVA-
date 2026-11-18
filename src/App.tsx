@@ -194,6 +194,7 @@ export default function App() {
             return best ? {
               selectionId: String(best.selection.id),
               marketId: String(best.market.id),
+              marketKey: String(best.market.market_key || best.market.market_type),
               marketLabel: String(best.market.name),
               selectionLabel: String(best.selection.name),
               odds: Number(best.selection.odds).toFixed(2),
@@ -285,7 +286,7 @@ export default function App() {
     }
     const goalLine = (label: string) => {
       const value = label.split('·').pop()?.trim() ?? ''
-      const match = value.match(/^(over|under)\\s*(\\d+(?:\\.\\d+)?)$/i)
+      const match = value.match(/^(over|under)\s*(\d+(?:\.\d+)?)$/i)
       return match ? { side: match[1].toLowerCase(), line: Number(match[2]) } : null
     }
 
