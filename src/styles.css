@@ -287,6 +287,10 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .market-catalog-top i{font-style:normal;font-size:9px;font-weight:950;letter-spacing:1.5px;color:#9ee8b6}
 .market-catalog-group{overflow:hidden;border:1px solid #e0ebe1;border-radius:13px;background:linear-gradient(180deg,#fff,#fbfdfb);box-shadow:0 3px 12px #193d2810}
 .market-catalog-group h4{margin:0;padding:11px 13px;background:#f1f7f1;color:#28563d;font-size:11px;font-weight:950}
+.market-catalog-group-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0;border:0;background:transparent;color:#28563d;text-align:left;cursor:pointer}
+.market-catalog-group-toggle h4{flex:1;min-width:0}
+.market-catalog-group-toggle svg{flex:0 0 auto;margin-right:12px;color:#39815b}
+.market-catalog-group-body{display:block}
 .market-catalog-item{padding:11px 12px;border-top:1px solid #edf2ed}
 .market-catalog-item-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;color:#365d47;font-size:9px;font-weight:850}
 .market-catalog-item-title span{flex:0 0 auto;padding:4px 6px;border-radius:6px;background:#f4f5f3;color:#9a9f99;font-size:7px;font-weight:800}
