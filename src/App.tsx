@@ -140,6 +140,7 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [isAdminUser, setIsAdminUser] = useState(false)
   const [loadingMatches, setLoadingMatches] = useState(true)
   const [matchLoadError, setMatchLoadError] = useState<string | null>(null)
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
@@ -150,9 +151,10 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => setUserEmail(data.session?.user.email ?? null))
+    const checkAdmin = async (userId?: string) => { if (!userId) { setIsAdminUser(false); return } const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle(); setIsAdminUser(data?.role === 'admin') }
+    supabase.auth.getSession().then(({ data }) => { const user=data.session?.user; setUserEmail(user?.email ?? null); void checkAdmin(user?.id) })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user.email ?? null)
+      const user=session?.user; setUserEmail(user?.email ?? null); void checkAdmin(user?.id)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -368,7 +370,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand nova-brand-lockup" href="#"><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">N</span><i/></span><span className="nova-brand-word">NOVA<span className="brand-accent">ARENA</span><small>THE NEXT SPORTS EXPERIENCE</small></span></a>
         <nav className="desktop-nav"><a className="active" href="#events">{t('sports')}</a><button onClick={() => openEventView('live')}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => openEventView('results')}>{t('results')}</button></nav>
-        <div className="top-actions"><button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <><button className="wallet-open-btn deposit-open-btn" onClick={() => openWallet('deposit')}><Wallet size={15}/> Deposit</button><button className="account-open-btn" onClick={() => setAccountOpen(true)}><UserRound size={15}/> My account</button></>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>{t('admin')}</button></> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); setAuthOpen(true) }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
+        <div className="top-actions"><button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <><button className="wallet-open-btn deposit-open-btn" onClick={() => openWallet('deposit')}><Wallet size={15}/> Deposit</button><button className="account-open-btn" onClick={() => setAccountOpen(true)}><UserRound size={15}/> My account</button></>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button>{isAdminUser && <button className="admin-open-btn" onClick={() => setAdminOpen(true)}>{t('admin')}</button>}</> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); setAuthOpen(true) }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
       </header>
 
       <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
@@ -438,7 +440,7 @@ export default function App() {
             <button onClick={() => { setMobileMoreOpen(false); setNotificationsOpen(true) }}><Bell size={17}/>{t("notifications")}</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("responsible")?.scrollIntoView({behavior:"smooth"}) }}><ShieldCheck size={17}/>Responsible play</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("help")?.scrollIntoView({behavior:"smooth"}) }}><CircleHelp size={17}/>Help & support</button>
-            <button onClick={() => { setMobileMoreOpen(false); setAdminOpen(true) }}><ShieldCheck size={17}/>{t("admin")}</button>
+            {isAdminUser && <button onClick={() => { setMobileMoreOpen(false); setAdminOpen(true) }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { setMobileMoreOpen(false); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
             <button onClick={() => { setMobileMoreOpen(false); setAuthMode("login"); setAuthOpen(true) }}><ArrowRight size={17}/>{t("login")}</button>
