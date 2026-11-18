@@ -159,6 +159,7 @@ export default function App() {
   const [betCurrency, setBetCurrency] = useState('DZD')
   const [betBusy, setBetBusy] = useState(false)
   const [betMessage, setBetMessage] = useState('')
+  const [betIdempotencyKey, setBetIdempotencyKey] = useState(() => crypto.randomUUID())
   const [mobileSlip, setMobileSlip] = useState(false)
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -398,28 +399,53 @@ export default function App() {
       return
     }
     const sameMatchPicks = selected.filter(item => String(item.match.id) === matchKey)
-    // Replacing an outcome in the same market is allowed; a third market from this fixture is not.
+    // Replacing an outcome in the same market is allowed. Multiple markets from one match
+    // are blocked until a verified same-match combined price is available.
     const afterMarketReplacement = selected.filter(item => !(String(item.match.id) === matchKey && item.marketKey === selection.marketKey))
-    const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }
     const remainingSameMatchPicks = afterMarketReplacement.filter(item => String(item.match.id) === matchKey)
-    if (remainingSameMatchPicks.length >= 2) {
-      setBetMessage('Bet Builder limit reached: choose up to two markets from this match.')
+    if (remainingSameMatchPicks.length > 0) {
+      const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }
+      const incompatible = remainingSameMatchPicks.find(item => builderConflict(
+        { marketKey: item.marketKey, label: item.label },
+        { marketKey: candidate.marketKey, label: candidate.label }
+      ))
+      setBetMessage(incompatible ? 'These two selections contradict each other.' : 'Only one selection per match is currently supported.')
       return
     }
-    const incompatible = remainingSameMatchPicks.find(item => builderConflict(
-      { marketKey: item.marketKey, label: item.label },
-      { marketKey: candidate.marketKey, label: candidate.label }
-    ))
-    if (incompatible) {
-      setBetMessage('These two selections contradict each other and cannot be combined.')
-      return
-    }
+    const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }
     setSelected([...afterMarketReplacement, candidate])
-    setBetMessage(sameMatchPicks.length ? 'Compatible Bet Builder selections added. A verified combined price is required before a return can be shown.' : '')
+    setBetMessage('')
   }
 
   async function placeBet() {
-    setBetMessage('BETNOVA is currently a preview. Real-money betting is disabled until licensing, legal compliance, and secure payment controls are verified.')
+    if (!supabase) { setBetMessage('Betting service is unavailable. Please try again later.'); return }
+    if (!selected.length) { setBetMessage('Choose at least one market.'); return }
+    if (hasSameMatchBuilder) { setBetMessage('Choose only one selection per match for now.'); return }
+    const stake = Number(betStake)
+    if (!Number.isFinite(stake) || stake <= 0) { setBetMessage('Enter a valid stake.'); return }
+    setBetBusy(true); setBetMessage('')
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+      if (!user) {
+        setAuthMode('login'); setAuthOpen(true)
+        setBetMessage('Sign in to place a bet with your wallet balance.')
+        return
+      }
+      const { data, error: betError } = await supabase.rpc('betnova_place_bet', {
+        p_selections: selected.map(item => ({ selection_id: item.selectionId })),
+        p_stake: stake,
+        p_currency: betCurrency,
+        p_idempotency_key: betIdempotencyKey
+      })
+      if (betError) throw betError
+      setSelected([])
+      setBetStake('')
+      setBetIdempotencyKey(crypto.randomUUID())
+      setBetMessage(`Bet accepted. Reference: ${String(data).slice(0, 8).toUpperCase()}`)
+    } catch (caught) {
+      setBetMessage(caught instanceof Error ? caught.message : 'Your bet could not be placed. Please refresh the odds and try again.')
+    } finally { setBetBusy(false) }
   }
 
   // Guests use the same live match centre and market details as members; betting remains authenticated.
@@ -494,9 +520,9 @@ export default function App() {
         <aside className="right-rail">
           <div className="slip-card"><div className="slip-head"><div><span className="eyebrow dark">{t('your_picks')}</span><h3>{t('bet_slip')} <span>{selected.length}</span></h3></div><button className="slip-clear" onClick={()=>setSelected([])}>{t("clear")}</button></div>
             {selected.length ? <div className="slip-selections">{selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button onClick={()=>setSelected(current=>current.filter(x=>x.selectionId!==s.selectionId))}><X size={14}/></button></div>)}</div> : <div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>{t("slip_waiting")}</b><p>{t("select_price")}</p></div>}
-            {userEmail ? <div className="bet-slip-stake"><label>Virtual stake · Preview<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t('potential_return')}</span><b>{(hasSameMatchBuilder ? 'Combined price pending' : (Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2))} {betCurrency}</b></div></div> : <p className="guest-slip-note">Preview mode: selections and estimated returns are for demonstration only. Real-money betting is currently disabled.</p>}
+            {userEmail ? <div className="bet-slip-stake"><label>Stake<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t('potential_return')}</span><b>{(hasSameMatchBuilder ? 'Combined price pending' : (Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2))} {betCurrency}</b></div></div> : <p className="guest-slip-note">Sign in to view your wallet balance and place real bets.</p>}
             {betMessage && <p className="bet-slip-message">{betMessage}</p>}
-            <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>Preview only <ArrowRight size={15}/></button>
+            <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>{betBusy ? 'Placing…' : 'Place bet'} <ArrowRight size={15}/></button>
           </div>
           <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><a href="#help">Get support <ArrowRight size={13}/></a></div></div>
           <div className="responsible-card" id="responsible"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
