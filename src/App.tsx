@@ -69,6 +69,12 @@ function countryFlagForCompetition(competition: string, country: string) {
   return flags.find(([pattern]) => pattern.test(value))?.[1] ?? '🌍'
 }
 
+function isInternationalCompetition(competition: string, country: string) {
+  const value = `${country} ${competition}`.toLowerCase()
+  return /^(world|europe|africa|asia|oceania|international)$/.test(country.trim().toLowerCase()) ||
+    /international|friendly|qualif|nations league|world cup|euro|asian cup|africa cup|afcon|copa america|olympic|fifa|uefa|afc|caf|concacaf|conmebol|u17 world|u19 world|u20 world|u23/.test(value)
+}
+
 const sports = ['Football', 'Basketball', 'Tennis', 'Ice Hockey', 'Volleyball']
 
 function normalizedPick(value: string) {
@@ -309,10 +315,24 @@ export default function App() {
     }
   }, [sport, userEmail, eventView])
 
-  const leagueOptions = useMemo(
-    () => Array.from(new Set(matches.map(match => match.league))).sort((a, b) => a.localeCompare(b)),
-    [matches]
-  )
+  const competitionOptions = useMemo(() => {
+    const byName = new Map<string, { name: string; country: string; count: number; international: boolean }>()
+    for (const match of matches) {
+      const current = byName.get(match.league)
+      if (current) current.count += 1
+      else byName.set(match.league, {
+        name: match.league,
+        country: match.country,
+        count: 1,
+        international: isInternationalCompetition(match.league, match.country),
+      })
+    }
+    return Array.from(byName.values()).sort((a, b) =>
+      Number(b.international) - Number(a.international) || a.name.localeCompare(b.name)
+    )
+  }, [matches])
+  const internationalCompetitions = competitionOptions.filter(item => item.international)
+  const domesticCompetitions = competitionOptions.filter(item => !item.international)
 
   const filteredMatches = useMemo(() => matches.filter(m =>
     (!showFavorites || favoriteIds.includes(String(m.id))) &&
@@ -419,7 +439,21 @@ export default function App() {
               <button className={eventView === 'results' ? 'event-view active' : 'event-view'} onClick={() => setEventView('results')}>{t("results")}</button>
             </div>
             <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>
-            <div className="filter-row"><div className="league-filters"><select className="filter league-select" aria-label="Filter by competition" value={league} onChange={event=>setLeague(event.target.value)}><option value="All matches">All competitions ({matches.length})</option>{leagueOptions.map(name=><option key={name} value={name}>{name}</option>)}</select></div><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("search")}/></label></div>
+            <div className="filter-row"><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("search")}/></label></div>
+            {eventView === 'upcoming' && !showFavorites && <div className="competition-browser" aria-label="Browse upcoming competitions">
+              <div className="competition-browser-top"><span>Browse by competition</span><small>{competitionOptions.length} competitions · {matches.length} matches</small></div>
+              <div className="competition-chip-list competition-all-row">
+                <button type="button" className={league === 'All matches' ? 'competition-chip selected' : 'competition-chip'} onClick={() => setLeague('All matches')}>All competitions <b>{matches.length}</b></button>
+              </div>
+              {internationalCompetitions.length > 0 && <section className="competition-group">
+                <div className="competition-group-title"><Globe2 size={13}/> International competitions</div>
+                <div className="competition-chip-list">{internationalCompetitions.map(item => <button type="button" key={item.name} title={item.name} className={league === item.name ? 'competition-chip selected international' : 'competition-chip international'} onClick={() => setLeague(item.name)}><span className="competition-chip-flag">{countryFlagForCompetition(item.name, item.country)}</span><span className="competition-chip-name">{item.name}</span><b>{item.count}</b></button>)}</div>
+              </section>}
+              {domesticCompetitions.length > 0 && <section className="competition-group">
+                <div className="competition-group-title"><Trophy size={13}/> Domestic leagues & cups</div>
+                <div className="competition-chip-list">{domesticCompetitions.map(item => <button type="button" key={item.name} title={item.name} className={league === item.name ? 'competition-chip selected' : 'competition-chip'} onClick={() => setLeague(item.name)}><span className="competition-chip-flag">{countryFlagForCompetition(item.name, item.country)}</span><span className="competition-chip-name">{item.name}</span><b>{item.count}</b></button>)}</div>
+              </section>}
+            </div>}
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => setDetailMatch(match)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setDetailMatch(match) } }}>
                 <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
