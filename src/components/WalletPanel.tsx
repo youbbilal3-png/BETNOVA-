@@ -62,53 +62,11 @@ export default function WalletPanel({ onClose }: Props) {
   async function submitDeposit(event: FormEvent) {
     event.preventDefault()
     setNotice('Preview only: deposits are disabled until legal authorization and payment compliance are verified.')
-    return
-    if (!supabase || !userId || !selectedMethod) return
-    const value = Number(amount)
-    if (!Number.isFinite(value) || value <= 0) { setError(t('valid_deposit_amount')); return }
-    if (!proofFile && !reference.trim()) { setError(t('add_transfer_proof')); return }
-    if (proofFile && (proofFile.size > 5 * 1024 * 1024 || !['image/jpeg','image/png','image/webp','application/pdf'].includes(proofFile.type))) { setError(t('proof_format')); return }
-    setBusy(true); setError(''); setNotice('')
-    try {
-      let proofPath: string | null = null
-      if (proofFile) {
-        proofPath = userId + '/' + crypto.randomUUID() + '-' + proofFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-        const { error: uploadError } = await supabase.storage.from('deposit-proofs').upload(proofPath, proofFile, { contentType: proofFile.type, upsert: false })
-        if (uploadError) throw uploadError
-      }
-      const { error: insertError } = await supabase.from('deposit_requests').insert({
-        user_id: userId, payment_method: method, amount: value, currency,
-        sender_reference: reference.trim() || null, proof_path: proofPath, status: 'pending'
-      })
-      if (insertError) {
-        if (proofPath) await supabase.storage.from('deposit-proofs').remove([proofPath])
-        throw insertError
-      }
-      setNotice(t('deposit_sent'))
-      setAmount(''); setReference(''); setProofFile(null); const fileInput = document.getElementById('wallet-proof-input') as HTMLInputElement | null; if (fileInput) fileInput.value = ''
-      await refresh()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : t('could_not_load_wallet')) }
-    finally { setBusy(false) }
   }
 
   async function submitWithdrawal(event: FormEvent) {
     event.preventDefault()
     setNotice('Preview only: withdrawals are disabled until legal authorization and payment compliance are verified.')
-    return
-    if (!supabase) return
-    const value = Number(amount)
-    if (!Number.isFinite(value) || value <= 0 || !method || !destination.trim()) { setError(t('complete_withdrawal')); return }
-    setBusy(true); setError(''); setNotice('')
-    try {
-      const { error: rpcError } = await supabase.rpc('betnova_request_withdrawal', {
-        p_payment_method: method, p_amount: value, p_currency: currency, p_destination_details: destination.trim()
-      })
-      if (rpcError) throw rpcError
-      setNotice(t('withdrawal_sent'))
-      setAmount(''); setDestination('')
-      await refresh()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : t('could_not_load_wallet')) }
-    finally { setBusy(false) }
   }
 
   const instructions = selectedMethod?.instructions ?? {}
