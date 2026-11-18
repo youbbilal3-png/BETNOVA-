@@ -6,6 +6,7 @@ import WalletPanel from './components/WalletPanel'
 import MatchMarkets from './components/MatchMarkets'
 import MatchStatistics from './components/MatchStatistics'
 import MyBetsPanel from './components/MyBetsPanel'
+import AccountPanel from './components/AccountPanel'
 import { languages, useLanguage } from './i18n'
 import { supabase } from './lib/supabase'
 
@@ -95,6 +96,7 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false)
   const [walletOpen, setWalletOpen] = useState(false)
   const [betsOpen, setBetsOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -270,7 +272,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand nova-brand-lockup" href="#"><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">N</span><i/></span><span className="nova-brand-word">NOVA<span className="brand-accent">ARENA</span><small>THE NEXT SPORTS EXPERIENCE</small></span></a>
         <nav className="desktop-nav"><a className="active" href="#events">{t('sports')}</a><button onClick={() => openEventView('live')}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => openEventView('results')}>{t('results')}</button></nav>
-        <div className="top-actions"><label className="language-picker" aria-label={t("language")}><Globe2 size={14}/><select value={language} onChange={event=>setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="wallet-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> {t("wallet")}</button><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>{t('admin')}</button></> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button></>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? t('signout') : t('join')} <ArrowRight size={16}/></button></div>
+        <div className="top-actions"><label className="language-picker" aria-label={t("language")}><Globe2 size={14}/><select value={language} onChange={event=>setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><button className="icon-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button><button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="wallet-open-btn" onClick={() => setWalletOpen(true)}><Wallet size={15}/> {t("wallet")}</button><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button><button className="account-open-btn" onClick={() => setAccountOpen(true)}><ShieldCheck size={15}/> Profile</button><button className="admin-open-btn" onClick={() => setAdminOpen(true)}>{t('admin')}</button></> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button></>}<button className="join-btn" onClick={() => userEmail ? void supabase?.auth.signOut() : (setAuthMode('signup'), setAuthOpen(true))}>{userEmail ? t('signout') : t('join')} <ArrowRight size={16}/></button></div>
       </header>
 
       <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
@@ -337,8 +339,12 @@ export default function App() {
           <button onClick={() => { setMobileMoreOpen(false); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           <button onClick={() => { setMobileMoreOpen(false); setShowFavorites(true); setEventView("upcoming"); document.getElementById("events")?.scrollIntoView({behavior:"smooth"}) }}><Star size={17}/>{t("favourites")}</button>
           {userEmail ? <>
+            <button className="mobile-account-entry" onClick={() => { setMobileMoreOpen(false); setAccountOpen(true) }}><ShieldCheck size={17}/>My profile & security<span>›</span></button>
             <button onClick={() => { setMobileMoreOpen(false); setWalletOpen(true) }}><Wallet size={17}/>{t("wallet")}</button>
             <button onClick={() => { setMobileMoreOpen(false); setBetsOpen(true) }}><Activity size={17}/>{t("my_bets")}</button>
+            <button onClick={() => { setMobileMoreOpen(false); setNotificationsOpen(true) }}><Bell size={17}/>{t("notifications")}</button>
+            <button onClick={() => { setMobileMoreOpen(false); document.getElementById("responsible")?.scrollIntoView({behavior:"smooth"}) }}><ShieldCheck size={17}/>Responsible play</button>
+            <button onClick={() => { setMobileMoreOpen(false); document.getElementById("help")?.scrollIntoView({behavior:"smooth"}) }}><CircleHelp size={17}/>Help & support</button>
             <button onClick={() => { setMobileMoreOpen(false); setAdminOpen(true) }}><ShieldCheck size={17}/>{t("admin")}</button>
             <button onClick={() => { setMobileMoreOpen(false); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
@@ -360,6 +366,7 @@ export default function App() {
       {adminOpen && <AdminOverview onClose={() => setAdminOpen(false)} />}
       {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} />}
       {betsOpen && <MyBetsPanel onClose={() => setBetsOpen(false)} />}
+      {accountOpen && <AccountPanel onClose={() => setAccountOpen(false)} onSignOut={() => { setAccountOpen(false); void supabase?.auth.signOut() }} />}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
       <footer className="footer"><span>© 2026 NOVA ARENA · BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span><span>Football data by <a href="https://5dollarfootballapi.com" target="_blank" rel="noreferrer">5DollarFootballAPI</a></span></footer>
     </div>
