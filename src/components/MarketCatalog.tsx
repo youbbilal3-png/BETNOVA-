@@ -78,11 +78,11 @@ export default function MarketCatalog({ markets, live, selectedIds, onSelect }: 
     {item.choices.length && typeof item.choices[0] === 'string' && item.choices.every(v=>/^\\d+(\\.\\d+)?$/.test(String(v))) ?
      <div className="market-line-grid">{item.choices.map(line=>{
       const market=findMarket(item.key,String(line))
-      const over=pickFor(market,w[8]+' '+line)
-      const under=pickFor(market,w[9]+' '+line)
+      const over=pickFor(market,'Over '+line)
+      const under=pickFor(market,'Under '+line)
       return <div className="market-line-row" key={line}><b>{line}</b>
-       <button type="button" disabled={!over} aria-pressed={!!over&&selectedIds.includes(over.selectionId)} className={over&&selectedIds.includes(over.selectionId)?'catalog-picked':''} onClick={()=>handle(market,w[8]+' '+line)}>{w[8]} {line}<strong>{over?.odds ?? '—'}</strong></button>
-       <button type="button" disabled={!under} aria-pressed={!!under&&selectedIds.includes(under.selectionId)} className={under&&selectedIds.includes(under.selectionId)?'catalog-picked':''} onClick={()=>handle(market,w[9]+' '+line)}>{w[9]} {line}<strong>{under?.odds ?? '—'}</strong></button>
+       <button type="button" disabled={!over} aria-pressed={!!over&&selectedIds.includes(over.selectionId)} className={over&&selectedIds.includes(over.selectionId)?'catalog-picked':''} onClick={()=>handle(market,'Over '+line)}>{w[8]} {line}<strong>{over?.odds ?? '—'}</strong></button>
+       <button type="button" disabled={!under} aria-pressed={!!under&&selectedIds.includes(under.selectionId)} className={under&&selectedIds.includes(under.selectionId)?'catalog-picked':''} onClick={()=>handle(market,'Under '+line)}>{w[9]} {line}<strong>{under?.odds ?? '—'}</strong></button>
       </div>
      })}</div> :
      <div className="market-outcomes">{item.choices.map(v=>{
