@@ -37,7 +37,7 @@ export default function MarketCatalog() {
    <h4>{w[group.title]}</h4>
    {group.items.map(item=><article className="market-catalog-item" key={item.name}>
     <div className="market-catalog-item-title">{w[item.name]}<span>{w[1]}</span></div>
-    {item.choices.length && typeof item.choices[0] === 'string' && item.choices.every(v=>lines.includes(String(v)) || /^\d/.test(String(v))) ?
+    {item.choices.length && typeof item.choices[0] === 'string' && item.choices.every(v=>/^\d+(\.\d+)?$/.test(String(v))) ?
      <div className="market-line-grid">{item.choices.map(line=><div className="market-line-row" key={line}><b>{line}</b><button disabled>{w[8]} {line}<strong>—</strong></button><button disabled>{w[9]} {line}<strong>—</strong></button></div>)}</div> :
      <div className="market-outcomes">{item.choices.map(v=><button disabled className="market-outcome" key={v}><span>{option(v)}</span><b>—</b></button>)}</div>}
    </article>)}
