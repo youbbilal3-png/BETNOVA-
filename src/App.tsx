@@ -295,10 +295,10 @@ export default function App() {
           // If a bookmaker has not posted 1X2 for this fixture, still surface
           // a real, currently open market (prefer O/U 2.5, then BTTS, then DC).
           // Never fabricate or derive prices.
-          let cardPicks = winnerPicks
+          let cardPicks: (MarketPick | null)[] = winnerPicks.every(Boolean) ? winnerPicks : []
           let cardLabels = ['Win 1', 'Draw', 'Win 2']
           let cardCaption = t('match_winner')
-          if (!winnerPicks.some(Boolean)) {
+          if (!winnerPicks.every(Boolean)) {
             const preferredMarkets = [...openMarkets].sort((a: any, b: any) => {
               const rank = (market: any) => {
                 const key = String(market.market_key || market.market_type || '').toLowerCase()
@@ -334,7 +334,7 @@ export default function App() {
               cardCaption = String(fallback.name || 'Available odds').split('·')[0].trim()
             }
           }
-          if (!cardPicks.some(Boolean) && row.status !== 'finished') {
+          if (!cardPicks.length && sportSlug === 'football' && row.status !== 'finished') {
             // Clearly labelled practice-only prices. These are never inserted into the
             // real markets tables and cannot reach the cash-wallet betting RPC.
             const trainingPrices = ['2.60', '3.20', '2.80']
