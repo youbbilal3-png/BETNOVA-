@@ -11,7 +11,7 @@
 - The integration makes one odds request per run, with up to three tournament IDs in that request.
 - The cron job runs every four hours (`0 */4 * * *`), budgeting about 180 odds requests over a 30-day month and preserving a quota reserve.
 - Tournament batches are prioritized using upcoming fixtures already present in BETNOVA, then rotated through a bounded competition list.
-- The currently validated bookmaker is 1xBet. Other bookmaker identifiers may not have odds for the selected competitions and can return 404; do not repeatedly spend quota on unsupported combinations.
+- The integration rotates among 1xBet, Pinnacle, and bet365 to broaden bookmaker coverage. 1xBet has been validated; other bookmaker/tournament combinations may return 404 when no odds are offered. A 404 advances both the bookmaker and tournament rotation so the same unsupported batch is not retried every four hours.
 - The current OddsPapi subscription reports no live odds. This integration is pre-match only; live prices must come from another enabled provider.
 
 ## Market normalization
