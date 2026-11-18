@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, ChevronUp, Clock3, LoaderCircle, Radio, RefreshCw } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Clock3, LoaderCircle, Radio, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
 import MarketCatalog from './MarketCatalog'
@@ -35,6 +35,13 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   const [activeCategory, setActiveCategory] = useState('all')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [clock, setClock] = useState(Date.now())
+  const [categoryOrder, setCategoryOrder] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('betnova-market-category-order-v1') || '[]') as string[] } catch { return [] }
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem('betnova-market-category-order-v1', JSON.stringify(categoryOrder)) } catch { /* storage may be unavailable */ }
+  }, [categoryOrder])
 
   const outcomeWords: Record<string, string[]> = {
     en:['Win 1','Draw','Win 2','Over','Under','Yes','No'],
@@ -129,17 +136,35 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       const category = categoryFor(market, t)
       groups.set(category, [...(groups.get(category) ?? []), market])
     }
-    return Array.from(groups.entries()).sort((a, b) => {
+    const entries = Array.from(groups.entries()).map(([category, items]) => ({
+      category,
+      items,
+      id: [...new Set(items.map(m => m.market_key || m.market_type))].sort().join('|') || category.toLowerCase().replace(/\\s+/g, '-')
+    }))
+    return entries.sort((a, b) => {
+      const ai = categoryOrder.indexOf(a.id)
+      const bi = categoryOrder.indexOf(b.id)
+      if (ai !== -1 || bi !== -1) return (ai === -1 ? Number.MAX_SAFE_INTEGER : ai) - (bi === -1 ? Number.MAX_SAFE_INTEGER : bi)
       const rank = (label: string) => /goal/i.test(label) ? 0 : /match|result/i.test(label) ? 1 : /corner/i.test(label) ? 2 : /card/i.test(label) ? 3 : 4
-      return rank(a[0]) - rank(b[0])
+      return rank(a.category) - rank(b.category)
     })
-  }, [markets, t])
+  }, [markets, t, categoryOrder])
+
+  function moveCategory(categoryId: string, direction: -1 | 1) {
+    const ids = grouped.map(group => group.id)
+    const current = ids.indexOf(categoryId)
+    const target = current + direction
+    if (current < 0 || target < 0 || target >= ids.length) return
+    const next = [...ids]
+    ;[next[current], next[target]] = [next[target], next[current]]
+    setCategoryOrder(next)
+  }
 
   if (loading) return <div className="markets-loading"><LoaderCircle size={18}/> {t('loading_markets')}</div>
   if (error) return <div><div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets() }}>{t('try_again')}</button></div><MarketCatalog markets={markets} live={live} selectedIds={selectedIds} onSelect={onSelect} /></div>
 
-  const categories = grouped.map(([category]) => category)
-  const visibleGroups = activeCategory === 'all' ? grouped : grouped.filter(([category]) => category === activeCategory)
+  const categories = grouped.map(group => group.category)
+  const visibleGroups = activeCategory === 'all' ? grouped : grouped.filter(group => group.category === activeCategory)
 
   return <div className="match-markets">
     {live && events.length > 0 && <section className="match-event-feed"><div className="match-event-feed-head"><span><Radio size={12}/> {t('live_match_events')}</span><small>{events.length} {t('recent_updates')}</small></div>{events.map(event=><div className="match-event-row" key={event.id}><b>{event.minute !== null ? event.minute + (event.added_time ? '+' + event.added_time : '') + "'" : '•'}</b><span className={'event-dot '+event.event_type}>{event.event_type==='goal'?'⚽':event.event_type==='yellow_card'?'🟨':event.event_type==='red_card'?'🟥':event.event_type==='corner'?'◉':event.event_type==='substitution'?'↔':'•'}</span><span>{event.player_name || t(event.event_type === 'goal' ? 'goal_event' : event.event_type === 'yellow_card' ? 'yellow_card_event' : event.event_type === 'red_card' ? 'red_card_event' : event.event_type === 'corner' ? 'corner_event' : event.event_type === 'substitution' ? 'substitution_event' : 'other_event')}{event.team?.name ? ' · '+event.team.name : ''}</span></div>)}</section>}
@@ -151,10 +176,14 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
         else { setActiveCategory(category); setExpanded(category) }
       }}>{category}</button>)}
     </div>
-    {visibleGroups.map(([category, items]) => <section className="market-group" key={category}>
-      <button className="market-group-head" aria-expanded={expanded === category} onClick={() => setExpanded(expanded === category ? '' : category)}>
-        <span>{category}</span><small>{items.length} {t('markets_count')}</small>{expanded === category ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
-      </button>
+    {visibleGroups.map(({category, items, id: categoryId}) => <section className="market-group" key={categoryId}>
+      <div className="market-group-toolbar">
+        <button type="button" className="market-group-order-btn" aria-label={'Move ' + category + ' up'} title="Move section up" disabled={grouped.findIndex(group => group.id === categoryId) === 0} onClick={() => moveCategory(categoryId, -1)}><ArrowUp size={14}/></button>
+        <button type="button" className="market-group-order-btn" aria-label={'Move ' + category + ' down'} title="Move section down" disabled={grouped.findIndex(group => group.id === categoryId) === grouped.length - 1} onClick={() => moveCategory(categoryId, 1)}><ArrowDown size={14}/></button>
+        <button className="market-group-head" aria-expanded={expanded === category} onClick={() => setExpanded(expanded === category ? '' : category)}>
+          <span>{category}</span><small>{items.length} {t('markets_count')}</small>{expanded === category ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
+        </button>
+      </div>
       {expanded === category && <div className="market-group-body">
         {items.map(market => {
           const updatedMs = new Date(market.last_updated_at).getTime()
