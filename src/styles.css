@@ -490,3 +490,14 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
  .market-category-filters .market-category-button{min-height:34px!important;padding:5px 6px!important;font-size:9px!important}
  .market-category-filters .market-category-button small{font-size:7px!important}
 }
+
+/* Wallet balance summary inside the account centre */
+.account-wallet-summary{margin:18px 0;padding:16px;border:1px solid rgba(70,190,135,.22);border-radius:16px;background:linear-gradient(135deg,rgba(12,42,34,.92),rgba(13,24,25,.96));box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+.account-wallet-summary-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.account-wallet-summary-head span{font-size:11px;font-weight:800;letter-spacing:.13em;color:#9cb7aa}
+.account-wallet-summary-head button{border:1px solid rgba(93,214,159,.32);border-radius:9px;background:rgba(33,145,99,.18);color:#a8f2cb;padding:7px 10px;font-weight:700}
+.account-wallet-balance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.account-wallet-balance-grid>div{min-width:0;padding:11px 9px;border-radius:11px;background:rgba(255,255,255,.045);display:flex;flex-direction:column;gap:5px}
+.account-wallet-balance-grid small{font-size:10px;color:#9cb7aa}
+.account-wallet-balance-grid strong{font-size:clamp(12px,2.5vw,16px);color:#f3fff8;overflow-wrap:anywhere}
+@media(max-width:480px){.account-wallet-balance-grid{gap:6px}.account-wallet-balance-grid>div{padding:9px 6px}.account-wallet-balance-grid strong{font-size:11px}}
