@@ -14,6 +14,18 @@ type Selection = { id: string; name: string; odds: number; status: string; resul
 type Market = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; settlement_rule: Record<string, unknown> | null; market_selections: Selection[] }
 type LiveEvent = { id: string; event_type: string; period: string | null; minute: number | null; added_time: number | null; player_name: string | null; team: { name: string; short_name: string | null } | null }
 
+const cleanMarketName = (raw: string) => String(raw ?? '')
+  .replace(/\\b(oddspapi|oddsapi|5dollarfootballapi|pinnacle|bet\\s?365|1xbet|unibet|leovegas|pmu|winamax|marathon\\s?bet|nordic\\s?bet|bwin|betfair|william\\s?hill|betway|888sport|stake|betano|parimatch|dafabet|10bet|sportingbet)\\b/gi, '')
+  .replace(/\\s*[·|–—-]\\s*/g, ' ')
+  .replace(/\\s{2,}/g, ' ')
+  .trim()
+  .replace(/^[:.\\s]+|[:.\\s]+$/g, '') || 'Market';
+const marketIdentity = (market: Market) => {
+  const key = String(market.market_key || market.market_type || '').toLowerCase();
+  if (key === 'match_result') return key + '|full-time';
+  return key + '|' + cleanMarketName(market.name).toLowerCase().replace(/[^\\p{L}\\p{N}.]+/gu, ' ').trim();
+};
+
 const categoryFor = (market: Market, t: (key: any) => string, language: string) => {
   const key = (market.market_key || market.market_type || '').toLowerCase()
   const name = market.name.toLowerCase()
@@ -102,8 +114,8 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       .order('name')
     if (queryError) { setError(t('could_not_load_markets')); setMarkets([]) }
     else {
-      setMarkets(((data ?? []) as Market[]).map(m => {
-        const marketSelections = (m.market_selections ?? []).filter(s => s.status === 'active' && s.result_status === 'pending')
+      const cleaned = ((data ?? []) as Market[]).map(m => {
+        const marketSelections = (m.market_selections ?? []).filter(s => s.status === 'active' && s.result_status === 'pending' && Number.isFinite(Number(s.odds)) && Number(s.odds) > 1)
         if (m.market_key === 'match_result' || m.market_type === 'match_result') {
           const rank = (name: string) => {
             const value = name.trim().toLowerCase()
@@ -117,8 +129,16 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
           }
           marketSelections.sort((left,right)=>rank(left.name)-rank(right.name))
         }
-        return {...m, market_selections: marketSelections}
-      }))
+        return {...m, name: cleanMarketName(m.name), market_selections: marketSelections}
+      });
+      const unique = new Map<string, Market>();
+      for (const market of cleaned) {
+        if (!market.market_selections.length) continue;
+        const key = marketIdentity(market);
+        const previous = unique.get(key);
+        if (!previous || Date.parse(market.last_updated_at) > Date.parse(previous.last_updated_at)) unique.set(key, market);
+      }
+      setMarkets(Array.from(unique.values()))
       setLastUpdated(new Date())
     }
     setLoading(false)
@@ -209,7 +229,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
           <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> LIVE</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">Price expired</span>}</div>
           <div className="market-outcomes">{market.market_selections.map(selection => {
             const picked = selectedIds.includes(selection.id)
-            return <button key={selection.id} disabled={!canBet && !picked} aria-pressed={picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketKey:market.market_key || market.market_type,marketLabel:market.name,selectionLabel:selection.name,odds:String(selection.odds)})}>
+            return <button key={selection.id} disabled={!canBet && !picked} aria-pressed={picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketKey:market.market_key || market.market_type,marketLabel:cleanMarketName(market.name),selectionLabel:selection.name,odds:String(selection.odds)})}>
               <span>{displaySelection(selection.name)}</span><b>{Number(selection.odds).toFixed(2)}</b>
             </button>
           })}</div>
