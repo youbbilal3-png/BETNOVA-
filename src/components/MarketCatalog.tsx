@@ -20,7 +20,7 @@ const words: Record<string, string[]> = {
 }
 const lines = ['1.5','2','2.5','3','3.5','4','4.5','5.5','6.5']
 const groups = [
- {title:2, items:[{name:16, choices:[10,11]},{name:17,choices:[12,14,11]}]},
+ {title:2, items:[{name:2,choices:lines},{name:16, choices:[10,11]},{name:17,choices:[12,14,11]}]},
  {title:3, items:[{name:3,choices:[12,13,14]},{name:15,choices:['1X','X2','12']}]},
  {title:4, items:[{name:20, choices:['7.5','8.5','9.5','10.5','11.5','12.5']}]},
  {title:5, items:[{name:18,choices:['1.5','2.5','3.5','4.5','5.5','6.5']},{name:19,choices:['0.5','1.5']}]},
