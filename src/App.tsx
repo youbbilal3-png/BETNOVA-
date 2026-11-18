@@ -237,7 +237,7 @@ export default function App() {
 
       <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
 
-      <main className="layout">
+      <main className="layout nova-dashboard">
         <aside className="left-rail">
           <div className="rail-heading">{t("discover")} <span>•••</span></div>
           <button className="rail-item selected" onClick={() => openEventView('upcoming')}><Trophy size={18}/> {t("sports")} <span className="rail-count">24</span></button>
@@ -249,7 +249,15 @@ export default function App() {
           <div className="rail-promo"><div className="promo-orb"><Sparkles size={20}/></div><b>{t("new_way")}</b><p>{t("sports_reimagined")}</p><span>{t("discover_betnova")} <ArrowRight size={13}/></span></div>
         </aside>
 
-        <section className="main-content">
+        <section className="main-content nova-content">
+          <div className="nova-welcome-strip">
+            <div className="nova-welcome-copy">
+              <span className="nova-kicker">NOVA ARENA <i/> YOUR SPORTS HUB</span>
+              <h2>One arena. <em>Every moment.</em></h2>
+              <p>Follow the fixtures, explore the markets and stay close to every match.</p>
+            </div>
+            <div className="nova-welcome-mark"><div className="nova-mark-orbit"/><Trophy size={34}/><span>SPORTS<br/>CENTRE</span></div>
+          </div>
           <section className="hero">
             <div className="hero-copy"><div className="eyebrow"><span/> {t("game_starts")}</div><h1>{t("feel_every")}<br/><em>{t("moment")}</em></h1><p>{t("hero_subtitle")}</p><div className="hero-actions"><button onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}>{t("explore_events_btn")} <ArrowRight size={16}/></button><span><ShieldCheck size={15}/> {t("safer_experience")}</span></div></div>
             <div className="hero-art"><div className="orbit orbit-a"/><div className="orbit orbit-b"/><div className="hero-ball">⚽</div><div className="art-tag tag-top"><span className="live-dot"/> MATCH DAY</div><div className="art-tag tag-bottom"><Trophy size={14}/> BIG MOMENTS AHEAD</div><div className="art-spark">✦</div></div>
