@@ -29,3 +29,8 @@ The existing `betnova_sync_secret` Vault secret is reused for the scheduled Edge
 ## Before enabling real-money wagering
 
 The Odds API permits storing and displaying its data in commercial user-facing apps under its current terms, but BETNOVA must separately verify its own licensing, age restrictions, responsible-gambling requirements, payment compliance, and legal permission to operate in every target jurisdiction. The provider feed is not a wagering licence and does not guarantee the accuracy of every price.
+
+
+## Bounded sync execution
+
+The active odds sync runs in two five-league batches at 02:10 and 02:20 UTC. The 50-league event catalogue refresh is split into five ten-league batches every six hours. Event rows are processed with bounded concurrency to avoid Edge Function wall-clock timeouts. The pre-match credit budget is unchanged: six priority leagues request h2h + totals, four additional leagues request h2h only (16 credits/day maximum when all markets are returned).
