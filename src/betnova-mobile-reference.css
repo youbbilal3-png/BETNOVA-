@@ -62,3 +62,15 @@
   .app-shell .footer{display:none!important}
   .app-shell .quick-slip-bar{bottom:calc(var(--bn-mobile-nav-h) + env(safe-area-inset-bottom) + 8px)!important}
 }
+
+
+/* BETNOVA brand-matched central bet-slip action: emerald, not neon lime. */
+@media (max-width: 760px) {
+  .app-shell .mobile-nav button:nth-child(3) {
+    background: linear-gradient(145deg, #18c982 0%, #0e8d68 100%) !important;
+    color: #f5fff8 !important;
+    border-color: #10251a !important;
+    box-shadow: 0 5px 18px rgba(24, 201, 130, .28) !important;
+  }
+  .app-shell .mobile-nav button:nth-child(3) svg { color: #f5fff8 !important; }
+}
