@@ -93,6 +93,25 @@ Deno.serve(async (req: Request) => {
         }, { onConflict: "source_provider,external_id" }).select("id").single(),
       ]);
       if (homeRes.error || awayRes.error || compRes.error) throw new Error("Could not store provider teams or competition");
+      const teamKey = (value: unknown) => String(value ?? "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
+        .toLowerCase().replace(/\\b(fc|cf|sc|ac|afc|club|football club)\\b/g, "")
+        .replace(/[^a-z0-9]+/g, " ").trim().replace(/\\s+/g, " ");
+      const kickoffMs = new Date(f.date).getTime();
+      const { data: candidates, error: candidateError } = await supabase.from("fixtures")
+        .select("id,starts_at,home_team:teams!fixtures_home_team_id_fkey(name),away_team:teams!fixtures_away_team_id_fkey(name)")
+        .gte("starts_at", new Date(kickoffMs - 15 * 60 * 1000).toISOString())
+        .lte("starts_at", new Date(kickoffMs + 15 * 60 * 1000).toISOString())
+        .neq("status", "cancelled").limit(100);
+      if (candidateError) throw new Error("Could not match API-Football fixture");
+      const matched = (candidates ?? []).find((candidate: any) => {
+        const home = Array.isArray(candidate.home_team) ? candidate.home_team[0] : candidate.home_team;
+        const away = Array.isArray(candidate.away_team) ? candidate.away_team[0] : candidate.away_team;
+        return teamKey(home?.name) === teamKey(h.name) && teamKey(away?.name) === teamKey(a.name);
+      });
+      if (matched?.id) {
+        fixtureIds.set(Number(f.id), matched.id);
+        continue;
+      }
       const status = fixtureStatus(f.status?.short ?? "NS");
       const { data: stored, error: fixtureError } = await supabase.from("fixtures").upsert({
         competition_id: compRes.data.id, home_team_id: homeRes.data.id, away_team_id: awayRes.data.id,
@@ -134,6 +153,33 @@ Deno.serve(async (req: Request) => {
               const key = ["home", "1"].includes(label) ? "home" : ["draw", "x"].includes(label) ? "draw" : ["away", "2"].includes(label) ? "away" : "";
               const odd = asOdd(v.odd); return key && odd ? [{ name: key === "home" ? "Home" : key === "draw" ? "Draw" : "Away", key, odds: odd }] : [];
             });
+          } else if (normalized.includes("both teams") || normalized.includes("both team to score") || normalized.includes("btts")) {
+            marketKey = "both_teams_score"; marketName = "Both Teams To Score";
+            accepted = (bet.values ?? []).flatMap((v: any) => {
+              const label = String(v.value ?? "").trim().toLowerCase();
+              const key = label === "yes" ? "yes" : label === "no" ? "no" : "";
+              const odd = asOdd(v.odd);
+              return key && odd ? [{ name: key === "yes" ? "Yes" : "No", key, odds: odd }] : [];
+            });
+          } else if (normalized.includes("double chance")) {
+            marketKey = "double_chance"; marketName = "Double Chance";
+            accepted = (bet.values ?? []).flatMap((v: any) => {
+              const label = String(v.value ?? "").trim().toLowerCase().replace(/\\s+/g, "");
+              const key = ["1x","home/draw","homeordraw"].includes(label) ? "1X" :
+                ["x2","draw/away","draworaway"].includes(label) ? "X2" :
+                ["12","home/away","homeoraway"].includes(label) ? "12" : "";
+              const odd = asOdd(v.odd);
+              return key && odd ? [{ name: key, key, odds: odd }] : [];
+            });
+          } else if (normalized.includes("first team to score") || normalized.includes("first goal")) {
+            marketKey = "first_team_to_score"; marketName = "First Team To Score";
+            accepted = (bet.values ?? []).flatMap((v: any) => {
+              const label = String(v.value ?? "").trim().toLowerCase();
+              const key = ["home","1"].includes(label) ? "home" : ["away","2"].includes(label) ? "away" :
+                ["no goal","none","no goals"].includes(label) ? "no_goal" : "";
+              const odd = asOdd(v.odd);
+              return key && odd ? [{ name: key === "home" ? "Home" : key === "away" ? "Away" : "No Goal", key, odds: odd }] : [];
+            });
           } else if ((normalized.includes("over/under") || normalized.includes("goals over")) && !normalized.includes("half")) {
             const values = bet.values ?? [];
             const parsed = values.map((v: any) => ({ raw: String(v.value ?? ""), odd: asOdd(v.odd) }))
@@ -145,7 +191,7 @@ Deno.serve(async (req: Request) => {
                 return { name: (side === "over" ? "Over " : "Under ") + threshold, key: selectionKey(side, threshold), odds: v.odd as number };
               });
               if (picks.length < 2) continue;
-              const { data: existingMarket } = await supabase.from("markets").select("id,status").eq("fixture_id", fixtureId).eq("market_key", "total_goals").eq("name", "Total Goals " + threshold).maybeSingle();
+              const { data: existingMarket } = await supabase.from("markets").select("id,status").eq("fixture_id", fixtureId).eq("source_provider", PROVIDER).eq("market_key", "total_goals").eq("name", "Total Goals " + threshold).maybeSingle();
               let marketId = existingMarket?.id;
               if (existingMarket?.status === "settled" || existingMarket?.status === "void") continue;
               if (!marketId) {
@@ -175,7 +221,7 @@ Deno.serve(async (req: Request) => {
           }
 
           if (!marketKey || accepted.length < 2) continue;
-          const { data: existingMarket } = await supabase.from("markets").select("id,status").eq("fixture_id", fixtureId).eq("market_key", marketKey).maybeSingle();
+          const { data: existingMarket } = await supabase.from("markets").select("id,status").eq("fixture_id", fixtureId).eq("source_provider", PROVIDER).eq("market_key", marketKey).maybeSingle();
           if (existingMarket?.status === "settled" || existingMarket?.status === "void") continue;
           let marketId = existingMarket?.id;
           if (!marketId) {
