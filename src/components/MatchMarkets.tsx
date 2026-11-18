@@ -23,6 +23,13 @@ const cleanMarketName = (raw: string) => String(raw ?? '')
 const marketIdentity = (market: Market) => {
   const key = String(market.market_key || market.market_type || '').toLowerCase();
   if (key === 'match_result') return key + '|full-time';
+  if (['both_teams_score','btts','double_chance','first_team_to_score'].includes(key)) return key;
+  if (['total_goals','total_corners','total_cards','total_shots','shots_on_target','asian_handicap','handicap'].includes(key)) {
+    const ruleLine = market.settlement_rule?.line;
+    const match = market.name.match(/(\d+(?:\.\d+)?)(?!.*\d)/);
+    const line = Number(ruleLine ?? match?.[1]);
+    if (Number.isFinite(line)) return key + '|' + line.toFixed(2);
+  }
   return key + '|' + cleanMarketName(market.name).toLowerCase().replace(/[^\p{L}\p{N}.]+/gu, ' ').trim();
 };
 
