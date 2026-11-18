@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { ArrowRight, CheckCircle2, Clock3, KeyRound, Mail, ShieldCheck, UserRound, X } from 'lucide-react'
+import { ArrowDownToLine, ArrowRight, ArrowUpFromLine, CheckCircle2, Clock3, KeyRound, Mail, ShieldCheck, UserRound, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
-type Props = { onClose: () => void; onSignOut: () => void }
+type Props = { onClose: () => void; onSignOut: () => void; onOpenWallet: (tab: 'deposit' | 'withdraw') => void }
 
-export default function AccountPanel({ onClose, onSignOut }: Props) {
+export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [createdAt, setCreatedAt] = useState('')
@@ -78,6 +78,7 @@ export default function AccountPanel({ onClose, onSignOut }: Props) {
       <button className="account-close" onClick={onClose} aria-label="Close"><X size={19}/></button>
       <div className="account-kicker"><ShieldCheck size={15}/> BETNOVA · ACCOUNT CENTRE</div>
       <div className="account-heading"><span className="account-avatar"><UserRound size={25}/></span><div><h2 id="account-title">My profile</h2><p>Manage your personal details and account security.</p></div></div>
+      <div className="account-wallet-actions"><button type="button" onClick={() => onOpenWallet('deposit')}><ArrowDownToLine size={17}/> Deposit</button><button type="button" onClick={() => onOpenWallet('withdraw')}><ArrowUpFromLine size={17}/> Withdraw</button></div>
       <div className="account-status-grid">
         <div><span>EMAIL STATUS</span><b className={verified ? 'verified' : 'unverified'}>{verified ? <><CheckCircle2 size={15}/> Verified</> : 'Not verified'}</b></div>
         <div><span>MEMBER SINCE</span><b><Clock3 size={14}/>{createdAt ? new Date(createdAt).toLocaleDateString() : '—'}</b></div>
