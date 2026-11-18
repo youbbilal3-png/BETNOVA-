@@ -34,3 +34,16 @@ The Odds API permits storing and displaying its data in commercial user-facing a
 ## Bounded sync execution
 
 The active odds sync runs in two five-league batches at 02:10 and 02:20 UTC. The 50-league event catalogue refresh is split into five ten-league batches every six hours. Event rows are processed with bounded concurrency to avoid Edge Function wall-clock timeouts. The pre-match credit budget is unchanged: six priority leagues request h2h + totals, four additional leagues request h2h only (16 credits/day maximum when all markets are returned).
+
+
+## Multi-provider odds coverage
+
+- The Odds API supplies the featured soccer markets currently mapped by this project (match result and totals). Its free Starter plan is 500 credits/month; each market-region combination costs one credit, so the current ten-league schedule is capped at 16 credits/day (up to 480/month). Additional event-level markets cost extra credits and are not requested blindly.
+- FiveDollarFootballAPI is a second, separate odds source. Its free plan lists the top five leagues and provides Bet365 odds per fixture; the pre-match worker now divides the 100-fixture/24-hour window into ten batches, cycling every three hours while respecting the project's 50-request/hour local cap.
+- FiveDollar market ingestion includes 1X2, full-time and first-half goal totals, full-time and first-half Asian handicap, BTTS, full-time and first-half corner totals, and Asian corner handicap. Card markets remain disabled until their exact settlement convention is implemented and verified.
+- Fixtures with no bookmaker quote remain without odds; the application must never manufacture or interpolate a price.
+
+Official provider references:
+- https://5dollarfootballapi.com/docs/fixtures
+- https://5dollarfootballapi.com/docs
+- https://the-odds-api.com/liveapi/guides/v4/
