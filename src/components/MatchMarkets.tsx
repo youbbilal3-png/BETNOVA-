@@ -138,7 +138,6 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       <button className={activeCategory === 'all' ? 'active' : ''} onClick={() => { setActiveCategory('all'); setExpanded('') }}>{t('all_markets')}</button>
       {categories.map(category => <button key={category} className={activeCategory === category ? 'active' : ''} onClick={() => { setActiveCategory(category); setExpanded(category) }}>{category}</button>)}
     </div>
-    <MarketCatalog />
     {visibleGroups.map(([category, items]) => <section className="market-group" key={category}>
       <button className="market-group-head" onClick={() => setExpanded(expanded === category ? '' : category)}>
         <span>{category}</span><small>{items.length} {t('markets_count')}</small>{expanded === category ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
@@ -160,6 +159,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
         </article>})}
       </div>}
     </section>)}
+    <MarketCatalog />
     {live && <div className="markets-live-note"><Clock3 size={13}/> {t('live_prices_warning')}</div>}
   </div>
 }
