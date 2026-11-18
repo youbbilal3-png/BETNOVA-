@@ -33,7 +33,7 @@ The Odds API permits storing and displaying its data in commercial user-facing a
 
 ## Bounded sync execution
 
-The active odds sync runs in two five-league batches at 02:10 and 02:20 UTC. The 50-league event catalogue refresh is split into five ten-league batches every six hours. Event rows are processed with bounded concurrency to avoid Edge Function wall-clock timeouts. The pre-match credit budget is unchanged: six priority leagues request h2h + totals, four additional leagues request h2h only (16 credits/day maximum when all markets are returned).
+The active odds sync runs in two five-league batches at 02:10 and 02:20 UTC. The 50-league event catalogue refresh is split into ten five-league batches every six hours. Event rows are processed with bounded concurrency to avoid Edge Function wall-clock timeouts. The pre-match credit budget is unchanged: six priority leagues request h2h + totals, four additional leagues request h2h only (16 credits/day maximum when all markets are returned).
 
 
 ## Multi-provider odds coverage
