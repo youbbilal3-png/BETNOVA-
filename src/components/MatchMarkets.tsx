@@ -61,7 +61,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
     if (normalized === 'home' || normalized === '1' || normalized === 'win 1') return ow[0]
     if (normalized === 'draw' || normalized === 'x') return ow[1]
     if (normalized === 'away' || normalized === '2' || normalized === 'win 2') return ow[2]
-    const total = value.match(/^(over|under)\\s*(.*)$/i)
+    const total = value.match(/^(over|under)\s*(.*)$/i)
     if (total) return (total[1].toLowerCase() === 'over' ? ow[3] : ow[4]) + ' ' + total[2]
     if (normalized === 'yes') return ow[5]
     if (normalized === 'no') return ow[6]
