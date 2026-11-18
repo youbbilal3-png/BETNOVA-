@@ -8,7 +8,7 @@ import './betnova-next-ui.css'
 import './betnova-native-shell.css'
 import './public-landing.css'
 import './betnova-premium-theme.css'
-import './nova-arena-home.css'
+import './nova-arena-home.css'\nimport './install-app.css'\nimport InstallAppPrompt from './components/InstallAppPrompt'
 import { LanguageProvider } from './i18n'
 
 if ('serviceWorker' in navigator) {
@@ -19,6 +19,6 @@ if ('serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <LanguageProvider><App /></LanguageProvider>
+    <LanguageProvider><App /><InstallAppPrompt /></LanguageProvider>
   </React.StrictMode>,
 )
