@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
   if (!apiKey) return json({ error: "Add fivedollarfootball_api_key to Supabase Vault" }, 503);
 
   const body = await req.json().catch(() => ({}));
-  const mode = body?.mode === "prematch" || body?.mode === "finalize" || body?.mode === "status" ? body.mode : "live";
+  const mode = body?.mode === "prematch" || body?.mode === "finalize" || body?.mode === "status" || body?.mode === "catalogue" ? body.mode : "live";
   const requestedBatch = Number(body?.batch ?? 0);
   const batch = Number.isInteger(requestedBatch) ? Math.max(0, Math.min(9, requestedBatch)) : 0;
   let requests = 0;
@@ -104,6 +104,19 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, provider: PROVIDER, mode, provider_status: providerStatus, requests });
     } catch (error) {
       return json({ ok: false, provider: PROVIDER, mode, error: error instanceof Error ? error.message : "Status check failed" }, 502);
+    }
+  }
+
+  if (mode === "catalogue") {
+    try {
+      const data = await get("/leagues?active_since=" + Math.floor(Date.now() / 1000));
+      const leagues = Array.isArray(data) ? data : [];
+      return json({ ok: true, provider: PROVIDER, mode, plan: config.plan ?? null, leagues: leagues.map((league: any) => ({
+        id: league.id, name: league.name, country: league.country?.name ?? league.country ?? null,
+        last_fixture_utc: league.last_fixture_utc ?? null,
+      })), requests });
+    } catch (error) {
+      return json({ ok: false, provider: PROVIDER, mode, error: error instanceof Error ? error.message : "Catalogue check failed" }, 502);
     }
   }
 
