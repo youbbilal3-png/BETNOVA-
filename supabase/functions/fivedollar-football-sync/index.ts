@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const API = "https://api.5dollarfootballapi.com/v1";
 const PROVIDER = "fivedollarfootballapi";
-const MAX_ODDS_FIXTURES = 8;
+const MAX_ODDS_FIXTURES = 7;
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, x-betnova-sync-secret",
