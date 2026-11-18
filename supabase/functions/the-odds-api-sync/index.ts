@@ -16,6 +16,8 @@ const ALLOWED_SOCCER_KEYS = new Set([
   "soccer_uefa_europa_conference_league",
   "soccer_uefa_europa_league",
 ]);
+// Request genuine Over/Under goal prices for every featured competition.
+// The Odds API charges one credit per region/market; this uses two markets per league.
 const TOTALS_SOCCER_KEYS = new Set([
   "soccer_epl",
   "soccer_germany_bundesliga",
@@ -23,6 +25,10 @@ const TOTALS_SOCCER_KEYS = new Set([
   "soccer_italy_serie_a",
   "soccer_france_ligue_one",
   "soccer_uefa_champs_league",
+  "soccer_efl_champ",
+  "soccer_brazil_campeonato",
+  "soccer_uefa_europa_conference_league",
+  "soccer_uefa_europa_league",
 ]);
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -209,7 +215,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Pre-match mode covers ten leagues: six with h2h + totals and four with h2h (16 credits).
+    // Pre-match mode covers ten leagues with h2h + totals (20 credits per complete daily pass).
     // Live mode uses the aggregate upcoming feed, one region and one market (1 credit per run).
     // The live cron is deliberately quota-budgeted; stale markets remain visible but cannot be bet.
     if (mode !== "events") {
