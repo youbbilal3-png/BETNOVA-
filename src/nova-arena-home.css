@@ -304,3 +304,94 @@ body{background:radial-gradient(ellipse at 14% 0%,#173b2b 0,transparent 34%),rad
 @media(prefers-reduced-motion:reduce){
   .app-shell *, .app-shell *:before,.app-shell *:after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+
+/* NOVA ARENA — high-priority homepage composition.
+   These rules intentionally supersede legacy !important layout declarations. */
+#root .app-shell{background:radial-gradient(ellipse at 50% -18%,#1c5038 0%,#0b1b13 42%,#070d0b 78%)!important;color:#eff8f0!important;overflow-x:hidden!important}
+#root .app-shell>.topbar{height:76px!important;min-height:76px!important;padding:0 max(18px,calc((100vw - 1440px)/2))!important;background:linear-gradient(105deg,#08140e 0%,#10291b 58%,#0d1c13 100%)!important;border-bottom:1px solid #b8e9c51c!important}
+#root .app-shell>.ticker{min-height:38px!important;background:#0d1c13!important;color:#9ab5a1!important;border-bottom:1px solid #b8e9c51a!important}
+#root .app-shell>.nova-dashboard{display:grid!important;grid-template-columns:minmax(0,1fr)!important;max-width:1320px!important;gap:0!important;padding:26px clamp(14px,3vw,38px) 48px!important}
+#root .app-shell>.nova-dashboard>.left-rail{display:none!important}
+#root .app-shell .nova-content{min-width:0!important;width:100%!important}
+#root .app-shell .nova-welcome-strip{position:relative!important;display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:104px!important;padding:18px 25px!important;margin:0 0 16px!important;border:1px solid #b6e9c52a!important;border-radius:21px!important;background:linear-gradient(105deg,#132a1b 0%,#102219 55%,#173a27 100%)!important;box-shadow:0 16px 36px #0004,inset 0 1px #ffffff12!important;overflow:hidden!important}
+#root .app-shell .nova-welcome-strip:after{content:""!important;position:absolute!important;inset:0!important;pointer-events:none!important;background:linear-gradient(110deg,#ffffff08,transparent 45%,#caff7610)!important}
+#root .app-shell .nova-welcome-copy{position:relative!important;z-index:1!important}
+#root .app-shell .nova-kicker{display:flex!important;align-items:center!important;gap:9px!important;color:#a9d7b5!important;font-size:9px!important;font-weight:900!important;letter-spacing:2px!important}
+#root .app-shell .nova-kicker i{width:5px!important;height:5px!important;border-radius:50%!important;background:#d5ff72!important;box-shadow:0 0 12px #d5ff72!important}
+#root .app-shell .nova-welcome-copy h2{margin:7px 0 3px!important;color:#f3fff3!important;font-size:clamp(19px,2.5vw,27px)!important;letter-spacing:-1px!important;font-weight:850!important}
+#root .app-shell .nova-welcome-copy h2 em{font-style:normal!important;color:#d5ff72!important}
+#root .app-shell .nova-welcome-copy p{margin:0!important;color:#9db8a5!important;font-size:11px!important}
+#root .app-shell .nova-welcome-mark{position:relative!important;z-index:1!important;display:flex!important;align-items:center!important;gap:11px!important;padding:12px 17px!important;border:1px solid #c4f07c40!important;border-radius:15px!important;background:linear-gradient(145deg,#214b30,#142c1d)!important;color:#d7ff83!important;box-shadow:0 9px 24px #0004,inset 0 1px #ffffff20!important}
+#root .app-shell .nova-welcome-mark span{font-size:8px!important;line-height:1.5!important;font-weight:900!important;letter-spacing:1.4px!important;color:#dff0d9!important}
+#root .app-shell .nova-mark-orbit{position:absolute!important;inset:-9px!important;border:1px solid #c5f47522!important;border-radius:20px!important;transform:rotate(-8deg)!important;pointer-events:none!important}
+#root .app-shell .hero{min-height:335px!important;padding:42px clamp(24px,4vw,52px)!important;border-radius:27px!important;background:radial-gradient(circle at 78% 48%,#2abf7a55 0,transparent 27%),linear-gradient(116deg,#102a1c 0%,#155638 51%,#0c3425 100%)!important;border:1px solid #83c99b55!important;box-shadow:0 27px 65px #0007,inset 0 1px #ffffff35,inset 0 -30px 70px #020a0666!important}
+#root .app-shell .hero h1{font-size:clamp(43px,5vw,65px)!important;line-height:.98!important}
+#root .app-shell .hero-art{right:7%!important;width:285px!important;height:265px!important}
+#root .app-shell .hero-ball{font-size:145px!important}
+#root .app-shell .quick-stats{gap:13px!important;margin:16px 0 34px!important}
+#root .app-shell .quick-stats>div{min-height:84px!important;border-radius:17px!important;padding:15px!important;background:linear-gradient(145deg,#172c20,#101d15)!important;border:1px solid #bce9c524!important;box-shadow:0 13px 30px #0004,inset 0 1px #ffffff12!important}
+#root .app-shell .events-section{padding:23px!important;border-radius:24px!important;border:1px solid #b9e8c51c!important;background:linear-gradient(155deg,#0f1d15dd,#0a1510ee)!important;box-shadow:0 20px 48px #0003!important}
+#root .app-shell .section-heading h2{font-size:30px!important}
+#root .app-shell .event-view-tabs{width:100%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:5px!important;margin:0 0 12px!important;border-radius:14px!important;background:#0a1710!important;border:1px solid #b9edc31c!important}
+#root .app-shell .event-view{justify-content:center!important;min-height:43px!important}
+#root .app-shell .sports-tabs{border-bottom:1px solid #b9edc31c!important}
+#root .app-shell .match-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:13px!important}
+#root .app-shell .match-card{padding:17px!important;border-radius:18px!important;background:linear-gradient(145deg,#172b1e,#0e1b14 76%)!important;border:1px solid #b7e9c329!important;box-shadow:0 15px 34px #0004,inset 0 1px #ffffff12!important}
+#root .app-shell .match-body{gap:14px!important}
+#root .app-shell .right-rail{display:grid!important;grid-template-columns:minmax(0,1.35fr) repeat(2,minmax(0,1fr))!important;align-items:start!important;gap:13px!important;margin-top:18px!important}
+#root .app-shell .slip-card{position:relative!important;top:auto!important;min-height:100%!important}
+#root .app-shell .help-card,#root .app-shell .responsible-card{min-height:150px!important;padding:19px!important}
+#root .app-shell .footer{max-width:1320px!important;margin:0 auto!important;padding:22px 28px!important;border-top:1px solid #b8e9c51a!important;color:#8ca697!important}
+#root .app-shell .mobile-nav{background:linear-gradient(100deg,#09170f,#142b1c)!important;border-top:1px solid #b9edc32a!important}
+@media(max-width:980px){
+ #root .app-shell>.nova-dashboard{padding-inline:18px!important}
+ #root .app-shell .right-rail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+ #root .app-shell .slip-card{grid-column:1/-1!important}
+}
+@media(max-width:760px){
+ #root .app-shell{padding-bottom:calc(78px + env(safe-area-inset-bottom))!important}
+ #root .app-shell>.topbar{height:66px!important;min-height:66px!important;padding:0 13px!important}
+ #root .app-shell>.ticker{min-height:32px!important;padding:7px 13px!important}
+ #root .app-shell>.nova-dashboard{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:11px 11px 24px!important}
+ #root .app-shell .nova-welcome-strip{min-height:91px!important;padding:14px 15px!important;margin-bottom:11px!important;border-radius:17px!important}
+ #root .app-shell .nova-welcome-copy h2{font-size:18px!important}
+ #root .app-shell .nova-welcome-copy p{max-width:230px!important;font-size:9px!important;line-height:1.45!important}
+ #root .app-shell .nova-kicker{font-size:7px!important;letter-spacing:1.4px!important}
+ #root .app-shell .nova-welcome-mark{gap:7px!important;padding:9px 10px!important;border-radius:12px!important}
+ #root .app-shell .nova-welcome-mark svg{width:25px!important;height:25px!important}
+ #root .app-shell .nova-welcome-mark span{font-size:6px!important;letter-spacing:.8px!important}
+ #root .app-shell .hero{min-height:225px!important;padding:24px 18px!important;border-radius:21px!important}
+ #root .app-shell .hero-copy{max-width:70%!important}
+ #root .app-shell .hero h1{font-size:clamp(33px,9vw,43px)!important;letter-spacing:-1.7px!important}
+ #root .app-shell .hero-copy>p{max-width:100%!important;font-size:10px!important}
+ #root .app-shell .hero-art{right:-18px!important;width:160px!important;height:155px!important;transform:translateY(-50%) scale(.76)!important;transform-origin:center!important}
+ #root .app-shell .hero-ball{font-size:100px!important}
+ #root .app-shell .quick-stats{gap:6px!important;margin:10px 0 17px!important}
+ #root .app-shell .quick-stats>div{min-height:70px!important;padding:8px 6px!important;gap:5px!important;border-radius:12px!important}
+ #root .app-shell .quick-stats b{font-size:8px!important}
+ #root .app-shell .quick-stats small{font-size:7px!important}
+ #root .app-shell .events-section{padding:13px 10px!important;border-radius:18px!important}
+ #root .app-shell .section-heading h2{font-size:21px!important}
+ #root .app-shell .section-heading p{font-size:9px!important}
+ #root .app-shell .view-all{font-size:8px!important}
+ #root .app-shell .event-view-tabs{gap:4px!important}
+ #root .app-shell .event-view{min-height:40px!important;font-size:9px!important;padding:7px 3px!important}
+ #root .app-shell .sports-tabs{gap:4px!important}
+ #root .app-shell .tab{font-size:8px!important;padding:8px 8px!important}
+ #root .app-shell .filter-row{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+ #root .app-shell .league-filters{gap:4px!important}
+ #root .app-shell .filter{font-size:8px!important;padding:7px 8px!important}
+ #root .app-shell .match-list{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ #root .app-shell .match-card{padding:12px!important;border-radius:15px!important}
+ #root .app-shell .match-body{display:flex!important;flex-direction:column!important;gap:10px!important;padding:11px 0!important}
+ #root .app-shell .team b{font-size:10px!important}
+ #root .app-shell .team-mark{width:36px!important;height:36px!important}
+ #root .app-shell .right-rail{display:none!important}
+ #root .app-shell .footer{padding:16px 13px!important;gap:8px!important;font-size:8px!important}
+}
+@media(max-width:380px){
+ #root .app-shell .nova-welcome-mark{display:none!important}
+ #root .app-shell .hero-copy{max-width:74%!important}
+ #root .app-shell .hero-art{right:-30px!important;transform:translateY(-50%) scale(.67)!important}
+}
