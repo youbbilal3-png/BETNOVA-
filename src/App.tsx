@@ -412,7 +412,7 @@ export default function App() {
           .replace(/[\u0300-\u036f]/g, '')
           .toLowerCase()
           .replace(/\b(fc|cf|cd|sc|ac|fk|sk|afc|cfc|fbc|ca)\b/g, '')
-          .replace(/[^a-z0-9]+/g, ' ')
+          .replace(/[^\\p{L}\\p{N}]+/gu, ' ')
           .trim()
         const matchQuality = (match: Match) =>
           match.winnerPicks.filter(pick => pick && !pick.isDemo).length * 1000 +
@@ -420,7 +420,11 @@ export default function App() {
           (match.country ? 1 : 0)
         for (const match of mapped) {
           const minute = Math.floor(Date.parse(match.startsAt ?? '') / 60000)
-          const key = [normalizeTeam(match.home), normalizeTeam(match.away), minute].join('|')
+          const homeKey = normalizeTeam(match.home)
+          const awayKey = normalizeTeam(match.away)
+          const key = homeKey && awayKey && Number.isFinite(minute)
+            ? [homeKey, awayKey, minute].join('|')
+            : 'fixture:' + String(match.id)
           const existing = uniqueMatches.get(key)
           if (!existing || matchQuality(match) > matchQuality(existing)) uniqueMatches.set(key, match)
         }
