@@ -423,7 +423,7 @@ Deno.serve(async (req: Request) => {
       last_updated_at: timestamp,
     };
     const saved = existing
-      ? await supabase.from("markets").update(marketPayload).eq("id", existing.id).eq("status", "open").select("id").single()
+      ? await supabase.from("markets").update(marketPayload).eq("id", existing.id).in("status", ["open", "suspended"]).select("id").single()
       : await supabase.from("markets").insert(marketPayload).select("id").single();
     if (saved.error || !saved.data) return;
     marketsSynced++;
