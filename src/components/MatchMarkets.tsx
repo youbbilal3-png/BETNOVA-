@@ -24,7 +24,7 @@ const categoryFor = (market: Market, t: (key: any) => string, language: string) 
     events: {en:'Match Events',ar:'أحداث المباراة',fr:'Événements du match',es:'Eventos del partido',pt:'Eventos da partida',de:'Spielereignisse',it:'Eventi della partita',tr:'Maç olayları',nl:'Wedstrijdgebeurtenissen',ru:'События матча',zh:'比赛事件',ja:'試合イベント',ko:'경기 이벤트',id:'Peristiwa pertandingan',hi:'मैच की घटनाएँ',ur:'میچ کے واقعات'}
   }
   const label = (group: keyof typeof labels) => labels[group][language] || labels[group].en
-  if (/both.?teams.?to.?score|btts/.test(value)) return label('btts')
+  if (/both.?teams?.?to?.?score|btts/.test(value)) return label('btts')
   if (/double.?chance|double_chance/.test(value)) return label('double')
   if (/corner/.test(value)) return t('corners')
   if (/yellow.?card|red.?card|card|booking/.test(value)) return t('cards_fouls')
