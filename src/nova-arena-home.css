@@ -395,3 +395,176 @@ body{background:radial-gradient(ellipse at 14% 0%,#173b2b 0,transparent 34%),rad
  #root .app-shell .hero-copy{max-width:74%!important}
  #root .app-shell .hero-art{right:-30px!important;transform:translateY(-50%) scale(.67)!important}
 }
+
+
+/* NOVA ARENA — 3D app-shell redesign, homepage presentation only */
+:root{
+ --nova-ink:#070b12;--nova-panel:#101a27;--nova-panel2:#142235;
+ --nova-line:#263b50;--nova-cyan:#5de6d0;--nova-violet:#8d7bff;
+ --nova-white:#f3f6ff;--nova-muted:#93a4bb;
+}
+html,body,#root{background:#070b12!important}
+body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),#070b12!important}
+#root .app-shell{
+ color:var(--nova-white)!important;
+ background:
+ radial-gradient(ellipse at 80% 8%,#263b7040 0,transparent 28%),
+ radial-gradient(ellipse at 12% 48%,#155b5940 0,transparent 32%),
+ linear-gradient(145deg,#080d16 0%,#0a111d 58%,#080d16 100%)!important;
+}
+#root .app-shell>.topbar{
+ min-height:78px!important;height:78px!important;
+ padding:0 clamp(16px,4vw,64px)!important;
+ background:#0a111deF!important;border-bottom:1px solid #8ba8d326!important;
+ box-shadow:0 12px 40px #0008!important;backdrop-filter:blur(24px)!important;
+}
+#root .app-shell .brand{gap:12px!important;color:#f6f8ff!important;font-size:22px!important}
+#root .app-shell .nova-brand-symbol{
+ width:48px!important;height:48px!important;border-radius:16px!important;
+ display:grid!important;place-items:center!important;position:relative!important;
+ background:linear-gradient(145deg,#a7fff0,#42cdbb 45%,#5c5de7)!important;
+ border:1px solid #b8fff0!important;color:#07151c!important;
+ box-shadow:0 0 0 5px #5de6d01b,0 12px 28px #28cbbb55,inset 0 2px 3px #fff!important;
+ transform:perspective(220px) rotateY(-14deg) rotateX(9deg)!important;
+}
+#root .app-shell .nova-brand-glyph{font-size:28px!important;line-height:1!important;font-weight:1000!important;letter-spacing:-3px!important}
+#root .app-shell .nova-brand-symbol i{position:absolute!important;inset:4px!important;border:1px solid #ffffff85!important;border-radius:12px!important}
+#root .app-shell .nova-brand-word{display:flex!important;align-items:baseline!important;gap:5px!important;flex-wrap:wrap!important;font-weight:950!important;letter-spacing:-1px!important}
+#root .app-shell .nova-brand-word .brand-accent{color:#65ead8!important}
+#root .app-shell .nova-brand-word small{flex-basis:100%!important;margin-top:2px!important;color:#8094ad!important;font-size:7px!important;letter-spacing:2px!important}
+#root .app-shell .desktop-nav a,#root .app-shell .desktop-nav button{color:#9eafc6!important}
+#root .app-shell .desktop-nav a.active{color:#65ead8!important}
+#root .app-shell .desktop-nav a.active:after{background:linear-gradient(90deg,#5de6d0,#8d7bff)!important}
+#root .app-shell .top-actions .icon-btn,#root .app-shell .menu-btn{background:linear-gradient(145deg,#1a2a3e,#101b2a)!important;border:1px solid #7894b52b!important;color:#d9e7fa!important}
+#root .app-shell .join-btn{background:linear-gradient(120deg,#a3fff0,#54d8c7 60%,#8982ff)!important;color:#08131c!important;border:1px solid #b8fff0!important;box-shadow:0 8px 24px #51d9c044!important}
+#root .app-shell>.ticker{background:#0d1725!important;border-color:#7894b526!important;color:#93a8c1!important}
+#root .app-shell .ticker strong{color:#65ead8!important}
+#root .app-shell>.nova-dashboard{max-width:1480px!important;padding:30px clamp(14px,3vw,42px) 48px!important;grid-template-columns:minmax(0,1fr)!important}
+#root .app-shell .nova-content{display:flex!important;flex-direction:column!important;gap:22px!important}
+#root .app-shell .hero{
+ min-height:390px!important;display:flex!important;align-items:center!important;
+ padding:48px clamp(24px,5vw,68px)!important;border-radius:30px!important;
+ background:
+ radial-gradient(ellipse at 78% 45%,#5de6d044 0,transparent 29%),
+ radial-gradient(ellipse at 100% 0%,#8d7bff30 0,transparent 35%),
+ linear-gradient(115deg,#14263b 0%,#172d45 50%,#102c35 100%)!important;
+ border:1px solid #9ebfff3b!important;box-shadow:0 30px 80px #0009,inset 0 1px #ffffff26,inset 0 -35px 70px #02081488!important;
+}
+#root .app-shell .hero:before{background:linear-gradient(110deg,#ffffff0c,transparent 40%,#5de6d010)!important}
+#root .app-shell .hero-copy{max-width:53%!important;z-index:3!important}
+#root .app-shell .hero h1{font-size:clamp(48px,5.4vw,76px)!important;line-height:.95!important;letter-spacing:-3px!important;color:#f7f9ff!important}
+#root .app-shell .hero h1 em{color:#6cebd8!important;text-shadow:0 0 32px #5de6d066!important}
+#root .app-shell .hero-copy>p{font-size:13px!important;color:#b3c4d9!important;max-width:420px!important}
+#root .app-shell .hero .eyebrow{color:#8cecdf!important}
+#root .app-shell .hero .eyebrow>span{background:#65ead8!important;box-shadow:0 0 16px #65ead8!important}
+#root .app-shell .hero-actions button{background:linear-gradient(120deg,#a5fff0,#5cddcd 58%,#9186ff)!important;color:#07141c!important;border:1px solid #c2fff4!important;box-shadow:0 7px 0 #287f7b,0 16px 30px #0007!important}
+#root .app-shell .hero-actions>span{color:#b7c8db!important}
+#root .app-shell .hero-art.nova-hero-scene{right:4%!important;width:390px!important;height:320px!important;display:block!important;perspective:1100px!important;transform-style:preserve-3d!important}
+#root .app-shell .nova-scene-grid{position:absolute!important;inset:12% 0!important;opacity:.34!important;transform:perspective(420px) rotateX(62deg) rotateZ(-18deg) scale(1.35)!important;background-image:linear-gradient(#8deee522 1px,transparent 1px),linear-gradient(90deg,#8deee522 1px,transparent 1px)!important;background-size:27px 27px!important;mask-image:radial-gradient(ellipse,#000 12%,transparent 72%)!important}
+#root .app-shell .nova-core{position:absolute!important;left:50%!important;top:50%!important;width:190px!important;height:190px!important;display:grid!important;place-items:center!important;border-radius:50%!important;transform:translate(-50%,-50%) rotateX(18deg) rotateY(-22deg)!important;background:conic-gradient(from 35deg,#5de6d0,#8d7bff,#273b75,#5de6d0)!important;box-shadow:0 0 0 12px #5de6d014,0 0 55px #5de6d055,0 35px 55px #0009,inset 0 4px 12px #ffffff66!important}
+#root .app-shell .nova-core:before{content:""!important;position:absolute!important;inset:9px!important;border-radius:50%!important;border:1px solid #ffffff8a!important;background:radial-gradient(circle at 30% 20%,#ffffff45,transparent 35%),linear-gradient(145deg,#244e69,#111b3b 70%)!important;box-shadow:inset 0 -14px 25px #050b20,inset 0 5px 18px #ffffff24!important}
+#root .app-shell .nova-core-inner{position:relative!important;z-index:1!important;display:grid!important;place-items:center!important;width:108px!important;height:108px!important;border-radius:30px!important;background:linear-gradient(145deg,#a4fff0,#4bd5c9 55%,#7671f0)!important;color:#07151e!important;font-size:76px!important;font-weight:1000!important;letter-spacing:-10px!important;padding-right:10px!important;transform:translateZ(36px) rotate(-9deg)!important;box-shadow:0 18px 35px #0008,inset 0 3px 5px #ffffffbd,inset 0 -8px 15px #1a8e91!important}
+#root .app-shell .nova-hero-scene .orbit{border-color:#91fff080!important;box-shadow:0 0 28px #5de6d033!important}
+#root .app-shell .nova-hero-scene .orbit-a{width:320px!important;height:130px!important;transform:translate(-50%,-50%) rotate(-25deg) rotateY(30deg)!important}
+#root .app-shell .nova-hero-scene .orbit-b{width:350px!important;height:190px!important;transform:translate(-50%,-50%) rotate(48deg) rotateX(48deg)!important}
+#root .app-shell .nova-float-card{position:absolute!important;z-index:4!important;display:flex!important;align-items:center!important;gap:8px!important;padding:10px 13px!important;border-radius:13px!important;background:linear-gradient(145deg,#172a40ed,#0d1928ed)!important;border:1px solid #9cbbd85c!important;color:#dcefff!important;font-size:8px!important;font-weight:900!important;letter-spacing:1px!important;box-shadow:0 14px 28px #0008,inset 0 1px #ffffff22!important;backdrop-filter:blur(14px)!important}
+#root .app-shell .nova-float-card b{color:#68ebd7!important;font-size:11px!important}
+#root .app-shell .nova-float-live{right:0!important;top:42px!important}
+#root .app-shell .nova-float-signal{left:0!important;bottom:38px!important}
+#root .app-shell .nova-scene-spark{position:absolute!important;color:#b2fff2!important;text-shadow:0 0 20px #5de6d0!important;font-size:24px!important}
+#root .app-shell .nova-spark-one{top:18px!important;left:70px!important}
+#root .app-shell .nova-spark-two{right:48px!important;bottom:12px!important}
+#root .app-shell .hero-index{color:#c1d2e8!important}
+#root .app-shell .quick-stats{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;margin:0!important}
+#root .app-shell .quick-stats>div{min-height:96px!important;padding:19px!important;border-radius:20px!important;background:linear-gradient(145deg,#15263a,#101b2b)!important;border:1px solid #8faed22c!important;box-shadow:0 16px 38px #0006,inset 0 1px #ffffff14!important}
+#root .app-shell .stat-icon,#root .app-shell .stat-icon.teal,#root .app-shell .stat-icon.lime{width:46px!important;height:46px!important;border-radius:15px!important;background:linear-gradient(145deg,#1c5b60,#293a69)!important;color:#77f2df!important;box-shadow:0 8px 20px #0005,inset 0 1px #ffffff33!important}
+#root .app-shell .quick-stats b{color:#f0f5ff!important;font-size:12px!important}
+#root .app-shell .quick-stats small{color:#91a7c1!important;font-size:10px!important}
+#root .app-shell .events-section{padding:27px!important;border-radius:27px!important;background:linear-gradient(150deg,#101d2c,#0b1421)!important;border:1px solid #819fbd2a!important;box-shadow:0 22px 60px #0005,inset 0 1px #ffffff0b!important}
+#root .app-shell .section-heading h2{color:#f4f7ff!important;font-size:32px!important}
+#root .app-shell .section-heading p{color:#92a6bf!important}
+#root .app-shell .eyebrow.dark{color:#77dccc!important}
+#root .app-shell .event-view-tabs{background:#091321!important;border:1px solid #718eac33!important}
+#root .app-shell .event-view,#root .app-shell .tab,#root .app-shell .filter{background:#142338!important;border-color:#809bb51c!important;color:#a9bad0!important}
+#root .app-shell .event-view.active,#root .app-shell .filter.active-filter{background:linear-gradient(120deg,#a4fff0,#64dccc)!important;color:#07161d!important;border-color:#c5fff5!important}
+#root .app-shell .tab.active-tab{background:#1b3948!important;color:#70edda!important;border-color:#5de6d066!important}
+#root .app-shell .search-field{background:#0b1725!important;border-color:#819fbd3b!important;color:#8beadb!important}
+#root .app-shell .search-field input{color:#f1f5ff!important}
+#root .app-shell .match-list{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+#root .app-shell .match-card{padding:20px!important;border-radius:21px!important;background:linear-gradient(145deg,#192b40,#101c2b 75%)!important;border:1px solid #8aa9ca30!important;box-shadow:0 18px 40px #0006,inset 0 1px #ffffff13!important}
+#root .app-shell .match-card:before{width:4px!important;background:linear-gradient(#65ead8,#8d7bff)!important}
+#root .app-shell .match-card:hover{border-color:#62e6d5aa!important;box-shadow:0 25px 50px #0008,0 0 24px #5de6d015!important}
+#root .app-shell .match-meta,#root .app-shell .league-name{color:#9bb0c8!important}
+#root .app-shell .match-time{color:#72e8d9!important}
+#root .app-shell .team b{color:#f2f6ff!important;font-size:13px!important}
+#root .app-shell .team-mark{background:linear-gradient(145deg,#31546a,#27315c)!important;border:1px solid #81c7d77a!important;color:#c1fff5!important;box-shadow:0 10px 22px #0006,inset 0 1px #ffffff33!important}
+#root .app-shell .versus{color:#7e91aa!important}
+#root .app-shell .odds-caption{color:#91a8c1!important}
+#root .app-shell .odd{background:linear-gradient(145deg,#1d344b,#14253a)!important;border:1px solid #7898b64d!important;color:#f3f7ff!important}
+#root .app-shell .odd b{color:#75efdc!important}
+#root .app-shell .odd:hover:not(:disabled){background:linear-gradient(145deg,#25535a,#263b69)!important;border-color:#6cebd8!important}
+#root .app-shell .match-footer{border-color:#8ba5c326!important}
+#root .app-shell .match-footer button,#root .app-shell .favorite-toggle,#root .app-shell .details-trigger{color:#8cecdf!important}
+#root .app-shell .details-trigger{background:#193849!important;border-color:#5de6d044!important}
+#root .app-shell .right-rail{display:grid!important;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr))!important;gap:14px!important;margin-top:18px!important}
+#root .app-shell .slip-card{position:relative!important;top:auto!important;background:linear-gradient(150deg,#192b40,#101a29)!important;border:1px solid #8da9c83b!important;border-radius:22px!important}
+#root .app-shell .slip-head h3,#root .app-shell .help-card b,#root .app-shell .responsible-card b{color:#f3f7ff!important}
+#root .app-shell .slip-empty-icon{background:linear-gradient(145deg,#245c61,#323d75)!important;color:#85f2e2!important}
+#root .app-shell .slip-cta{background:linear-gradient(120deg,#a4fff0,#64dccc 60%,#9388ff)!important;color:#07151d!important}
+#root .app-shell .help-card,#root .app-shell .responsible-card{background:linear-gradient(145deg,#15263a,#101a29)!important;border:1px solid #819fbd2b!important;border-radius:20px!important}
+#root .app-shell .help-card p,#root .app-shell .responsible-card p{color:#91a6c0!important}
+#root .app-shell .footer{border-color:#819fbd26!important;color:#8095af!important}
+#root .app-shell .footer a{color:#72ebd9!important}
+#root .app-shell .mobile-nav{background:#0a1421f2!important;border-color:#829ebd30!important}
+#root .app-shell .mobile-nav button{color:#91a7c0!important}
+#root .app-shell .mobile-nav button.mobile-active{color:#72edda!important}
+@media(max-width:980px){
+ #root .app-shell>.nova-dashboard{padding-inline:16px!important}
+ #root .app-shell .right-rail{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #root .app-shell .slip-card{grid-column:1/-1!important}
+}
+@media(max-width:760px){
+ #root .app-shell{padding-bottom:calc(80px + env(safe-area-inset-bottom))!important}
+ #root .app-shell>.topbar{height:66px!important;min-height:66px!important;padding:0 12px!important}
+ #root .app-shell .brand{font-size:18px!important;gap:8px!important}
+ #root .app-shell .nova-brand-symbol{width:38px!important;height:38px!important;border-radius:13px!important}
+ #root .app-shell .nova-brand-glyph{font-size:23px!important}
+ #root .app-shell .nova-brand-word small{font-size:6px!important;letter-spacing:1.2px!important}
+ #root .app-shell>.ticker{padding:7px 12px!important}
+ #root .app-shell>.nova-dashboard{padding:12px 10px 24px!important}
+ #root .app-shell .nova-content{gap:13px!important}
+ #root .app-shell .hero{min-height:245px!important;padding:24px 17px!important;border-radius:22px!important}
+ #root .app-shell .hero-copy{max-width:68%!important}
+ #root .app-shell .hero h1{font-size:clamp(34px,9vw,44px)!important;letter-spacing:-1.8px!important}
+ #root .app-shell .hero-copy>p{font-size:10px!important;line-height:1.55!important}
+ #root .app-shell .hero-actions{margin-top:14px!important;gap:8px!important}
+ #root .app-shell .hero-actions button{min-height:40px!important;padding:0 12px!important;font-size:9px!important}
+ #root .app-shell .hero-actions>span{font-size:7px!important}
+ #root .app-shell .hero-art.nova-hero-scene{right:-55px!important;width:205px!important;height:205px!important;transform:translateY(-50%) scale(.82)!important;transform-origin:center!important}
+ #root .app-shell .nova-core{width:125px!important;height:125px!important}
+ #root .app-shell .nova-core-inner{width:72px!important;height:72px!important;font-size:52px!important;border-radius:22px!important;letter-spacing:-7px!important}
+ #root .app-shell .nova-hero-scene .orbit-a{width:205px!important;height:86px!important}
+ #root .app-shell .nova-hero-scene .orbit-b{width:220px!important;height:120px!important}
+ #root .app-shell .nova-float-card{font-size:6px!important;padding:7px 8px!important;gap:5px!important}
+ #root .app-shell .nova-float-card b{font-size:8px!important}
+ #root .app-shell .nova-float-live{right:0!important;top:25px!important}
+ #root .app-shell .nova-float-signal{left:0!important;bottom:24px!important}
+ #root .app-shell .quick-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+ #root .app-shell .quick-stats>div{min-height:76px!important;padding:9px 7px!important;gap:6px!important;border-radius:14px!important}
+ #root .app-shell .stat-icon,#root .app-shell .stat-icon.teal,#root .app-shell .stat-icon.lime{width:31px!important;height:31px!important;border-radius:10px!important}
+ #root .app-shell .quick-stats b{font-size:8px!important}
+ #root .app-shell .quick-stats small{font-size:7px!important;line-height:1.25!important}
+ #root .app-shell .events-section{padding:15px 11px!important;border-radius:19px!important}
+ #root .app-shell .section-heading h2{font-size:22px!important}
+ #root .app-shell .section-heading p{font-size:9px!important}
+ #root .app-shell .match-list{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+ #root .app-shell .match-card{padding:14px!important;border-radius:17px!important}
+ #root .app-shell .team b{font-size:10px!important}
+ #root .app-shell .right-rail{display:none!important}
+ #root .app-shell .footer{padding:16px 12px!important}
+}
+@media(max-width:380px){
+ #root .app-shell .hero-copy{max-width:72%!important}
+ #root .app-shell .hero-art.nova-hero-scene{right:-72px!important;transform:translateY(-50%) scale(.72)!important}
+ #root .app-shell .quick-stats small{display:none!important}
+}
