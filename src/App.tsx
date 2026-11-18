@@ -9,6 +9,19 @@ import MyBetsPanel from './components/MyBetsPanel'
 import { languages, useLanguage } from './i18n'
 import { supabase } from './lib/supabase'
 
+const CLUB_PREFIXES = new Set(['FC','CF','CD','SC','AC','FK','SK','AFC','CFC','FBC','CA','CLUB','FOOTBALL','DEPORTIVO','SPORTING'])
+
+function teamInitials(name: string) {
+  const words = String(name ?? '').trim().split(/[\\s-]+/).filter(Boolean)
+  const meaningful = words.filter(word => !CLUB_PREFIXES.has(word.replace(/[^\\p{L}]/gu, '').toUpperCase()))
+  const source = meaningful.length ? meaningful : words
+  if (!source.length) return '??'
+  const chars = source.length > 1
+    ? source.slice(0, 2).map(word => Array.from(word)[0])
+    : Array.from(source[0]).slice(0, 2)
+  return chars.join('').toLocaleUpperCase().slice(0, 2)
+}
+
 type Match = {
   id: string | number
   league: string
@@ -177,8 +190,8 @@ export default function App() {
             dateLabel: startsAt.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }),
             home: home?.name ?? 'Home team',
             away: away?.name ?? 'Away team',
-            homeMark: home?.short_name ?? String(home?.name ?? 'H').slice(0, 2).toUpperCase(),
-            awayMark: away?.short_name ?? String(away?.name ?? 'A').slice(0, 2).toUpperCase(),
+            homeMark: teamInitials(home?.name ?? 'Home team'),
+            awayMark: teamInitials(away?.name ?? 'Away team'),
             homeLogo: home?.logo_url ?? null,
             awayLogo: away?.logo_url ?? null,
             odds: [findOdd(['home', '1']), findOdd(['draw', 'x']), findOdd(['away', '2'])],
@@ -295,7 +308,7 @@ export default function App() {
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
                 <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : <><Clock3 size={13}/>{match.time}</>}</span></div>
-                <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} crest unavailable`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus">VS</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} crest unavailable`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><span className="odds-caption">{t('match_winner')} <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>setDetailMatch(match)} className='odd'><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div>}</div>
+                <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} initials`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus">VS</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} initials`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><span className="odds-caption">{t('match_winner')} <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>setDetailMatch(match)} className='odd'><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div>}</div>
                 <div className="match-footer"><button className="favorite-toggle" onClick={() => toggleFavorite(match.id)}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={() => setDetailMatch(match)}>{t("match_details_btn")} <ArrowRight size={13}/></button></div>
               </article>) : <div className="empty-state">{query ? t('empty_search') : sport === 'Football' ? eventView === 'live' ? t('empty_live') : eventView === 'results' ? t('empty_results') : t('empty_football') : t('empty_sport')}</div>}
             </div>
