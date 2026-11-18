@@ -34,13 +34,13 @@ function countryFlagForCompetition(competition: string, country: string) {
   const value = `${country} ${competition}`.toLowerCase()
   const flags: [RegExp, string][] = [
     [/england|premier league|championship|league one|league two|fa cup|efl|epl/, '🇬🇧'],
-    [/spain|la liga|laliga|copa del rey/, '🇪🇸'], [/italy|serie a|serie b|coppa italia/, '🇮🇹'],
+    [/spain|españa|espana|la liga|laliga|primera división|primera division|copa del rey/, '🇪🇸'], [/italy|serie a|serie b|coppa italia/, '🇮🇹'],
     [/germany|bundesliga|dfb/, '🇩🇪'], [/france|ligue 1|ligue 2/, '🇫🇷'],
     [/portugal|primeira liga|liga portugal/, '🇵🇹'], [/netherlands|eredivisie|holland/, '🇳🇱'],
     [/turkey|super lig|süper lig/, '🇹🇷'], [/saudi|pro league/, '🇸🇦'],
     [/algeria|ligue 1 alg|algerian/, '🇩🇿'], [/morocco|botola/, '🇲🇦'],
-    [/egypt|premier league egypt/, '🇪🇬'], [/brazil|serie a brazil|brasileirao|gaucho|paraense|pernambucano|sergipano/, '🇧🇷'],
-    [/argentina/, '🇦🇷'], [/usa|united states|mls/, '🇺🇸'], [/mexico|liga mx/, '🇲🇽'],
+    [/egypt|premier league egypt/, '🇪🇬'], [/brazil|brasileiro|serie a brazil|brasileirao|gaucho|paraense|pernambucano|sergipano/, '🇧🇷'],
+    [/argentina/, '🇦🇷'], [/colombia|primera a colombia/, '🇨🇴'], [/usa|united states|mls|major league soccer/, '🇺🇸'], [/mexico|liga mx/, '🇲🇽'],
     [/japan|j-league/, '🇯🇵'], [/south korea|korea|k league/, '🇰🇷'],
     [/india|indian super/, '🇮🇳'], [/australia|a-league/, '🇦🇺'],
     [/scotland|premiership scotland/, '🇬🇧'], [/wales/, '🇬🇧'], [/ireland/, '🇮🇪'],
