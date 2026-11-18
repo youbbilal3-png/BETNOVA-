@@ -334,7 +334,7 @@ export default function App() {
               cardCaption = String(fallback.name || 'Available odds').split('·')[0].trim()
             }
           }
-          if (!winnerPicks.some(Boolean) && row.status !== 'finished') {
+          if (!cardPicks.some(Boolean) && row.status !== 'finished') {
             // Clearly labelled practice-only prices. These are never inserted into the
             // real markets tables and cannot reach the cash-wallet betting RPC.
             const trainingPrices = ['2.60', '3.20', '2.80']
@@ -478,7 +478,7 @@ export default function App() {
       setBetMessage(incompatible ? 'These two selections contradict each other.' : 'Only one selection per match is currently supported.')
       return
     }
-    const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }
+    const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey, isDemo: selection.isDemo }
     setSelected([...afterMarketReplacement, candidate])
     setBetMessage('')
   }
