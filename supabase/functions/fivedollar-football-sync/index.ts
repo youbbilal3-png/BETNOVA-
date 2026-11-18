@@ -564,6 +564,10 @@ Deno.serve(async (req: Request) => {
     // Never expose a market that the trusted event processor cannot settle safely.
   }
 
+  let prematchLeagueName: string | null = null;
+  let prematchLeagueId: string | null = null;
+  let prematchOffset = batch * 5;
+
   try {
     let fixtures: any[] = [];
     if (mode === "live") {
@@ -576,14 +580,34 @@ Deno.serve(async (req: Request) => {
       fixtures = Array.isArray(data) ? data : [];
     } else {
       const start = Math.floor(Date.now() / 1000);
-      // The provider rejects windows longer than 24 hours. Poll a rolling day instead.
-      const end = start + 24 * 60 * 60;
-      const data = await get("/fixtures?status=scheduled&start_time=" + start + "&end_time=" + end + "&per_page=100");
-      fixtures = Array.isArray(data) ? data : [];
+      // Unlike /fixtures (a 24-hour window), the league fixture endpoint can
+      // return the whole upcoming week. The league catalogue is plan-scoped:
+      // Free gives the top five; Community Access adds its chosen country pack.
+      const end = start + 7 * 24 * 60 * 60;
+      const leagueData = await get("/leagues?active_since=" + start);
+      const leagues = (Array.isArray(leagueData) ? leagueData : [])
+        .filter((league: any) => league?.id !== undefined && league?.id !== null)
+        .sort((a: any, b: any) => String(a.name ?? a.id).localeCompare(String(b.name ?? b.id)));
+      if (leagues.length) {
+        const leagueIndex = batch % leagues.length;
+        const selectedLeague = leagues[leagueIndex];
+        prematchLeagueName = String(selectedLeague.name ?? selectedLeague.id);
+        prematchLeagueId = String(selectedLeague.id);
+        prematchOffset = Math.floor(batch / leagues.length) * 5;
+        const data = await get("/leagues/" + encodeURIComponent(String(selectedLeague.id)) +
+          "/fixtures?status=scheduled&start_time=" + start + "&end_time=" + end +
+          "&order=asc&per_page=100");
+        fixtures = Array.isArray(data) ? data : [];
+      } else {
+        // Fallback for an empty provider catalogue; keep the previous safe window.
+        const data = await get("/fixtures?status=scheduled&start_time=" + start +
+          "&end_time=" + (start + 24 * 60 * 60) + "&per_page=100");
+        fixtures = Array.isArray(data) ? data : [];
+      }
     }
 
     const fixturesToProcess = mode === "prematch"
-      ? fixtures.slice(batch * 5, batch * 5 + 5)
+      ? fixtures.slice(prematchOffset, prematchOffset + 5)
       : fixtures;
     const stored: Array<{item:any;id:string}> = [];
     for (const item of fixturesToProcess) {
@@ -618,7 +642,10 @@ Deno.serve(async (req: Request) => {
       fixtures_received: fixtures.length, fixtures_selected: fixturesToProcess.length, fixtures_synced: fixturesSynced,
       events_synced: eventsSynced, retracted_goals_recorded: retractedGoals,
       markets_synced: marketsSynced, selections_synced: selectionsSynced,
-      provider_requests: requests, local_rate_limited: rateLimited, errors: errors.slice(0, 10),
+      provider_requests: requests, local_rate_limited: rateLimited,
+      prematch_league: prematchLeagueName, prematch_league_id: prematchLeagueId,
+      prematch_window_days: mode === "prematch" ? 7 : null,
+      errors: errors.slice(0, 10),
       settlement_policy: "Live goals and full-time results are replayed after score/event consistency checks. A missing goal must be absent from two consecutive consistent snapshots before automatic VAR correction; the fixture is held from new bets during confirmation, then markets and payouts are automatically reconciled using the immutable wallet audit ledger.",
     });
   } catch (error) {
