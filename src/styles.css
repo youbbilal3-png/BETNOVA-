@@ -294,10 +294,10 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .market-line-row{display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);align-items:center;gap:4px;padding:5px;border:1px solid #edf1ed;border-radius:9px;background:#fafcfa}
 .market-line-row>b{font-size:8px;color:#4d6c58;text-align:center}
 .market-line-row button{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:3px;padding:7px 5px;border:1px solid #e8eee8;border-radius:7px;background:#f5f8f5;color:#849187;font-size:7px;font-weight:750;white-space:nowrap}
-.market-line-row button strong{font-size:9px;color:#9aa49b}
+.market-line-row button strong{font-size:9px;color:#9aa49b}.market-line-row button{cursor:pointer;transition:background .16s,border-color .16s,transform .16s}.market-line-row button:hover:not(:disabled){border-color:#85c9a0;background:#edf8ef;transform:translateY(-1px)}.market-line-row button:disabled{cursor:not-allowed;opacity:.58}.market-line-row button.catalog-picked{border-color:#18a878;background:linear-gradient(135deg,#ddf5e5,#c9eed8);color:#08734e;box-shadow:inset 0 0 0 1px #18a878}.market-line-row button.catalog-picked strong{color:#08734e}
 .market-catalog .market-outcomes{grid-template-columns:repeat(3,minmax(0,1fr))}
 .market-catalog .market-outcome{background:#f6f9f6;border-color:#e8eee8}
-.market-catalog .market-outcome b{color:#9aa49b}
+.market-catalog .market-outcome b{color:#9aa49b}.market-catalog .market-outcome:disabled{opacity:.55;cursor:not-allowed}.market-catalog .market-outcome:not(:disabled){cursor:pointer}.market-catalog .market-outcome:not(:disabled):hover{border-color:#85c9a0;background:#edf8ef}.market-catalog .market-outcome.picked{border-color:#18a878;background:linear-gradient(135deg,#ddf5e5,#c9eed8);box-shadow:inset 0 0 0 1px #18a878}.market-catalog .market-outcome.picked b{color:#08734e}
 .market-catalog-note{margin:0;padding:9px 11px;border-left:3px solid #6eaa83;border-radius:7px;background:#f4f8f4;color:#7b8d80;font-size:8px;line-height:1.55}
 .market-catalog button:disabled{opacity:1;cursor:not-allowed}
 @media(max-width:480px){.market-line-grid{grid-template-columns:1fr}.market-catalog .market-outcomes{grid-template-columns:repeat(2,minmax(0,1fr))}.market-catalog-top{padding:11px 12px}}
