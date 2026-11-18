@@ -8,7 +8,9 @@ import './betnova-next-ui.css'
 import './betnova-native-shell.css'
 import './public-landing.css'
 import './betnova-premium-theme.css'
-import './nova-arena-home.css'\nimport './install-app.css'\nimport InstallAppPrompt from './components/InstallAppPrompt'
+import './nova-arena-home.css'
+import './install-app.css'
+import InstallAppPrompt from './components/InstallAppPrompt'
 import { LanguageProvider } from './i18n'
 
 if ('serviceWorker' in navigator) {
