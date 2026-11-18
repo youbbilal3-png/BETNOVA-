@@ -234,13 +234,13 @@ Deno.serve(async (req: Request) => {
           const eventSport = mode === "live"
             ? selectedSports.find((item: any) => item.key === String(event.sport_key ?? ""))
             : sport;
-          if (!eventSport) continue;
+          if (!eventSport) return;
           const fixtureId = await storeEvent(event, eventSport);
-          if (!fixtureId) continue;
+          if (!fixtureId) return;
           const bookmakers = (Array.isArray(event.bookmakers) ? event.bookmakers : []).filter((book: any) =>
             Array.isArray(book.markets) && book.markets.some((m: any) => m.key === "h2h" || m.key === "totals")
           );
-          if (!bookmakers.length) continue;
+          if (!bookmakers.length) return;
           // Store each bookmaker separately so users can compare real quoted prices.
           for (const bookmaker of bookmakers) {
           const rawUpdatedAt = bookmaker.markets?.find((m: any) => m.key === "h2h")?.last_update ??
