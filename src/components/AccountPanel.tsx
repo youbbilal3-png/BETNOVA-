@@ -10,6 +10,7 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
   const [createdAt, setCreatedAt] = useState('')
   const [verified, setVerified] = useState(false)
   const [accountBalances, setAccountBalances] = useState<{currency:string;available_balance:number;reserved_balance:number}[]>([])
+  const [bonusBalance, setBonusBalance] = useState(0)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -28,8 +29,11 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
       setDisplayName(String(data.user.user_metadata?.display_name ?? data.user.user_metadata?.full_name ?? ''))
       setCreatedAt(data.user.created_at)
       setVerified(Boolean(data.user.email_confirmed_at))
-      const { data: balances } = await supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance').eq('user_id', data.user.id)
-      if (active) setAccountBalances((balances ?? []) as {currency:string;available_balance:number;reserved_balance:number}[])
+      const [balances, bonus] = await Promise.all([
+        supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance').eq('user_id', data.user.id),
+        supabase.from('bonus_wallet_accounts').select('available_balance').eq('user_id', data.user.id).maybeSingle()
+      ])
+      if (active) { setAccountBalances((balances.data ?? []) as {currency:string;available_balance:number;reserved_balance:number}[]); setBonusBalance(Number(bonus.data?.available_balance ?? 0)) }
     }
     void loadAccount().catch(caught => setError(caught instanceof Error ? caught.message : 'Could not load account details.'))
     return () => { active = false }
@@ -90,6 +94,7 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
           })}
         </div>
       </div>
+      <div className="account-wallet-summary account-bonus-summary"><div className="account-wallet-summary-head"><span>WELCOME BONUS · SEPARATE WALLET</span></div><div className="account-wallet-balance-grid"><div><small>USD</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}).format(bonusBalance)}</strong></div><div><small>DZD equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'DZD',maximumFractionDigits:0}).format(bonusBalance*260)}</strong></div><div><small>EUR equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(bonusBalance*0.9)}</strong></div></div></div>
       <div className="account-wallet-actions"><button type="button" onClick={() => onOpenWallet('deposit')}><ArrowDownToLine size={17}/> Deposit</button><button type="button" onClick={() => onOpenWallet('withdraw')}><ArrowUpFromLine size={17}/> Withdraw</button></div>
       <div className="account-status-grid">
         <div><span>EMAIL STATUS</span><b className={verified ? 'verified' : 'unverified'}>{verified ? <><CheckCircle2 size={15}/> Verified</> : 'Not verified'}</b></div>
