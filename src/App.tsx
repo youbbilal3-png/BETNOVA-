@@ -168,9 +168,11 @@ export default function App() {
 
   useEffect(() => {
     let active = true
+    let latestRequest = 0
 
     async function loadFixtures() {
-      setLoadingMatches(true)
+      const requestId = ++latestRequest
+      if (matches.length === 0) setLoadingMatches(true)
       setMatchLoadError(null)
 
       if (!supabase) {
@@ -224,7 +226,7 @@ export default function App() {
           .limit(1000)
 
         if (error) throw error
-        if (!active) return
+        if (!active || requestId !== latestRequest) return
 
         const mapped: Match[] = (data ?? []).map((row: any) => {
           const competition = Array.isArray(row.competitions) ? row.competitions[0] : row.competitions
@@ -292,12 +294,11 @@ export default function App() {
           setMatches([])
         }
       } catch (caught) {
-        if (active) {
-          setMatches([])
+        if (active && requestId === latestRequest) {
           setMatchLoadError(caught instanceof Error ? caught.message : 'Could not load sports data.')
         }
       } finally {
-        if (active) setLoadingMatches(false)
+        if (active && requestId === latestRequest) setLoadingMatches(false)
       }
     }
 
@@ -313,7 +314,7 @@ export default function App() {
       window.clearInterval(refreshTimer)
       if (client && channel) void client.removeChannel(channel)
     }
-  }, [sport, userEmail, eventView])
+  }, [sport, userEmail, eventView, matches.length])
 
   const competitionOptions = useMemo(() => {
     const byName = new Map<string, { name: string; country: string; count: number; international: boolean }>()
