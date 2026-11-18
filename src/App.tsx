@@ -206,7 +206,7 @@ export default function App() {
           fixtureQuery = fixtureQuery
             .eq('status', 'live')
             .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
-            .gte('updated_at', new Date(Date.now() - 30 * 60 * 1000).toISOString())
+            .gte('updated_at', new Date(Date.now() - 75 * 60 * 1000).toISOString())
         } else if (eventView === 'results') {
           fixtureQuery = fixtureQuery.eq('status', 'finished')
         } else {
