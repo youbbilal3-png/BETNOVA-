@@ -103,7 +103,7 @@ Deno.serve(async(req:Request)=>{
   const prioritized=all.slice(0,150);
   const cursor=Number(state?.tournament_cursor??0)%prioritized.length;
   const selected=[0,1,2].map(i=>prioritized[(cursor+i)%prioritized.length]).filter(Boolean);
-  const bookmakers=["1xbet"];
+  const bookmakers=["1xbet","pinnacle","bet365"];
   const callCount=Number(state?.call_count??0);
   const bookmaker=bookmakers[callCount%bookmakers.length];
   const ids=selected.map((x:any)=>Number(x.tournament_id));
