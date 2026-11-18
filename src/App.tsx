@@ -435,7 +435,6 @@ export default function App() {
             <button className="mobile-account-entry" onClick={() => { setMobileMoreOpen(false); setAccountOpen(true) }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>Deposit</button>
             <button onClick={() => { setMobileMoreOpen(false); setBetsOpen(true) }}><Activity size={17}/>{t("my_bets")}</button>
-            <button onClick={() => { setMobileMoreOpen(false); setSettingsOpen(true) }}><Settings size={17}/>{t("settings")}</button>
             <button onClick={() => { setMobileMoreOpen(false); setNotificationsOpen(true) }}><Bell size={17}/>{t("notifications")}</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("responsible")?.scrollIntoView({behavior:"smooth"}) }}><ShieldCheck size={17}/>Responsible play</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("help")?.scrollIntoView({behavior:"smooth"}) }}><CircleHelp size={17}/>Help & support</button>
@@ -445,6 +444,7 @@ export default function App() {
             <button onClick={() => { setMobileMoreOpen(false); setAuthMode("login"); setAuthOpen(true) }}><ArrowRight size={17}/>{t("login")}</button>
             <button onClick={() => { setMobileMoreOpen(false); setAuthMode("signup"); setAuthOpen(true) }}><ShieldCheck size={17}/>{t("join")}</button>
           </>}
+          <button onClick={() => { setMobileMoreOpen(false); setSettingsOpen(true) }}><Settings size={17}/>{t("settings")}</button>
           <div className="mobile-more-language"><Globe2 size={16}/><span>{t("language")}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></div>
         </section>
       </div>}
