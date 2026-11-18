@@ -274,61 +274,6 @@ export default function App() {
     document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  function picksCanCoexist(first: { marketKey: string; label: string }, second: { marketKey: string; label: string }) {
-    const firstKey = first.marketKey.toLowerCase()
-    const secondKey = second.marketKey.toLowerCase()
-    const outcome = (label: string) => {
-      const value = label.split('·').pop()?.trim().toLowerCase() ?? ''
-      if (['home', '1', 'win 1'].includes(value)) return 'home'
-      if (['draw', 'x'].includes(value)) return 'draw'
-      if (['away', '2', 'win 2'].includes(value)) return 'away'
-      return value
-    }
-    const goalLine = (label: string) => {
-      const value = label.split('·').pop()?.trim() ?? ''
-      const match = value.match(/^(over|under)\s*(\d+(?:\.\d+)?)$/i)
-      return match ? { side: match[1].toLowerCase(), line: Number(match[2]) } : null
-    }
-
-    // Two match-result outcomes must describe the same result to coexist.
-    if (firstKey === 'match_result' && secondKey === 'match_result') {
-      // A second match-result pick is either contradictory or an exact duplicate.
-      return false
-    }
-
-    // Check whether at least one whole-number final goal total can satisfy both picks.
-    const resultPick = firstKey === 'match_result' ? first : secondKey === 'match_result' ? second : null
-    const goalsPick = firstKey === 'total_goals' ? first : secondKey === 'total_goals' ? second : null
-    if (resultPick && goalsPick) {
-      const result = outcome(resultPick.label)
-      const total = goalLine(goalsPick.label)
-      if (!total) return true
-      for (let goals = 0; goals <= 100; goals++) {
-        const goalsWin = total.side === 'over' ? goals > total.line : goals < total.line
-        if (!goalsWin) continue
-        if (result === 'draw' && goals % 2 === 0) return true
-        if ((result === 'home' || result === 'away') && goals >= 1) return true
-      }
-      return false
-    }
-
-    // Opposite total-goals sides are allowed only when a real integer total can win both.
-    if (firstKey === 'total_goals' && secondKey === 'total_goals') {
-      const a = goalLine(first.label)
-      const b = goalLine(second.label)
-      if (!a || !b || a.side === b.side) return true
-      for (let goals = 0; goals <= 100; goals++) {
-        const aWins = a.side === 'over' ? goals > a.line : goals < a.line
-        const bWins = b.side === 'over' ? goals > b.line : goals < b.line
-        if (aWins && bWins) return true
-      }
-      return false
-    }
-
-    // Different market types (for example goals and corners) are independent outcomes.
-    return true
-  }
-
   function toggleMarketSelection(match: Match, selection: MarketPick) {
     const matchKey = String(match.id)
     const alreadySelected = selected.some(item => item.selectionId === selection.selectionId)
@@ -341,20 +286,18 @@ export default function App() {
       setBetMessage('A bet slip can contain up to 20 selections.')
       return
     }
-    const sameMatchMarket = selected.find(item => String(item.match.id) === matchKey && item.marketId === selection.marketId)
-    const afterMarketReplacement = sameMatchMarket
-      ? selected.filter(item => item.selectionId !== sameMatchMarket.selectionId)
+    const existingMatchPick = selected.find(item => String(item.match.id) === matchKey)
+    // Standard accumulators accept only one selection per fixture. Multiple
+    // related selections require a dedicated Bet Builder and a separately
+    // calculated combined price; BETNOVA does not have that pricing engine yet.
+    if (existingMatchPick && existingMatchPick.marketKey !== selection.marketKey) {
+      setBetMessage('Only one selection per match is allowed in a standard bet slip. Same-match combinations require Bet Builder pricing, which is not available yet.')
+      return
+    }
+    // Replace a pick from the same market instead of adding a duplicate leg.
+    const afterMarketReplacement = existingMatchPick
+      ? selected.filter(item => String(item.match.id) !== matchKey)
       : selected
-    const sameMatchPicks = afterMarketReplacement.filter(item => String(item.match.id) === matchKey)
-    if (sameMatchPicks.some(item => !picksCanCoexist(item, { marketKey: selection.marketKey, label: selection.marketLabel + ' · ' + selection.selectionLabel }))) {
-      setBetMessage('These two selections cannot both win from the same match result. Choose compatible markets.')
-      return
-    }
-    const sameMatchCount = sameMatchPicks.length
-    if (sameMatchCount >= 2) {
-      setBetMessage('You can add up to 2 different markets from the same match.')
-      return
-    }
     setSelected([...afterMarketReplacement, { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }])
     setBetMessage('')
   }
