@@ -19,8 +19,29 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [resending, setResending] = useState(false)
 
   if (!open) return null
+
+  async function handleResendConfirmation() {
+    if (!supabase || !email.trim()) return
+    setError('')
+    setNotice('')
+    setResending(true)
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: { emailRedirectTo: 'https://betnova-8daa3.web.app/' },
+      })
+      if (resendError) throw resendError
+      setNotice(t('confirmation_resent'))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('resend_failed'))
+    } finally {
+      setResending(false)
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -83,6 +104,7 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
           <label>{t('password')}<span className="password-wrap"><input type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={event => setPassword(event.target.value)} placeholder={t('password_minimum')} minLength={8} required/><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t('hide_password') : t('show_password')}>{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></span></label>
           {error && <div className="auth-message error" role="alert">{error}</div>}
           {notice && <div className="auth-message success" role="status">{notice}</div>}
+          {mode === 'signup' && notice && <button className="auth-submit" type="button" onClick={handleResendConfirmation} disabled={resending || !email.trim()}>{resending ? t('please_wait') : t('resend_confirmation')}</button>}
           <button className="auth-submit" type="submit" disabled={busy}>{busy ? t('please_wait') : mode === 'signup' ? t('create_account') : t('login')} <ArrowRight size={16}/></button>
         </form>
         <div className="auth-switch">{mode === 'signup' ? t('already_account') : t('new_to_betnova')} <button onClick={() => { setError(''); setNotice(''); onModeChange(mode === 'signup' ? 'login' : 'signup') }}>{mode === 'signup' ? t('login') : t('create_account')}</button></div>
