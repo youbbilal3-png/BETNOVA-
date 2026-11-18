@@ -69,7 +69,7 @@ function countryFlagForCompetition(competition: string, country: string) {
 
   const name = normalize(competition || '')
   const flags: [RegExp, string][] = [
-    [/\b(algeria|algerian|algerie|dz)\b|^ligue 1$/, '🇩🇿'],
+    [/\b(algeria|algerian|algerie|dz)\b/, '🇩🇿'],
     [/\b(france|french|ligue 1 - france|ligue 2 - france)\b/, '🇫🇷'],
     [/\b(england|english|premier league - england|epl|fa cup|efl)\b|championship - england/, '🇬🇧'],
     [/\b(spain|spanish|la liga|laliga|copa del rey)\b/, '🇪🇸'],
