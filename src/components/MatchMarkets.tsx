@@ -145,14 +145,17 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
     {live && events.length > 0 && <section className="match-event-feed"><div className="match-event-feed-head"><span><Radio size={12}/> {t('live_match_events')}</span><small>{events.length} {t('recent_updates')}</small></div>{events.map(event=><div className="match-event-row" key={event.id}><b>{event.minute !== null ? event.minute + (event.added_time ? '+' + event.added_time : '') + "'" : '•'}</b><span className={'event-dot '+event.event_type}>{event.event_type==='goal'?'⚽':event.event_type==='yellow_card'?'🟨':event.event_type==='red_card'?'🟥':event.event_type==='corner'?'◉':event.event_type==='substitution'?'↔':'•'}</span><span>{event.player_name || t(event.event_type === 'goal' ? 'goal_event' : event.event_type === 'yellow_card' ? 'yellow_card_event' : event.event_type === 'red_card' ? 'red_card_event' : event.event_type === 'corner' ? 'corner_event' : event.event_type === 'substitution' ? 'substitution_event' : 'other_event')}{event.team?.name ? ' · '+event.team.name : ''}</span></div>)}</section>}
     <div className="markets-toolbar"><span>{markets.length} {t('available_markets')}</span><small>{lastUpdated ? t('updated') + ' ' + lastUpdated.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : ''}</small><button onClick={() => { setLoading(true); void loadMarkets() }} aria-label={t('refresh_markets')}><RefreshCw size={13}/></button></div>
     <div className="market-category-filters" role="tablist" aria-label={t('market_categories')}>
-      <button className={activeCategory === 'all' ? 'active' : ''} onClick={() => { setActiveCategory('all'); setExpanded('') }}>{t('all_markets')}</button>
-      {categories.map(category => <button key={category} className={activeCategory === category ? 'active' : ''} onClick={() => { setActiveCategory(category); setExpanded(category) }}>{category}</button>)}
+      <button className={activeCategory === 'all' ? 'active' : ''} aria-pressed={activeCategory === 'all'} onClick={() => { setActiveCategory('all'); setExpanded('') }}>{t('all_markets')}</button>
+      {categories.map(category => <button key={category} className={activeCategory === category ? 'active' : ''} aria-pressed={activeCategory === category} aria-expanded={expanded === category} onClick={() => {
+        if (activeCategory === category) setExpanded(expanded === category ? '' : category)
+        else { setActiveCategory(category); setExpanded(category) }
+      }}>{category}</button>)}
     </div>
     {visibleGroups.map(([category, items]) => <section className="market-group" key={category}>
-      <button className="market-group-head" onClick={() => setExpanded(expanded === category ? '' : category)}>
+      <button className="market-group-head" aria-expanded={expanded === category} onClick={() => setExpanded(expanded === category ? '' : category)}>
         <span>{category}</span><small>{items.length} {t('markets_count')}</small>{expanded === category ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
       </button>
-      {(activeCategory === category || expanded === category || (!expanded && activeCategory === 'all' && grouped[0]?.[0] === category)) && <div className="market-group-body">
+      {expanded === category && <div className="market-group-body">
         {items.map(market => {
           const updatedMs = new Date(market.last_updated_at).getTime()
           const maxAgeMs = market.is_live ? 7 * 60 * 1000 : 24 * 60 * 60 * 1000
