@@ -71,6 +71,49 @@ function countryFlagForCompetition(competition: string, country: string) {
 const sports = ['Football', 'Basketball', 'Tennis', 'Ice Hockey', 'Volleyball']
 const leagues = ['All matches', 'Popular', 'England', 'Spain', 'Italy', 'Germany']
 
+function normalizedPick(value: string) {
+  return String(value ?? '').trim().toLowerCase().replace(/[ _-]+/g, ' ')
+}
+
+function builderConflict(a: { marketKey: string; label: string }, b: { marketKey: string; label: string }) {
+  const keyA = normalizedPick(a.marketKey)
+  const keyB = normalizedPick(b.marketKey)
+  const labelA = normalizedPick(a.label)
+  const labelB = normalizedPick(b.label)
+  const resultOf = (key: string, label: string) => {
+    if (key === 'match_result') {
+      if (/\b(home|win 1|فوز 1)\b/.test(label)) return 'home'
+      if (/\b(away|win 2|فوز 2)\b/.test(label)) return 'away'
+      if (/\b(draw|تعادل|\bx\b)/.test(label)) return 'draw'
+    }
+    if (key === 'double_chance') {
+      if (/\b1x\b/.test(label)) return '1x'
+      if (/\bx2\b/.test(label)) return 'x2'
+      if (/\b12\b/.test(label)) return '12'
+    }
+    return null
+  }
+  const resultA = resultOf(keyA, labelA)
+  const resultB = resultOf(keyB, labelB)
+  const result = resultA ?? resultB
+  const chance = resultA && ['1x','x2','12'].includes(resultA) ? resultA : resultB && ['1x','x2','12'].includes(resultB) ? resultB : null
+  if (result && chance && !['1x','x2','12'].includes(result)) {
+    if (chance === '1x' && result === 'away') return true
+    if (chance === 'x2' && result === 'home') return true
+    if (chance === '12' && result === 'draw') return true
+  }
+
+  const btts = keyA === 'both_teams_score' ? labelA : keyB === 'both_teams_score' ? labelB : ''
+  const total = keyA === 'total_goals' ? labelA : keyB === 'total_goals' ? labelB : ''
+  if (btts && total) {
+    const saysYes = /\b(yes|نعم)\b/.test(btts)
+    const under = /\b(under|أقل من|moins de)\b/.test(total)
+    const line = Number(total.match(/\d+(?:\.\d+)?/)?.[0])
+    if (saysYes && under && Number.isFinite(line) && line <= 1.5) return true
+  }
+  return false
+}
+
 export default function App() {
   const { language, setLanguage, t } = useLanguage()
   const [sport, setSport] = useState('Football')
@@ -288,16 +331,24 @@ export default function App() {
       return
     }
     const sameMatchPicks = selected.filter(item => String(item.match.id) === matchKey)
-    // Bet Builder preview: allow up to two distinct markets from the same fixture.
-    // Alternate outcomes from the same market replace the previous outcome.
+    // Replacing an outcome in the same market is allowed; a third market from this fixture is not.
     const afterMarketReplacement = selected.filter(item => !(String(item.match.id) === matchKey && item.marketKey === selection.marketKey))
+    const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }
     const remainingSameMatchPicks = afterMarketReplacement.filter(item => String(item.match.id) === matchKey)
     if (remainingSameMatchPicks.length >= 2) {
       setBetMessage('Bet Builder limit reached: choose up to two markets from this match.')
       return
     }
-    setSelected([...afterMarketReplacement, { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }])
-    setBetMessage(sameMatchPicks.length ? 'Bet Builder: two selections from this match. Combined pricing is not connected yet.' : '')
+    const incompatible = remainingSameMatchPicks.find(item => builderConflict(
+      { marketKey: item.marketKey, label: item.label },
+      { marketKey: candidate.marketKey, label: candidate.label }
+    ))
+    if (incompatible) {
+      setBetMessage('These two selections contradict each other and cannot be combined.')
+      return
+    }
+    setSelected([...afterMarketReplacement, candidate])
+    setBetMessage(sameMatchPicks.length ? 'Compatible Bet Builder selections added. A verified combined price is required before a return can be shown.' : '')
   }
 
   async function placeBet() {
