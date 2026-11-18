@@ -3,7 +3,20 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const PROVIDER = "the-odds-api";
 const API_BASE = "https://api.the-odds-api.com/v4";
+const MAX_EVENT_SPORTS = 50;
 const ALLOWED_SOCCER_KEYS = new Set([
+  "soccer_epl",
+  "soccer_germany_bundesliga",
+  "soccer_spain_la_liga",
+  "soccer_italy_serie_a",
+  "soccer_france_ligue_one",
+  "soccer_uefa_champs_league",
+  "soccer_efl_champ",
+  "soccer_brazil_campeonato",
+  "soccer_uefa_europa_conference_league",
+  "soccer_uefa_europa_league",
+]);
+const TOTALS_SOCCER_KEYS = new Set([
   "soccer_epl",
   "soccer_germany_bundesliga",
   "soccer_spain_la_liga",
@@ -38,6 +51,16 @@ function normalize(value: unknown): string {
 function selectionKey(side: string, point?: number): string {
   return point === undefined ? side : side + "_" + String(point).replace(".", "_");
 }
+async function runPool<T>(items: T[], concurrency: number, task: (item: T) => Promise<void>) {
+  let cursor = 0;
+  const workers = Math.min(Math.max(1, concurrency), items.length);
+  await Promise.all(Array.from({ length: workers }, async () => {
+    while (cursor < items.length) {
+      const item = items[cursor++];
+      await task(item);
+    }
+  }));
+}
 class QuotaExhaustedError extends Error {}
 
 async function providerGet(path: string, key: string) {
@@ -64,7 +87,9 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const requestBody = await req.json().catch(() => ({}));
-  const mode = requestBody?.mode === "live" ? "live" : "prematch";
+  const mode = requestBody?.mode === "live" ? "live" : requestBody?.mode === "events" ? "events" : "prematch";
+  const requestedBatch = Number(requestBody?.batch ?? 0);
+  const batch = Number.isInteger(requestedBatch) ? Math.max(0, Math.min(mode === "events" ? 4 : 1, requestedBatch)) : 0;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -84,14 +109,30 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { data: sports, remaining: initialRemaining } = await providerGet("/sports", apiKey);
-    const selectedSports = (Array.isArray(sports) ? sports : []).filter((sport: any) =>
+    const allSoccerSports = (Array.isArray(sports) ? sports : []).filter((sport: any) =>
       sport?.active === true &&
-      String(sport?.group ?? "").toLowerCase().includes("soccer") &&
+      String(sport?.group ?? "").toLowerCase().includes("soccer")
+    );
+    const selectedSports = allSoccerSports.filter((sport: any) =>
       ALLOWED_SOCCER_KEYS.has(String(sport?.key ?? ""))
     );
+    const selectedKeys = new Set(selectedSports.map((sport: any) => String(sport.key)));
+    const eventSports = [
+      ...selectedSports,
+      ...allSoccerSports
+        .filter((sport: any) => !selectedKeys.has(String(sport.key)))
+        .sort((a: any, b: any) => {
+          const priority = (item: any) => /friendly|qualif|nations|world|international|africa|asia|concacaf|conmebol|uefa|fifa|cup/i.test(String(item.key) + " " + String(item.title)) ? 0 : 1;
+          return priority(a) - priority(b) || String(a.title ?? a.key).localeCompare(String(b.title ?? b.key));
+        })
+        .slice(0, Math.max(0, MAX_EVENT_SPORTS - selectedSports.length)),
+    ];
+    const eventSportsToFetch = eventSports.slice(batch * 10, batch * 10 + 10);
     const sportsToFetch = mode === "live"
       ? [{ key: "upcoming", group: "soccer", title: "Soccer live and upcoming" }]
-      : selectedSports;
+      : mode === "prematch"
+        ? selectedSports.slice(batch * 5, batch * 5 + 5)
+        : [];
     const { data: football, error: footballError } = await supabase
       .from("sports").select("id").eq("slug", "football").eq("is_active", true).maybeSingle();
     if (footballError || !football) throw new Error("Football sport catalogue is not configured");
@@ -110,12 +151,16 @@ Deno.serve(async (req: Request) => {
       if (!eventId || !homeName || !awayName || !Number.isFinite(startsAt.getTime()) || startsAt.getTime() < Date.now() - 6 * 60 * 60 * 1000) {
         return null;
       }
+      // Event-only mode has no score/status feed. Never turn a past kickoff into a
+      // confirmed live match from the start time alone.
+      if (mode === "events" && startsAt.getTime() <= Date.now()) return null;
       const cacheKey = String(sport.key) + ":" + eventId;
       const cached = fixtureIds.get(cacheKey);
       if (cached) return cached;
 
       const teamExternal = (name: string) => String(sport.key) + ":" + normalize(name).replace(/[^a-z0-9]+/g, "-");
-      const country = String(sport.group ?? "").replace(/^soccer\s*-\s*/i, "") || null;
+      const group = String(sport.group ?? "").trim();
+      const country = /^soccer$/i.test(group) ? null : group.replace(/^soccer\s*-\s*/i, "") || null;
       const [home, away, competition] = await Promise.all([
         supabase.from("teams").upsert({
           name: homeName, short_name: homeName.slice(0, 3).toUpperCase(), country,
@@ -149,46 +194,55 @@ Deno.serve(async (req: Request) => {
       return fixture.id;
     }
 
-    // Events are free on this plan. They keep the upcoming fixture list populated
-    // even when the monthly odds-credit allowance has been used.
-    for (const sport of selectedSports) {
-      try {
-        const { data: events } = await providerGet("/sports/" + encodeURIComponent(sport.key) + "/events", apiKey);
-        for (const event of Array.isArray(events) ? events : []) {
-          await storeEvent(event, sport);
+    // The events endpoint is quota-free. Its dedicated cron imports the full catalogue;
+    // only the events mode runs this wider loop, avoiding duplicate 46-league calls on odds syncs.
+    if (mode === "events") {
+      for (const sport of eventSportsToFetch) {
+        try {
+          const { data: events } = await providerGet("/sports/" + encodeURIComponent(sport.key) + "/events?dateFormat=iso", apiKey);
+          await runPool(Array.isArray(events) ? events : [], 4, async (event: any) => {
+            await storeEvent(event, sport);
+          });
+        } catch (error) {
+          providerErrors.push(String(sport.key) + " events: " + (error instanceof Error ? error.message : "unknown error"));
         }
-      } catch (error) {
-        providerErrors.push(String(sport.key) + " events: " + (error instanceof Error ? error.message : "unknown error"));
       }
     }
 
-    // Pre-match mode uses the six selected leagues and two markets once daily (12 credits).
+    // Pre-match mode covers ten leagues: six with h2h + totals and four with h2h (16 credits).
     // Live mode uses the aggregate upcoming feed, one region and one market (1 credit per run).
     // The live cron is deliberately quota-budgeted; stale markets remain visible but cannot be bet.
+    if (mode !== "events") {
     for (const sport of sportsToFetch) {
-      if (remaining !== null && remaining < (mode === "live" ? 1 : 2)) {
+      const prematchMarkets = TOTALS_SOCCER_KEYS.has(String(sport.key)) ? "h2h,totals" : "h2h";
+      const requiredCredits = mode === "live" ? 1 : (prematchMarkets.includes("totals") ? 2 : 1);
+      if (remaining !== null && remaining < requiredCredits) {
         quotaExhausted = true;
         break;
       }
       try {
+        const oddsPath = mode === "live"
+          ? "/sports/upcoming/odds?regions=eu&markets=h2h"
+          : "/sports/" + encodeURIComponent(sport.key) + "/odds?regions=eu&markets=" + prematchMarkets;
         const { data: oddsEvents, remaining: nextRemaining } = await providerGet(
-          (mode === "live" ? "/sports/upcoming/odds?regions=eu&markets=h2h" : "/sports/" + encodeURIComponent(sport.key) + "/odds?regions=eu&markets=h2h,totals") + "&oddsFormat=decimal&dateFormat=iso",
+          oddsPath + "&oddsFormat=decimal&dateFormat=iso",
           apiKey,
         );
         if (nextRemaining !== null) remaining = nextRemaining;
 
-        for (const event of Array.isArray(oddsEvents) ? oddsEvents : []) {
+        await runPool(Array.isArray(oddsEvents) ? oddsEvents : [], 3, async (event: any) => {
           const eventSport = mode === "live"
             ? selectedSports.find((item: any) => item.key === String(event.sport_key ?? ""))
             : sport;
           if (!eventSport) continue;
           const fixtureId = await storeEvent(event, eventSport);
           if (!fixtureId) continue;
-          const bookmakers = Array.isArray(event.bookmakers) ? event.bookmakers : [];
-          const bookmaker = bookmakers.find((book: any) =>
+          const bookmakers = (Array.isArray(event.bookmakers) ? event.bookmakers : []).filter((book: any) =>
             Array.isArray(book.markets) && book.markets.some((m: any) => m.key === "h2h" || m.key === "totals")
           );
-          if (!bookmaker) continue;
+          if (!bookmakers.length) continue;
+          // Store each bookmaker separately so users can compare real quoted prices.
+          for (const bookmaker of bookmakers) {
           const rawUpdatedAt = bookmaker.markets?.find((m: any) => m.key === "h2h")?.last_update ??
             bookmaker.markets?.find((m: any) => m.key === "totals")?.last_update;
           const updateMs = Date.parse(String(rawUpdatedAt ?? ""));
@@ -296,7 +350,8 @@ Deno.serve(async (req: Request) => {
               }
             }
           }
-        }
+          }
+        });
       } catch (error) {
         if (error instanceof QuotaExhaustedError) {
           quotaExhausted = true;
@@ -304,6 +359,7 @@ Deno.serve(async (req: Request) => {
         }
         providerErrors.push(String(sport.key) + " odds: " + (error instanceof Error ? error.message : "unknown error"));
       }
+    }
     }
 
     if (mode === "live") {
@@ -319,13 +375,16 @@ Deno.serve(async (req: Request) => {
       ok: true,
       provider: PROVIDER,
       mode,
-      sports_checked: mode === "live" ? selectedSports.length : selectedSports.length,
+      batch,
+      sports_checked: mode === "live" ? selectedSports.length : sportsToFetch.length,
+      event_leagues_available: allSoccerSports.length,
+      event_leagues_checked: mode === "events" ? eventSportsToFetch.length : 0,
       fixtures_synced: fixturesSynced,
       markets_updated: marketsUpdated,
       selections_updated: selectionsUpdated,
       credits_remaining: remaining,
       quota_exhausted: quotaExhausted,
-      stored_odds_policy: "Pre-match markets remain stored across quota exhaustion. Live markets are written only from the aggregate in-play odds feed and fresh bookmaker timestamps; the database rejects stale live prices.",
+      stored_odds_policy: "Events-only mode imports fixtures without odds. Pre-match and live prices are stored only from provider-supplied bookmaker data with freshness checks; stale live prices are suspended.",
       provider_errors: providerErrors.slice(0, 8),
     });
   } catch (error) {
