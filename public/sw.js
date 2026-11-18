@@ -1,4 +1,4 @@
-const CACHE_NAME = 'betnova-static-v1';
+const CACHE_NAME = 'betnova-static-v2';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.add('/betnova-icon.svg')));
   self.skipWaiting();
