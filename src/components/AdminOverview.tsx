@@ -24,6 +24,7 @@ type ProviderHealth = {
 type Counts = { sports: number; competitions: number; teams: number; fixtures: number; markets: number }
 type Deposit = { id: string; user_id: string; payment_method: string; amount: number; currency: string; sender_reference: string | null; proof_path: string | null; created_at: string }
 type Withdrawal = { id: string; user_id: string; payment_method: string; amount: number; currency: string; destination_details: string; created_at: string }
+type BonusWithdrawal = { id:string; user_id:string; payment_method:string; amount:number; currency:string; bonus_amount_usd:number; destination_details:string; created_at:string }
 type PaymentMethod = { id: string; code: string; display_name: string; is_enabled: boolean; supported_currencies: string[]; instructions: Record<string, unknown> }
 
 const money = (amount: number, currency: string) => new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
@@ -34,10 +35,11 @@ export default function AdminOverview({ onClose }: Props) {
   const [counts, setCounts] = useState<Counts | null>(null)
   const [deposits, setDeposits] = useState<Deposit[]>([])
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
+  const [bonusWithdrawals, setBonusWithdrawals] = useState<BonusWithdrawal[]>([])
   const [methods, setMethods] = useState<PaymentMethod[]>([])
   const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null)
   const [providerHealthError, setProviderHealthError] = useState('')
-  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'payments' | 'providers' | 'wallet'>('deposits')
+  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'bonus' | 'payments' | 'providers' | 'wallet'>('deposits')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -66,16 +68,19 @@ export default function AdminOverview({ onClose }: Props) {
 
   const loadFinance = useCallback(async () => {
     if (!supabase) return
-    const [d, w, p] = await Promise.all([
+    const [d, w, b, p] = await Promise.all([
       supabase.from('deposit_requests').select('id,user_id,payment_method,amount,currency,sender_reference,proof_path,created_at').eq('status', 'pending').order('created_at', { ascending: true }),
       supabase.from('withdrawal_requests').select('id,user_id,payment_method,amount,currency,destination_details,created_at').eq('status', 'pending').order('created_at', { ascending: true }),
+      supabase.from('bonus_withdrawal_requests').select('id,user_id,payment_method,amount,currency,bonus_amount_usd,destination_details,created_at').eq('status','pending').order('created_at',{ascending:true}),
       supabase.from('payment_methods').select('id,code,display_name,is_enabled,supported_currencies,instructions').order('sort_order')
     ])
     if (d.error) throw d.error
     if (w.error) throw w.error
+    if (b.error) throw b.error
     if (p.error) throw p.error
     setDeposits((d.data ?? []) as Deposit[])
     setWithdrawals((w.data ?? []) as Withdrawal[])
+    setBonusWithdrawals((b.data ?? []) as BonusWithdrawal[])
     setMethods((p.data ?? []) as PaymentMethod[])
   }, [])
 
@@ -192,6 +197,19 @@ export default function AdminOverview({ onClose }: Props) {
     finally { setBusyId(null) }
   }
 
+  async function reviewBonusWithdrawal(id: string, action: 'paid' | 'reject') {
+    if (!supabase) return
+    const payoutReference = (payoutReferences[id] ?? '').trim()
+    if (action === 'paid' && payoutReference.length < 4) { setError('Enter the transfer reference before marking this bonus withdrawal paid.'); return }
+    setBusyId(id); setError(''); setNotice('')
+    try {
+      const { error: rpcError } = await supabase.rpc('betnova_review_bonus_withdrawal', {p_request_id:id,p_action:action,p_admin_note:null,p_payout_reference:action === 'paid' ? payoutReference : null})
+      if (rpcError) throw rpcError
+      setNotice(action === 'paid' ? 'Bonus withdrawal marked paid.' : 'Bonus withdrawal rejected; bonus funds returned to the bonus wallet.')
+      await loadFinance()
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not review bonus withdrawal.') }
+    finally { setBusyId(null) }
+  }
   async function saveCurrencies(method: PaymentMethod) {
     if (!supabase) return
     const currencies = currencyDrafts[method.id] ?? method.supported_currencies
@@ -256,6 +274,7 @@ export default function AdminOverview({ onClose }: Props) {
           <div className="admin-finance-tabs">
             <button className={tab === 'deposits' ? 'active' : ''} onClick={() => setTab('deposits')}><Wallet size={14}/> Deposits <b>{deposits.length}</b></button>
             <button className={tab === 'withdrawals' ? 'active' : ''} onClick={() => setTab('withdrawals')}><CreditCard size={14}/> Withdrawals <b>{withdrawals.length}</b></button>
+            <button className={tab === 'bonus' ? 'active' : ''} onClick={() => setTab('bonus')}><Wallet size={14}/> Bonus withdrawals <b>{bonusWithdrawals.length}</b></button>
             <button className={tab === 'payments' ? 'active' : ''} onClick={() => setTab('payments')}><ShieldCheck size={14}/> Methods</button>
             <button className={tab === 'providers' ? 'active' : ''} onClick={() => { setTab('providers'); void loadProviderHealth() }}><Activity size={14}/> Data health</button>
             <button className={tab === 'wallet' ? 'active' : ''} onClick={() => { setTab('wallet'); void loadOwnerWallet() }}><Wallet size={14}/> My wallet</button>
@@ -279,6 +298,15 @@ export default function AdminOverview({ onClose }: Props) {
               <small>Destination: {item.destination_details}</small>
               <label className="admin-payout-reference">External transfer reference<input value={payoutReferences[item.id] ?? ''} onChange={event => setPayoutReferences(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Transaction / transfer ID" maxLength={160} /></label>
               <div className="admin-finance-actions"><button disabled={busyId === item.id || (payoutReferences[item.id] ?? '').trim().length < 4} onClick={() => void reviewWithdrawal(item.id, 'paid')}><CheckCircle2 size={14}/> Mark paid</button><button className="reject" disabled={busyId === item.id} onClick={() => void reviewWithdrawal(item.id, 'reject')}><XCircle size={14}/> Reject & release</button></div>
+            </article>)}
+          </div>}
+          {tab === 'bonus' && <div className="admin-finance-list">
+            {bonusWithdrawals.length === 0 ? <p className="admin-message">No pending bonus withdrawals.</p> : bonusWithdrawals.map(item => <article className="admin-finance-item" key={item.id}>
+              <div className="admin-finance-top"><b>{money(Number(item.amount),item.currency)} · BONUS</b><span><Clock3 size={12}/> {new Date(item.created_at).toLocaleString()}</span></div>
+              <p>{item.payment_method.toUpperCase()} · User {item.user_id.slice(0,8)}… · Bonus value {money(Number(item.bonus_amount_usd),'USD')}</p>
+              <small>Destination: {item.destination_details}</small>
+              <label className="admin-payout-reference">External transfer reference<input value={payoutReferences[item.id] ?? ''} onChange={event => setPayoutReferences(current => ({...current,[item.id]:event.target.value}))} placeholder="Transaction / transfer ID" maxLength={160}/></label>
+              <div className="admin-finance-actions"><button disabled={busyId===item.id || (payoutReferences[item.id] ?? '').trim().length<4} onClick={() => void reviewBonusWithdrawal(item.id,'paid')}><CheckCircle2 size={14}/> Mark paid</button><button className="reject" disabled={busyId===item.id} onClick={() => void reviewBonusWithdrawal(item.id,'reject')}><XCircle size={14}/> Reject & return bonus</button></div>
             </article>)}
           </div>}
           {tab === 'wallet' && <div className="admin-finance-list">
