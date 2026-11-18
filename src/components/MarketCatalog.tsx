@@ -37,7 +37,7 @@ type Props = { markets: CatalogMarket[]; live: boolean; selectedIds: string[]; o
 export default function MarketCatalog({ markets, live, selectedIds, onSelect }: Props) {
  const { language } = useLanguage()
  const w = words[language] || words.en
- const [expandedGroups, setExpandedGroups] = useState<string[]>(groups.map(group => String(group.title)))
+ const [expandedGroups, setExpandedGroups] = useState<string[]>([])
  const option = (v: string | number) => typeof v === 'number' ? w[v] : v
  const findMarket = (key: string, line?: string) => markets.find(m => {
   if ((m.market_key || m.market_type) !== key || m.status !== 'open' || m.is_live !== live) return false
