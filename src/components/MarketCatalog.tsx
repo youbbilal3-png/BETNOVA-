@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useLanguage } from '../i18n'
 
 const words: Record<string, string[]> = {
@@ -30,6 +31,8 @@ const groups = [
 export default function MarketCatalog() {
  const { language } = useLanguage()
  const w = words[language] || words.en
+ const [notice, setNotice] = useState('')
+ const unavailable = () => setNotice(w[1] + ' — ' + w[25])
  const option = (v: string | number) => typeof v === 'number' ? w[v] : v
  return <section className="market-catalog">
   <header className="market-catalog-top"><div><span>{w[0]}</span><small>{w[1]}</small></div><i>BETNOVA</i></header>
@@ -38,10 +41,10 @@ export default function MarketCatalog() {
    {group.items.map(item=><article className="market-catalog-item" key={item.name}>
     <div className="market-catalog-item-title">{w[item.name]}<span>{w[1]}</span></div>
     {item.choices.length && typeof item.choices[0] === 'string' && item.choices.every(v=>/^\d+(\.\d+)?$/.test(String(v))) ?
-     <div className="market-line-grid">{item.choices.map(line=><div className="market-line-row" key={line}><b>{line}</b><button disabled>{w[8]} {line}<strong>—</strong></button><button disabled>{w[9]} {line}<strong>—</strong></button></div>)}</div> :
-     <div className="market-outcomes">{item.choices.map(v=><button disabled className="market-outcome" key={v}><span>{option(v)}</span><b>—</b></button>)}</div>}
+     <div className="market-line-grid">{item.choices.map(line=><div className="market-line-row" key={line}><b>{line}</b><button type="button" onClick={unavailable}>{w[8]} {line}<strong>—</strong></button><button type="button" onClick={unavailable}>{w[9]} {line}<strong>—</strong></button></div>)}</div> :
+     <div className="market-outcomes">{item.choices.map(v=><button type="button" className="market-outcome market-unavailable-choice" key={v} onClick={unavailable}><span>{option(v)}</span><b>—</b></button>)}</div>}
    </article>)}
   </section>)}
-  <p className="market-catalog-note">{w[25]}</p>
+  <p className="market-catalog-note">{notice || w[25]}</p>
  </section>
 }
