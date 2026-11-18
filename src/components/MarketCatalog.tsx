@@ -31,7 +31,7 @@ const groups = [
 ]
 type CatalogSelection = { id: string; name: string; odds: number; status: string; result_status: string }
 type CatalogMarket = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; settlement_rule: Record<string, unknown> | null; market_selections: CatalogSelection[] }
-type CatalogPick = { selectionId: string; marketId: string; marketLabel: string; selectionLabel: string; odds: string }
+type CatalogPick = { selectionId: string; marketId: string; marketKey: string; marketLabel: string; selectionLabel: string; odds: string }
 type Props = { markets: CatalogMarket[]; live: boolean; selectedIds: string[]; onSelect: (selection: CatalogPick) => void }
 
 export default function MarketCatalog({ markets, live, selectedIds, onSelect }: Props) {
@@ -64,7 +64,7 @@ export default function MarketCatalog({ markets, live, selectedIds, onSelect }: 
   })
   const odds = Number(selection?.odds)
   return selection && Number.isFinite(odds) && odds > 1
-   ? { selectionId: selection.id, marketId: market.id, marketLabel: market.name, selectionLabel: selection.name, odds: odds.toFixed(2) }
+   ? { selectionId: selection.id, marketId: market.id, marketKey: market.market_key || market.market_type, marketLabel: market.name, selectionLabel: selection.name, odds: odds.toFixed(2) }
    : null
  }
  const handle = (market: CatalogMarket | undefined, choice: string) => {
