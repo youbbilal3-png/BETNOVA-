@@ -1027,3 +1027,54 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
   #root .app-shell .detail-market-heading h3{font-size:16px!important}
 }
 
+
+
+/* Luminous match centre refresh — scoped to the inner match details only. */
+#root .app-shell .detail-backdrop{background:radial-gradient(ellipse at 50% 15%,#42d8c94a 0%,transparent 48%),#06131bd9!important;backdrop-filter:blur(12px) saturate(1.18)!important}
+#root .app-shell .detail-panel{color:#f2fbff!important;background:radial-gradient(ellipse at 8% 0%,#42e4c52c 0%,transparent 38%),radial-gradient(ellipse at 100% 100%,#6687ff24 0%,transparent 42%),linear-gradient(145deg,#142f3b 0%,#102633 48%,#101d32 100%)!important;border:1px solid #82e9e255!important;box-shadow:0 30px 90px #020b16b8,0 0 32px #37d8ca20,inset 0 1px #e5ffff30!important}
+#root .app-shell .detail-close{background:linear-gradient(145deg,#31586a,#1c394b)!important;color:#e8ffff!important;border:1px solid #9cefe044!important;box-shadow:0 5px 13px #020d1766,inset 0 1px #ffffff2b!important}
+#root .app-shell .detail-kicker{color:#79f2d8!important;text-shadow:0 0 16px #4be5ca55!important}
+#root .app-shell .detail-league{color:#b5d4e2!important}
+#root .app-shell .detail-panel h2{color:#f4fcff!important;text-shadow:0 2px 18px #62e9d52b!important}
+#root .app-shell .detail-teams{background:radial-gradient(ellipse at 50% 0%,#4de4d326,transparent 70%),linear-gradient(135deg,#1c4050,#172e43)!important;border:1px solid #77e8dc55!important;box-shadow:0 12px 28px #020c1766,inset 0 1px #eaffff24,inset 0 -12px 24px #061a2b55!important}
+#root .app-shell .detail-teams b{color:#f1fbff!important;font-weight:900!important;text-shadow:0 2px 10px #0008!important}
+#root .app-shell .detail-versus{color:#7ff5df!important;text-shadow:0 0 15px #45e5d477!important}
+#root .app-shell .detail-info-grid>div{background:linear-gradient(145deg,#24495a,#1a354a)!important;border:1px solid #83dfe044!important;box-shadow:0 6px 16px #020d1855,inset 0 1px #ffffff20!important}
+#root .app-shell .detail-info-grid small{color:#9cc9d8!important;font-weight:900!important}
+#root .app-shell .detail-info-grid b{color:#f3fbff!important;font-weight:850!important}
+#root .app-shell .detail-winner-pick{color:#eaffff!important;background:linear-gradient(145deg,#2e6570 0%,#214b60 54%,#1c3a55 100%)!important;border:1px solid #8de9df!important;box-shadow:0 3px 0 #102c40,0 8px 16px #020d1866,inset 0 1px 2px #ffffff65!important}
+#root .app-shell .detail-winner-pick span{color:#d5f6f3!important}
+#root .app-shell .detail-winner-pick b{color:#aaff8a!important;text-shadow:0 0 10px #9bff8c55!important}
+#root .app-shell .detail-winner-pick:hover:not(:disabled){background:linear-gradient(145deg,#367e83,#245c70)!important;border-color:#b6fff0!important;box-shadow:0 4px 0 #12394b,0 12px 22px #020d1877,inset 0 1px 3px #ffffff77!important}
+#root .app-shell .detail-winner-pick.picked{background:linear-gradient(135deg,#50e3b0 0%,#16b995 55%,#078b83 100%)!important;border-color:#c4ffdc!important;color:#052d2c!important;box-shadow:0 4px 0 #075d59,0 10px 20px #00c99a55,inset 0 1px 4px #ffffffa8!important}
+#root .app-shell .detail-winner-pick.picked span,#root .app-shell .detail-winner-pick.picked b{color:#052d2c!important;text-shadow:none!important}
+#root .app-shell .detail-market-heading{border-top:1px solid #8be8df55!important}
+#root .app-shell .detail-market-heading h3{color:#8ff7e2!important;text-shadow:0 0 15px #48dfce44!important}
+#root .app-shell .detail-market-heading>span{color:#a8ffdc!important;background:linear-gradient(135deg,#1d655d,#234b63)!important;border:1px solid #80ead477!important;box-shadow:0 4px 12px #020d1844!important}
+#root .app-shell .detail-panel .match-markets{color:#f0fbff!important}
+#root .app-shell .detail-panel .markets-toolbar{color:#c2e5e9!important}
+#root .app-shell .detail-panel .markets-toolbar small{color:#9fc5d0!important}
+#root .app-shell .detail-panel .markets-toolbar button{background:linear-gradient(145deg,#2b5968,#1c3d52)!important;color:#a6ffdf!important;border:1px solid #7cdbd477!important}
+#root .app-shell .detail-panel .market-group{background:linear-gradient(145deg,#1d4051,#172f45)!important;border:1px solid #77dcd355!important;box-shadow:0 7px 17px #020d1855,inset 0 1px #ffffff18!important}
+#root .app-shell .detail-panel .market-group-head{color:#effcff!important;background:linear-gradient(100deg,#28596a,#1e4058)!important;border-bottom:1px solid #78dcd344!important}
+#root .app-shell .detail-panel .market-group-head small{color:#b4d9e0!important}
+#root .app-shell .detail-panel .market-group-body{background:transparent!important}
+#root .app-shell .detail-panel .market-item{border-bottom-color:#8bded022!important}
+#root .app-shell .detail-panel .market-item-title{color:#d8f3f3!important}
+#root .app-shell .detail-panel .market-live-tag{color:#052f2b!important;background:linear-gradient(135deg,#9bffce,#55e7b7)!important}
+#root .app-shell .detail-panel .market-suspended{color:#ffe1a6!important;background:#78532b!important}
+#root .app-shell .detail-panel .market-outcome{color:#e5f8fb!important;background:linear-gradient(145deg,#31596a,#234459)!important;border:1px solid #77cbd366!important;box-shadow:0 3px 8px #020d1844,inset 0 1px #ffffff20!important}
+#root .app-shell .detail-panel .market-outcome span{color:#e5f8fb!important;font-weight:750!important}
+#root .app-shell .detail-panel .market-outcome b{color:#aaff91!important;font-weight:950!important}
+#root .app-shell .detail-panel .market-outcome:hover:not(:disabled){background:linear-gradient(145deg,#3b7180,#28566d)!important;border-color:#a4f5e7!important}
+#root .app-shell .detail-panel .market-outcome.picked{background:linear-gradient(135deg,#b6ffda,#64e9bd)!important;border-color:#d1ffe7!important;color:#073d37!important;box-shadow:inset 0 0 0 1px #36cfa3,0 5px 12px #00b98b33!important}
+#root .app-shell .detail-panel .market-outcome.picked span,#root .app-shell .detail-panel .market-outcome.picked b{color:#073d37!important}
+#root .app-shell .detail-panel .markets-loading,#root .app-shell .detail-panel .markets-empty{color:#c5e5e8!important;background:linear-gradient(145deg,#1c4051,#172f45)!important;border:1px dashed #78dcd377!important}
+#root .app-shell .detail-panel .markets-empty b{color:#f0ffff!important}
+#root .app-shell .detail-panel .markets-empty button{color:#073b34!important;background:linear-gradient(135deg,#b6ffda,#64e9bd)!important}
+@media(max-width:480px){
+#root .app-shell .detail-panel{background:radial-gradient(ellipse at 5% 0%,#42e4c52a 0%,transparent 38%),linear-gradient(155deg,#142f3b,#102238)!important;border-color:#8beee177!important;box-shadow:0 20px 65px #020b16cc,0 0 24px #37d8ca22,inset 0 1px #e5ffff30!important}
+#root .app-shell .detail-teams{padding:17px 9px!important}
+#root .app-shell .detail-info-grid>div{padding:10px!important}
+#root .app-shell .detail-panel .market-outcome{padding:10px 8px!important}
+}
