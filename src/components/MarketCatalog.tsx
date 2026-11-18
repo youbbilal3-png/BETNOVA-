@@ -80,7 +80,7 @@ export default function MarketCatalog({ markets, live, selectedIds, onSelect }: 
    <button type="button" className="market-catalog-group-toggle" aria-expanded={isExpanded} onClick={() => setExpandedGroups(current => current.includes(groupKey) ? current.filter(key => key !== groupKey) : [...current, groupKey])}>
     <h4>{w[group.title]}</h4>{isExpanded ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
    </button>
-   {isExpanded && <div className="market-catalog-group-body">{group.items.map(item=><article className="market-catalog-item" key={item.name}>
+   {isExpanded && <div className="market-catalog-group-body">{group.items.map(item=><article className="market-catalog-item" data-market-key={item.key} key={item.name}>
     <div className="market-catalog-item-title">{w[item.name]}<span>{w[1]}</span></div>
     {item.choices.length && typeof item.choices[0] === 'string' && item.choices.every(v=>/^\\d+(\\.\\d+)?$/.test(String(v))) ?
      <div className="market-line-grid">{item.choices.map(line=>{
