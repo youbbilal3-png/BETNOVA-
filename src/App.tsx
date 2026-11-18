@@ -13,6 +13,7 @@ type Match = {
   id: string | number
   league: string
   country: string
+  countryFlag: string
   time: string
   home: string
   away: string
@@ -26,6 +27,29 @@ type Match = {
   score?: string
   kickoff?: string
   dateLabel?: string
+}
+
+
+function countryFlagForCompetition(competition: string, country: string) {
+  const value = `${country} ${competition}`.toLowerCase()
+  const flags: [RegExp, string][] = [
+    [/england|premier league|championship|league one|league two|fa cup|efl|epl/, '🏴'],
+    [/spain|la liga|laliga|copa del rey/, '🇪🇸'], [/italy|serie a|serie b|coppa italia/, '🇮🇹'],
+    [/germany|bundesliga|dfb/, '🇩🇪'], [/france|ligue 1|ligue 2/, '🇫🇷'],
+    [/portugal|primeira liga|liga portugal/, '🇵🇹'], [/netherlands|eredivisie|holland/, '🇳🇱'],
+    [/turkey|super lig|süper lig/, '🇹🇷'], [/saudi|pro league/, '🇸🇦'],
+    [/algeria|ligue 1 alg|algerian/, '🇩🇿'], [/morocco|botola/, '🇲🇦'],
+    [/egypt|premier league egypt/, '🇪🇬'], [/brazil|serie a brazil|brasileirao|gaucho|paraense|pernambucano|sergipano/, '🇧🇷'],
+    [/argentina/, '🇦🇷'], [/usa|united states|mls/, '🇺🇸'], [/mexico|liga mx/, '🇲🇽'],
+    [/japan|j-league/, '🇯🇵'], [/south korea|korea|k league/, '🇰🇷'],
+    [/india|indian super/, '🇮🇳'], [/australia|a-league/, '🇦🇺'],
+    [/scotland|premiership scotland/, '🏴'], [/wales/, '🏴'], [/ireland/, '🇮🇪'],
+    [/belgium|jupiler/, '🇧🇪'], [/switzerland|super league switzerland/, '🇨🇭'],
+    [/austria|bundesliga austria/, '🇦🇹'], [/greece|super league greece/, '🇬🇷'],
+    [/denmark|superliga/, '🇩🇰'], [/sweden|allsvenskan/, '🇸🇪'], [/norway|eliteserien/, '🇳🇴'],
+    [/poland|ekstraklasa/, '🇵🇱'], [/ukraine/, '🇺🇦'], [/russia/, '🇷🇺'],
+  ]
+  return flags.find(([pattern]) => pattern.test(value))?.[1] ?? '🌍'
 }
 
 const sports = ['Football', 'Basketball', 'Tennis', 'Ice Hockey', 'Volleyball']
@@ -147,6 +171,7 @@ export default function App() {
             id: row.id,
             league: competition?.name ?? 'Competition',
             country: competition?.country ?? '',
+            countryFlag: countryFlagForCompetition(competition?.name ?? '', competition?.country ?? ''),
             time: startsAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             kickoff: startsAt.toLocaleString([], { dateStyle: 'full', timeStyle: 'short' }),
             dateLabel: startsAt.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -270,7 +295,7 @@ export default function App() {
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id}>
                 <div className="match-meta"><span className="league-name"><span className="league-ball">◉</span>{match.league}</span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : <><Clock3 size={13}/>{match.time}</>}</span></div>
-                <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none" }}/> : <span className="team-logo-fallback">{match.homeMark}</span>}</span><b title={match.home}>{match.home}</b></div><span className="versus">VS</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none" }}/> : <span className="team-logo-fallback">{match.awayMark}</span>}</span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><span className="odds-caption">{t('match_winner')} <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>setDetailMatch(match)} className='odd'><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div>}</div>
+                <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none" }}/> : <span className="team-logo-fallback" aria-label={`${match.home} team`}>{match.countryFlag}</span>}<span className="team-country-flag" title="Country">{match.countryFlag}</span></span><b title={match.home}>{match.home}</b></div><span className="versus">VS</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none" }}/> : <span className="team-logo-fallback" aria-label={`${match.away} team`}>{match.countryFlag}</span>}<span className="team-country-flag" title="Country">{match.countryFlag}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><span className="odds-caption">{t('match_winner')} <CircleHelp size={12}/></span><div className="odds-grid">{match.odds.map((odd,i)=><button key={i} disabled={odd === '—'} onClick={()=>setDetailMatch(match)} className='odd'><small>{['1','X','2'][i]}</small><b>{odd}</b></button>)}</div></div>}</div>
                 <div className="match-footer"><button className="favorite-toggle" onClick={() => toggleFavorite(match.id)}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={() => setDetailMatch(match)}>{t("match_details_btn")} <ArrowRight size={13}/></button></div>
               </article>) : <div className="empty-state">{query ? t('empty_search') : sport === 'Football' ? eventView === 'live' ? t('empty_live') : eventView === 'results' ? t('empty_results') : t('empty_football') : t('empty_sport')}</div>}
             </div>
