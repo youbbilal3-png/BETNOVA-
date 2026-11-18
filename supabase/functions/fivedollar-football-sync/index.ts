@@ -507,17 +507,9 @@ Deno.serve(async (req: Request) => {
       ]);
     }
 
-    // Bet365 publishes a combined total-card line. Keep the provider's actual
-    // line and prices; do not split it into yellow/red prices that are not supplied.
-    const cards = priceSet(odds.card_line);
-    if (cards && Number.isFinite(Number(cards.line)) && Math.round(Number(cards.line) * 2) === Number(cards.line) * 2) {
-      const line = Number(cards.line);
-      const key = line.toFixed(1).replace(".", "_");
-      await saveMarket(fixtureId, isLive, "total_cards", "Total Cards · " + line + " · Bet365", line, [
-        { name: "Over " + line, key: "over_" + key, price: cards.over },
-        { name: "Under " + line, key: "under_" + key, price: cards.under },
-      ]);
-    }
+    // Card markets are deliberately withheld until the provider's card-count
+    // settlement convention (yellow/red weighting and dismissals) is implemented.
+    // Never expose a market that the trusted event processor cannot settle safely.
   }
 
   try {
