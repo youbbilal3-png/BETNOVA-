@@ -31,6 +31,9 @@ const groups = [
 ]
 type CatalogSelection = { id: string; name: string; odds: number; status: string; result_status: string }
 type CatalogMarket = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; settlement_rule: Record<string, unknown> | null; market_selections: CatalogSelection[] }
+const cleanCatalogMarketName = (raw: string) => String(raw ?? '')
+ .replace(/\\b(oddspapi|oddsapi|5dollarfootballapi|pinnacle|bet\\s?365|1xbet|unibet|leovegas|pmu|winamax|marathon\\s?bet|nordic\\s?bet|bwin|betfair|william\\s?hill|betway|888sport|stake|betano|parimatch|dafabet|10bet|sportingbet)\\b/gi, '')
+ .replace(/\\s*[·|–—-]\\s*/g, ' ').replace(/\\s{2,}/g, ' ').trim() || 'Market';
 type CatalogPick = { selectionId: string; marketId: string; marketKey: string; marketLabel: string; selectionLabel: string; odds: string }
 type Props = { markets: CatalogMarket[]; live: boolean; selectedIds: string[]; onSelect: (selection: CatalogPick) => void }
 
@@ -64,7 +67,7 @@ export default function MarketCatalog({ markets, live, selectedIds, onSelect }: 
   })
   const odds = Number(selection?.odds)
   return selection && Number.isFinite(odds) && odds > 1
-   ? { selectionId: selection.id, marketId: market.id, marketKey: market.market_key || market.market_type, marketLabel: market.name, selectionLabel: selection.name, odds: odds.toFixed(2) }
+   ? { selectionId: selection.id, marketId: market.id, marketKey: market.market_key || market.market_type, marketLabel: cleanCatalogMarketName(market.name), selectionLabel: selection.name, odds: odds.toFixed(2) }
    : null
  }
  const handle = (market: CatalogMarket | undefined, choice: string) => {
