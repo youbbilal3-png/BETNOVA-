@@ -121,6 +121,7 @@ export default function App() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [showFavorites, setShowFavorites] = useState(false)
   const [matches, setMatches] = useState<Match[]>([])
+  const [visibleMatchLimit, setVisibleMatchLimit] = useState(40)
   const usingDemoData = false
   const [league, setLeague] = useState('All matches')
   const [selected, setSelected] = useState<{ match: Match; label: string; odd: string; selectionId: string; marketId: string; marketKey: string }[]>([])
@@ -214,7 +215,7 @@ export default function App() {
         }
         const { data, error } = await fixtureQuery
           .order('starts_at', { ascending: eventView !== 'results' })
-          .limit(750)
+          .limit(1000)
 
         if (error) throw error
         if (!active) return
@@ -313,11 +314,20 @@ export default function App() {
     [matches]
   )
 
-  const visibleMatches = useMemo(() => matches.filter(m =>
+  const filteredMatches = useMemo(() => matches.filter(m =>
     (!showFavorites || favoriteIds.includes(String(m.id))) &&
     (league === 'All matches' || m.league === league) &&
     (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase())
   ), [matches, league, query, showFavorites, favoriteIds])
+
+  const visibleMatches = useMemo(
+    () => filteredMatches.slice(0, visibleMatchLimit),
+    [filteredMatches, visibleMatchLimit]
+  )
+
+  useEffect(() => {
+    setVisibleMatchLimit(40)
+  }, [league, query, showFavorites, eventView])
 
   function toggleFavorite(matchId: string | number) {
     const id = String(matchId)
@@ -417,6 +427,7 @@ export default function App() {
                 <div className="match-footer"><button className="favorite-toggle" onClick={event => { event.stopPropagation(); toggleFavorite(match.id) }}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={event => { event.stopPropagation(); setDetailMatch(match) }}>{t("view_all_markets")} <span className="match-market-count">{match.marketsCount}</span><ArrowRight size={13}/></button></div>
               </article>) : <div className="empty-state">{query ? t('empty_search') : sport === 'Football' ? eventView === 'live' ? t('empty_live') : eventView === 'results' ? t('empty_results') : t('empty_football') : t('empty_sport')}</div>}
             </div>
+            {!loadingMatches && !matchLoadError && filteredMatches.length > visibleMatches.length && <button className="load-more-matches" type="button" onClick={() => setVisibleMatchLimit(current => Math.min(current + 40, filteredMatches.length))}>Load more matches · {filteredMatches.length - visibleMatches.length} remaining</button>}
             <div className="demo-note"><ShieldCheck size={15}/><span>{usingDemoData ? t('preview_note') : eventView === 'results' ? t('final_scores_note') : t('fixtures_note')}</span></div>
           </section>
         </section>
