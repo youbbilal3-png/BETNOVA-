@@ -95,12 +95,12 @@ function builderConflict(a: { marketKey: string; label: string }, b: { marketKey
   }
   const resultA = resultOf(keyA, labelA)
   const resultB = resultOf(keyB, labelB)
-  const result = resultA ?? resultB
-  const chance = resultA && ['1x','x2','12'].includes(resultA) ? resultA : resultB && ['1x','x2','12'].includes(resultB) ? resultB : null
-  if (result && chance && !['1x','x2','12'].includes(result)) {
-    if (chance === '1x' && result === 'away') return true
-    if (chance === 'x2' && result === 'home') return true
-    if (chance === '12' && result === 'draw') return true
+  const outcome = [resultA, resultB].find(value => value === 'home' || value === 'draw' || value === 'away')
+  const chance = [resultA, resultB].find(value => value === '1x' || value === 'x2' || value === '12')
+  if (outcome && chance) {
+    if (chance === '1x' && outcome === 'away') return true
+    if (chance === 'x2' && outcome === 'home') return true
+    if (chance === '12' && outcome === 'draw') return true
   }
 
   const btts = keyA === 'both_teams_score' ? labelA : keyB === 'both_teams_score' ? labelB : ''
