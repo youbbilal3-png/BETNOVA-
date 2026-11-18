@@ -45,7 +45,7 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
               display_name: displayName.trim(),
               country_code: 'DZ',
             },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: 'https://betnova-8daa3.web.app/',
           },
         })
         if (signUpError) throw signUpError
