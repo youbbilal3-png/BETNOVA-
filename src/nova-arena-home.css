@@ -747,8 +747,26 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
   #root .app-shell .nova-brand-word small,
   #root .app-shell .guest-preview-label,
   #root .app-shell .top-actions > .login-btn,
-  #root .app-shell .top-actions > .icon-btn {
+  #root .app-shell .top-actions > .icon-btn:not(.top-search-btn) {
     display: none !important;
+  }
+  #root .app-shell .top-actions > .top-search-btn {
+    display: inline-flex !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  #root .app-shell .top-actions > .deposit-open-btn {
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0 10px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
   }
   #root .app-shell .top-actions {
     flex: 0 0 auto !important;
