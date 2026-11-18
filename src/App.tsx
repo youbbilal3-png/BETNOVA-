@@ -292,7 +292,8 @@ export default function App() {
 
     // Two match-result outcomes must describe the same result to coexist.
     if (firstKey === 'match_result' && secondKey === 'match_result') {
-      return outcome(first.label) === outcome(second.label)
+      // A second match-result pick is either contradictory or an exact duplicate.
+      return false
     }
 
     // Check whether at least one whole-number final goal total can satisfy both picks.
