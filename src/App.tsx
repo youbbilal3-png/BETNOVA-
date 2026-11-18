@@ -274,14 +274,27 @@ export default function App() {
   }
 
   function toggleMarketSelection(match: Match, selection: MarketPick) {
+    const matchKey = String(match.id)
     const alreadySelected = selected.some(item => item.selectionId === selection.selectionId)
-    if (!alreadySelected && selected.length >= 20) {
+    if (alreadySelected) {
+      setSelected(current => current.filter(item => item.selectionId !== selection.selectionId))
+      setBetMessage('')
+      return
+    }
+    if (selected.length >= 20) {
       setBetMessage('A bet slip can contain up to 20 selections.')
       return
     }
-    setSelected(current => current.some(item => item.selectionId === selection.selectionId)
-      ? current.filter(item => item.selectionId !== selection.selectionId)
-      : [...current.filter(item => item.marketId !== selection.marketId), { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId }])
+    const sameMatchMarket = selected.find(item => String(item.match.id) === matchKey && item.marketId === selection.marketId)
+    const afterMarketReplacement = sameMatchMarket
+      ? selected.filter(item => item.selectionId !== sameMatchMarket.selectionId)
+      : selected
+    const sameMatchCount = afterMarketReplacement.filter(item => String(item.match.id) === matchKey).length
+    if (sameMatchCount >= 2) {
+      setBetMessage('You can add up to 2 different markets from the same match.')
+      return
+    }
+    setSelected([...afterMarketReplacement, { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId }])
     setBetMessage('')
   }
 
@@ -385,12 +398,20 @@ export default function App() {
       {mobileSlip && <div className="mobile-sheet-backdrop" onClick={()=>setMobileSlip(false)}><div className="mobile-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-handle"/><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><div className="sheet-head-actions"><button className="slip-clear" onClick={()=>setSelected([])}>{t("clear")}</button><button className="icon-btn" onClick={()=>setMobileSlip(false)} aria-label={t("close")}><X/></button></div></div>{selected.length?selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button className="slip-remove" onClick={()=>setSelected(current=>current.filter(x=>x.selectionId!==s.selectionId))} aria-label="Remove selection"><X size={16}/></button></div>):<div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>{t("slip_waiting")}</b><p>{t("select_price")}</p></div>}{userEmail ? <div className="bet-slip-stake"><label>Virtual stake · Preview<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t("potential_return")}</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} {betCurrency}</b></div></div> : <p className="guest-slip-note">Preview mode: selections and estimated returns are for demonstration only. Real-money betting is currently disabled.</p>}{betMessage&&<p className="bet-slip-message">{betMessage}</p>}<button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>Preview only <ArrowRight size={15}/></button></div></div>}
       {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailMatch(null) }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => setDetailMatch(null)} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">{t('match_details')}</h2><div className="detail-teams"><div><span className="detail-mark team-crest">{detailMatch.homeLogo && <img src={detailMatch.homeLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.homeMark}</span></span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark team-crest">{detailMatch.awayLogo && <img src={detailMatch.awayLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.awayMark}</span></span><b>{detailMatch.away}</b></div></div><div className="detail-winner-odds" aria-label="Match winner odds">{[0,2,1].map(i=>{const pick=detailMatch.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} className={picked?'detail-winner-pick picked':'detail-winner-pick'} onClick={()=>pick&&toggleMarketSelection(detailMatch,pick)}><span>{['Win 1','Draw','Win 2'][i]}</span><b>{pick?.odds ?? '—'}</b></button>})}</div><div className="detail-info-grid"><div><small>{detailMatch.status === 'finished' ? 'MATCH STATUS' : detailMatch.status === 'live' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? 'Live now' : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div>{detailMatch.status === 'live' && typeof detailMatch.id === 'string' && <MatchStatistics fixtureId={detailMatch.id} />}<div className="detail-market-heading"><div><span className="eyebrow dark">EXPLORE THE ODDS</span><h3>{t('markets')}</h3></div><span>{detailMatch.status === 'live' ? 'LIVE EVENT' : 'PRE-MATCH'}</span></div>{usingDemoData || typeof detailMatch.id !== 'string' ? <div className="markets-empty">Sample fixture preview only. Verified markets are unavailable for this event.</div> : <MatchMarkets fixtureId={detailMatch.id} live={detailMatch.status === 'live'} selectedIds={selected.map(item => item.selectionId)} onSelect={selection => { if (detailMatch) toggleMarketSelection(detailMatch, selection) }} />}</section></div>}
       {selected.length > 0 && (() => {
-        const latestPick = selected[selected.length - 1]
         const combinedOdds = selected.reduce((total, item) => total * Number(item.odd), 1)
+        const potentialReturn = Math.max(0, Number(betStake) || 0) * combinedOdds
         return <div className="quick-slip-bar" role="status" aria-live="polite">
-          <div className="quick-slip-status"><span className="quick-slip-check">✓</span><div><b>Added to bet slip</b><small>{latestPick.match.home} – {latestPick.match.away}</small></div></div>
-          <div className="quick-slip-pick"><span>{latestPick.label}</span><b>@ {latestPick.odd}</b></div>
-          <div className="quick-slip-summary"><span>{selected.length} {selected.length === 1 ? 'selection' : 'selections'}</span><small>Total odds</small><b>{combinedOdds.toFixed(2)}</b></div>
+          <div className="quick-slip-status"><span className="quick-slip-check">✓</span><div><b>Added to bet slip</b><small>{selected.length} / 20 selections · max 2 per match</small></div></div>
+          <div className="quick-slip-picks" aria-label="Current bet selections">
+            {selected.map(item => <div className="quick-slip-pick" key={item.selectionId}>
+              <span>{item.match.home} – {item.match.away}</span><small>{item.label}</small><b>@ {item.odd}</b>
+              <button type="button" aria-label="Remove selection" onClick={() => setSelected(current => current.filter(pick => pick.selectionId !== item.selectionId))}><X size={12}/></button>
+            </div>)}
+          </div>
+          <div className="quick-slip-stake">
+            <label>Stake ({betCurrency})<input type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event => setBetStake(event.target.value)} placeholder="Enter amount"/></label>
+            <div><small>Total odds</small><b>{combinedOdds.toFixed(2)}</b><small>Potential return</small><strong>{potentialReturn.toFixed(2)} {betCurrency}</strong></div>
+          </div>
           <button type="button" className="quick-slip-open" onClick={() => setMobileSlip(true)}>View bet slip <ArrowRight size={15}/></button>
         </div>
       })()}
