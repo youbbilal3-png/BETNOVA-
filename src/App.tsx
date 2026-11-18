@@ -70,7 +70,6 @@ function countryFlagForCompetition(competition: string, country: string) {
 }
 
 const sports = ['Football', 'Basketball', 'Tennis', 'Ice Hockey', 'Volleyball']
-const leagues = ['All matches', 'Popular', 'England', 'Spain', 'Italy', 'Germany']
 
 function normalizedPick(value: string) {
   return String(value ?? '').trim().toLowerCase().replace(/[ _-]+/g, ' ')
@@ -215,7 +214,7 @@ export default function App() {
         }
         const { data, error } = await fixtureQuery
           .order('starts_at', { ascending: eventView !== 'results' })
-          .limit(30)
+          .limit(200)
 
         if (error) throw error
         if (!active) return
@@ -309,9 +308,14 @@ export default function App() {
     }
   }, [sport, userEmail, eventView])
 
+  const leagueOptions = useMemo(
+    () => Array.from(new Set(matches.map(match => match.league))).sort((a, b) => a.localeCompare(b)),
+    [matches]
+  )
+
   const visibleMatches = useMemo(() => matches.filter(m =>
     (!showFavorites || favoriteIds.includes(String(m.id))) &&
-    (league === 'All matches' || league === 'Popular' || m.country === league) &&
+    (league === 'All matches' || m.league === league) &&
     (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase())
   ), [matches, league, query, showFavorites, favoriteIds])
 
@@ -405,7 +409,7 @@ export default function App() {
               <button className={eventView === 'results' ? 'event-view active' : 'event-view'} onClick={() => setEventView('results')}>{t("results")}</button>
             </div>
             <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>
-            <div className="filter-row"><div className="league-filters">{leagues.map(l=><button key={l} onClick={()=>setLeague(l)} className={league===l?'filter active-filter':'filter'}>{l}</button>)}</div><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("search")}/></label></div>
+            <div className="filter-row"><div className="league-filters"><select className="filter league-select" aria-label="Filter by competition" value={league} onChange={event=>setLeague(event.target.value)}><option value="All matches">All competitions ({matches.length})</option>{leagueOptions.map(name=><option key={name} value={name}>{name}</option>)}</select></div><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("search")}/></label></div>
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => setDetailMatch(match)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setDetailMatch(match) } }}>
                 <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
