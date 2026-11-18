@@ -619,8 +619,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // Free/Community plans expose live Bet365 prices per fixture. The live endpoint
-    // costs one request plus one request per selected fixture. Eight fixtures every
-    // ten minutes use at most 54 requests/hour, leaving headroom below the 60/hour cap.
+    // costs one request plus one request per selected fixture. Seven fixtures every
+    // ten minutes use at most 48 requests/hour, below the local 50/hour and provider 60/hour caps.
     // Rotate across the provider's live fixture list so later matches are not starved.
     let oddsTargets: Array<{item:any;id:string}> = [];
     if (mode === "live" && stored.length) {
