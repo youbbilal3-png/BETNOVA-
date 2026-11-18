@@ -152,7 +152,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
           <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> LIVE</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">Price expired</span>}</div>
           <div className="market-outcomes">{market.market_selections.map(selection => {
             const picked = selectedIds.includes(selection.id)
-            return <button key={selection.id} disabled={!canBet} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketLabel:market.name,selectionLabel:selection.name,odds:String(selection.odds)})}>
+            return <button key={selection.id} disabled={!canBet && !picked} aria-pressed={picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketLabel:market.name,selectionLabel:selection.name,odds:String(selection.odds)})}>
               <span>{displaySelection(selection.name)}</span><b>{Number(selection.odds).toFixed(2)}</b>
             </button>
           })}</div>
