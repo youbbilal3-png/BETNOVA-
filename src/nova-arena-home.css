@@ -1269,3 +1269,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
   .app-shell .competition-chip{min-height:34px!important;padding:7px 8px!important;font-size:9px!important;max-width:100%!important}
 }
 @media(max-width:360px){.app-shell .competition-chip{font-size:8px!important;padding:6px 7px!important}}
+
+/* Welcome bonus is promoted inside the existing Feel every moment hero without enlarging it. */
+#root .app-shell .hero .hero-bonus-tag{display:inline-flex;align-items:center;margin-inline-start:7px;padding:4px 8px;border:1px solid #70e5ae70;border-radius:999px;background:linear-gradient(110deg,#123d31,#173b32);color:#a7ffd2;font-size:8px;font-weight:950;letter-spacing:.25px;white-space:nowrap;vertical-align:middle}
+#root .app-shell .hero .hero-bonus-terms{max-width:470px;margin-top:5px;color:#a9d9c1;font-size:8px;line-height:1.35;opacity:.92}
+@media(max-width:760px){#root .app-shell .hero .hero-bonus-tag{font-size:6px;padding:3px 5px;margin-inline-start:4px}#root .app-shell .hero .hero-bonus-terms{font-size:6.5px;max-width:100%;margin-top:4px}}
