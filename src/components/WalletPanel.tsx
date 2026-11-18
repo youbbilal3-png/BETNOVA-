@@ -195,7 +195,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         <label>{t('withdrawal_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min={currency === 'DZD' ? 1000 : 1.5} max={bonusWithdrawMode ? bonus.available_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1) : Math.min(currency === 'DZD' ? 1500000 : 50000, account?.available_balance ?? 0)} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
-        <button className="wallet-submit" disabled={busy || !selectedMethod || !account || Number(account.available_balance) <= 0}>{busy ? 'Submitting…' : 'Request withdrawal'}</button>
+        <button className="wallet-submit" disabled={busy || !selectedMethod || (bonusWithdrawMode ? bonus.available_balance <= 0 : !account || Number(account.available_balance) <= 0)}>{busy ? 'Submitting…' : bonusWithdrawMode ? 'Request bonus withdrawal' : 'Request withdrawal'}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('withdrawal_reserved')}</p>
       </form>}
       </>}
