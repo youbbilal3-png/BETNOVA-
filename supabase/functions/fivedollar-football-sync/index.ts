@@ -71,6 +71,8 @@ Deno.serve(async (req: Request) => {
 
   const body = await req.json().catch(() => ({}));
   const mode = body?.mode === "prematch" || body?.mode === "finalize" ? body.mode : "live";
+  const requestedBatch = Number(body?.batch ?? 0);
+  const batch = Number.isInteger(requestedBatch) ? Math.max(0, Math.min(9, requestedBatch)) : 0;
   let requests = 0;
   let rateLimited = false;
   const errors: string[] = [];
@@ -530,13 +532,17 @@ Deno.serve(async (req: Request) => {
       fixtures = Array.isArray(data) ? data : [];
     } else {
       const start = Math.floor(Date.now() / 1000);
-      const end = start + 7 * 24 * 60 * 60;
+      // The provider rejects windows longer than 24 hours. Poll a rolling day instead.
+      const end = start + 24 * 60 * 60;
       const data = await get("/fixtures?status=scheduled&start_time=" + start + "&end_time=" + end + "&per_page=100");
       fixtures = Array.isArray(data) ? data : [];
     }
 
+    const fixturesToProcess = mode === "prematch"
+      ? fixtures.slice(batch * 10, batch * 10 + 10)
+      : fixtures;
     const stored: Array<{item:any;id:string}> = [];
-    for (const item of fixtures) {
+    for (const item of fixturesToProcess) {
       const id = await storeFixture(item);
       if (!id) continue;
       stored.push({ item, id });
@@ -544,11 +550,12 @@ Deno.serve(async (req: Request) => {
       if (mode === "live" || mode === "finalize") await syncEvents(item, id);
     }
 
-    // Free plan provides odds per fixture. Keep each 5-minute live cycle to two
-    // matches (plus the fixture list) to stay under the account-wide 60/hour cap.
+    // Free plan returns each fixture's full Bet365 odds through a per-fixture call.
+    // Prematch batches contain ten fixtures; ten runs per three-hour cycle cover
+    // the full 100-row fixture window while staying below the 50/hour local budget.
     const oddsTargets = mode === "live"
       ? stored.slice(0, MAX_ODDS_FIXTURES)
-      : mode === "prematch" ? stored.slice(0, 8) : [];
+      : mode === "prematch" ? stored : [];
     for (const target of oddsTargets) {
       try { await syncOdds(target.item, target.id, mode === "live"); }
       catch (error) { errors.push("odds " + target.item.id + ": " + (error instanceof Error ? error.message : "unknown").slice(0, 150)); }
@@ -562,7 +569,8 @@ Deno.serve(async (req: Request) => {
     }
 
     return json({
-      ok: true, provider: PROVIDER, mode, fixtures_received: fixtures.length, fixtures_synced: fixturesSynced,
+      ok: true, provider: PROVIDER, mode, batch,
+      fixtures_received: fixtures.length, fixtures_selected: fixturesToProcess.length, fixtures_synced: fixturesSynced,
       events_synced: eventsSynced, retracted_goals_recorded: retractedGoals,
       markets_synced: marketsSynced, selections_synced: selectionsSynced,
       provider_requests: requests, local_rate_limited: rateLimited, errors: errors.slice(0, 10),
