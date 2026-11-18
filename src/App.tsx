@@ -10,6 +10,12 @@ import MyBetsPanel from './components/MyBetsPanel'
 import { languages, useLanguage } from './i18n'
 import { supabase } from './lib/supabase'
 
+const cleanMarketDisplayName = (raw: string) => String(raw ?? '')
+  .replace(/\b(oddspapi|oddsapi|5dollarfootballapi|pinnacle|bet\s?365|1xbet|unibet|leovegas|pmu|winamax|marathon\s?bet|nordic\s?bet|bwin|betfair|william\s?hill|betway|888sport|stake|betano|parimatch|dafabet|10bet|sportingbet)\b/gi, '')
+  .replace(/\s*[·|–—-]\s*/g, ' ')
+  .replace(/\s{2,}/g, ' ')
+  .trim() || 'BETNOVA Markets';
+
 const CLUB_PREFIXES = new Set(['FC','CF','CD','SC','AC','FK','SK','AFC','CFC','FBC','CA','CLUB','FOOTBALL','DEPORTIVO','SPORTING'])
 
 function teamInitials(name: string) {
@@ -331,7 +337,7 @@ export default function App() {
                 odds: Number(selection.odds).toFixed(2),
               }))
               cardLabels = selections.map((selection: any) => String(selection.name))
-              cardCaption = String(fallback.name || 'Available odds').split('·')[0].trim()
+              cardCaption = cleanMarketDisplayName(String(fallback.name || 'Available odds'))
             }
           }
           if (!cardPicks.length && sportSlug === 'football' && row.status !== 'finished') {
