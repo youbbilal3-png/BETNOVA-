@@ -372,3 +372,11 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 /* High-contrast removal controls in the compact bet slip. */
 .quick-slip-pick button{width:25px;height:25px;right:4px;top:4px;border:1px solid #ffb5b577;border-radius:50%;background:#9f3030;color:#fff;box-shadow:0 2px 7px #0006;z-index:2}
 .quick-slip-pick button svg{width:15px;height:15px;stroke-width:3}
+
+/* Personal market category ordering controls */
+.market-group-toolbar{display:flex;align-items:stretch;gap:6px}
+.market-group-toolbar .market-group-head{flex:1;min-width:0}
+.market-group-order-btn{width:32px;min-width:32px;min-height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(120,190,170,.22);border-radius:10px;background:rgba(15,35,32,.72);color:var(--text-secondary,#b8c8c2);cursor:pointer;transition:background .18s ease,border-color .18s ease,color .18s ease}
+.market-group-order-btn:hover:not(:disabled){background:rgba(30,190,135,.14);border-color:rgba(30,210,150,.55);color:#58e2ad}
+.market-group-order-btn:disabled{opacity:.28;cursor:not-allowed}
+@media(max-width:640px){.market-group-toolbar{gap:5px}.market-group-order-btn{width:30px;min-width:30px;min-height:42px;border-radius:9px}.market-group-toolbar .market-group-head{min-height:42px}}
