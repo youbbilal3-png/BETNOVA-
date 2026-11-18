@@ -315,7 +315,7 @@ export default function App() {
       window.clearInterval(refreshTimer)
       if (client && channel) void client.removeChannel(channel)
     }
-  }, [sport, userEmail, eventView]
+  }, [sport, userEmail, eventView])
 
   const competitionOptions = useMemo(() => {
     const byName = new Map<string, { name: string; country: string; count: number; international: boolean }>()
