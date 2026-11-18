@@ -15,15 +15,15 @@ type Market = { id: string; market_key: string | null; market_type: string; name
 type LiveEvent = { id: string; event_type: string; period: string | null; minute: number | null; added_time: number | null; player_name: string | null; team: { name: string; short_name: string | null } | null }
 
 const cleanMarketName = (raw: string) => String(raw ?? '')
-  .replace(/\\b(oddspapi|oddsapi|5dollarfootballapi|pinnacle|bet\\s?365|1xbet|unibet|leovegas|pmu|winamax|marathon\\s?bet|nordic\\s?bet|bwin|betfair|william\\s?hill|betway|888sport|stake|betano|parimatch|dafabet|10bet|sportingbet)\\b/gi, '')
-  .replace(/\\s*[·|–—-]\\s*/g, ' ')
-  .replace(/\\s{2,}/g, ' ')
+  .replace(/\b(oddspapi|oddsapi|5dollarfootballapi|pinnacle|bet\s?365|1xbet|unibet|leovegas|pmu|winamax|marathon\s?bet|nordic\s?bet|bwin|betfair|william\s?hill|betway|888sport|stake|betano|parimatch|dafabet|10bet|sportingbet)\b/gi, '')
+  .replace(/\s*[·|–—-]\s*/g, ' ')
+  .replace(/\s{2,}/g, ' ')
   .trim()
-  .replace(/^[:.\\s]+|[:.\\s]+$/g, '') || 'Market';
+  .replace(/^[:.\s]+|[:.\s]+$/g, '') || 'Market';
 const marketIdentity = (market: Market) => {
   const key = String(market.market_key || market.market_type || '').toLowerCase();
   if (key === 'match_result') return key + '|full-time';
-  return key + '|' + cleanMarketName(market.name).toLowerCase().replace(/[^\\p{L}\\p{N}.]+/gu, ' ').trim();
+  return key + '|' + cleanMarketName(market.name).toLowerCase().replace(/[^\p{L}\p{N}.]+/gu, ' ').trim();
 };
 
 const categoryFor = (market: Market, t: (key: any) => string, language: string) => {
