@@ -100,6 +100,12 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
             return ['home','1','win 1'].includes(value) ? 0 : ['draw','x'].includes(value) ? 1 : ['away','2','win 2'].includes(value) ? 2 : 3
           }
           marketSelections.sort((left,right)=>rank(left.name)-rank(right.name))
+        } else if (m.market_key === 'double_chance' || m.market_type === 'double_chance') {
+          const rank = (name: string) => {
+            const value = name.trim().toLowerCase().replace(/\\s+/g, '')
+            return value === '1x' ? 0 : value === '12' ? 1 : value === 'x2' ? 2 : 3
+          }
+          marketSelections.sort((left,right)=>rank(left.name)-rank(right.name))
         }
         return {...m, market_selections: marketSelections}
       }))
