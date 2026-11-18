@@ -214,7 +214,7 @@ export default function App() {
         }
         const { data, error } = await fixtureQuery
           .order('starts_at', { ascending: eventView !== 'results' })
-          .limit(200)
+          .limit(500)
 
         if (error) throw error
         if (!active) return
