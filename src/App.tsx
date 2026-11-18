@@ -33,7 +33,7 @@ type Match = {
 function countryFlagForCompetition(competition: string, country: string) {
   const value = `${country} ${competition}`.toLowerCase()
   const flags: [RegExp, string][] = [
-    [/england|premier league|championship|league one|league two|fa cup|efl|epl/, '🏴'],
+    [/england|premier league|championship|league one|league two|fa cup|efl|epl/, '🇬🇧'],
     [/spain|la liga|laliga|copa del rey/, '🇪🇸'], [/italy|serie a|serie b|coppa italia/, '🇮🇹'],
     [/germany|bundesliga|dfb/, '🇩🇪'], [/france|ligue 1|ligue 2/, '🇫🇷'],
     [/portugal|primeira liga|liga portugal/, '🇵🇹'], [/netherlands|eredivisie|holland/, '🇳🇱'],
@@ -43,7 +43,7 @@ function countryFlagForCompetition(competition: string, country: string) {
     [/argentina/, '🇦🇷'], [/usa|united states|mls/, '🇺🇸'], [/mexico|liga mx/, '🇲🇽'],
     [/japan|j-league/, '🇯🇵'], [/south korea|korea|k league/, '🇰🇷'],
     [/india|indian super/, '🇮🇳'], [/australia|a-league/, '🇦🇺'],
-    [/scotland|premiership scotland/, '🏴'], [/wales/, '🏴'], [/ireland/, '🇮🇪'],
+    [/scotland|premiership scotland/, '🇬🇧'], [/wales/, '🇬🇧'], [/ireland/, '🇮🇪'],
     [/belgium|jupiler/, '🇧🇪'], [/switzerland|super league switzerland/, '🇨🇭'],
     [/austria|bundesliga austria/, '🇦🇹'], [/greece|super league greece/, '🇬🇷'],
     [/denmark|superliga/, '🇩🇰'], [/sweden|allsvenskan/, '🇸🇪'], [/norway|eliteserien/, '🇳🇴'],
