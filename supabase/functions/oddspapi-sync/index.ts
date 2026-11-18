@@ -77,13 +77,28 @@ Deno.serve(async(req:Request)=>{
   const {data:tournaments,error:tError}=await sb.from("oddspapi_tournament_catalog").select("tournament_id,tournament_name,category_name,future_fixtures,upcoming_fixtures").gt("future_fixtures",0);
   if(tError)throw tError;
   const all=Array.isArray(tournaments)?tournaments:[];
+  const syncNow=new Date();
+  const {data:compFixtures,error:compFixtureError}=await sb.from("fixtures").select("competition_id").eq("status","scheduled").gte("starts_at",syncNow.toISOString()).lte("starts_at",new Date(syncNow.getTime()+14*86400000).toISOString()).limit(5000);
+  if(compFixtureError)throw compFixtureError;
+  const localCompCounts=new Map<string,number>();
+  for(const f of compFixtures??[]){if(f.competition_id)localCompCounts.set(f.competition_id,(localCompCounts.get(f.competition_id)??0)+1);}
+  const compIds=[...localCompCounts.keys()];
+  const {data:localComps,error:localCompError}=compIds.length?await sb.from("competitions").select("id,name,country").in("id",compIds):{data:[],error:null};
+  if(localCompError)throw localCompError;
+  const countryHints:Record<string,string>={"championship":"england","league 1":"scotland","league 2":"scotland","liga mx":"mexico","mls":"usa","k league 1":"republic of korea","a league":"australia","copa del rey":"spain","copa de sm la reina":"spain","dfb pokal":"germany","uefa champions league":"international clubs","uefa europa league":"international clubs","uefa champions league women":"international clubs"};
+  const localPriority=new Map<number,number>();
+  for(const comp of localComps??[]){
+   const compName=norm(comp.name),country=comp.country?norm(comp.country):(countryHints[compName]??"");
+   if(!country)continue;
+   for(const t of all){if(norm(t.tournament_name)===compName&&norm(t.category_name)===country){const id=Number(t.tournament_id);localPriority.set(id,(localPriority.get(id)??0)+(localCompCounts.get(comp.id)??0));}}
+  }
   const priority=(t:any)=>{const c=String(t.category_name??"").toLowerCase(),n=String(t.tournament_name??"").toLowerCase();let p=3;
    if(/england|spain|germany|italy|france|international/.test(c))p=0;
    if(/algeria|morocco|tunisia|egypt|saudi|united arab emirates|qatar|portugal|netherlands|belgium|turkey|scotland|brazil|argentina|mexico|usa/.test(c))p=1;
    if(/premier league|laliga|serie a|bundesliga|ligue 1|champions league|europa league|conference league|world cup|nations league|cup/.test(n))p=Math.max(0,p-1);
    if(/u\s?\d{2}|youth|amateur|reserve|regional|junior/.test(n+" "+c))p+=3;
    return p;};
-  all.sort((a:any,b:any)=>priority(a)-priority(b)||Number(b.upcoming_fixtures??0)-Number(a.upcoming_fixtures??0)||Number(b.future_fixtures??0)-Number(a.future_fixtures??0));
+  all.sort((a:any,b:any)=>(localPriority.get(Number(b.tournament_id))??0)-(localPriority.get(Number(a.tournament_id))??0)||priority(a)-priority(b)||Number(b.upcoming_fixtures??0)-Number(a.upcoming_fixtures??0)||Number(b.future_fixtures??0)-Number(a.future_fixtures??0));
   if(!all.length)return reply({ok:true,message:"No eligible soccer tournaments in the cached catalogue."});
   const prioritized=all.slice(0,150);
   const cursor=Number(state?.tournament_cursor??0)%prioritized.length;
@@ -95,7 +110,7 @@ Deno.serve(async(req:Request)=>{
   const oddsData=await api("odds-by-tournaments?"+new URLSearchParams({bookmaker,tournamentIds:ids.join(","),language:"en",verbosity:"3"}).toString(),key);
   const events=Array.isArray(oddsData)?oddsData:Array.isArray(oddsData?.data)?oddsData.data:[];
   const now=new Date();
-  const {data:fixtures,error:fError}=await sb.from("fixtures").select("id,starts_at,status,home_team_id,away_team_id").eq("status","scheduled").gte("starts_at",now.toISOString()).lte("starts_at",new Date(now.getTime()+14*86400000).toISOString()).limit(1200);
+  const {data:fixtures,error:fError}=await sb.from("fixtures").select("id,starts_at,status,home_team_id,away_team_id").eq("status","scheduled").gte("starts_at",now.toISOString()).lte("starts_at",new Date(now.getTime()+14*86400000).toISOString()).order("starts_at",{ascending:true}).limit(1200);
   if(fError)throw fError;
   const idsTeams=[...new Set((fixtures??[]).flatMap((f:any)=>[f.home_team_id,f.away_team_id]))];
   const teams:any[]=[];
@@ -168,6 +183,6 @@ Deno.serve(async(req:Request)=>{
   if(suspendError)errors.push("stale suspension: "+suspendError.message.slice(0,100));
   const accountAfter=await api("account",key),afterSub=(Array.isArray(accountAfter?.subscriptions)?accountAfter.subscriptions:[]).find((x:any)=>x.is_active);
   const afterRemaining=afterSub?Math.max(0,Number(afterSub.request_limit??0)-Number(afterSub.request_count??0)):null;
-  return reply({ok:true,provider:PROVIDER,mode,bookmaker,tournament_ids:ids,tournaments:selected.map((x:any)=>x.tournament_name),provider_events:events.length,matched_fixtures:matched,unmatched_events:unmatched,markets_saved:marketsSaved,selections_saved:selectionsSaved,stale_skipped:staleSkipped,unsupported_markets:unsupported,remaining_requests:afterRemaining,monthly_limit:Number(afterSub?.request_limit??0),live_odds_available:!!afterSub?.bookmakers?.[bookmaker]?.has_live_odds,errors:errors.slice(0,12)});
+  return reply({ok:true,provider:PROVIDER,mode,bookmaker,tournament_ids:ids,tournaments:selected.map((x:any)=>({name:x.tournament_name,local_fixtures:localPriority.get(Number(x.tournament_id))??0})),provider_events:events.length,matched_fixtures:matched,unmatched_events:unmatched,markets_saved:marketsSaved,selections_saved:selectionsSaved,stale_skipped:staleSkipped,unsupported_markets:unsupported,remaining_requests:afterRemaining,monthly_limit:Number(afterSub?.request_limit??0),live_odds_available:!!afterSub?.bookmakers?.[bookmaker]?.has_live_odds,errors:errors.slice(0,12)});
  }catch(e){const detail=e instanceof Error?e.message:JSON.stringify(e);console.error("oddspapi-sync",detail);return reply({ok:false,provider:PROVIDER,mode,error:String(detail??"Sync failed").slice(0,600)},502);}
 });
