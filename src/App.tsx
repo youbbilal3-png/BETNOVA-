@@ -202,7 +202,9 @@ export default function App() {
   const [walletOpen, setWalletOpen] = useState(false)
   function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') { setWalletInitialTab(tab); openOverlay('wallet') }
   const [betsOpen, setBetsOpen] = useState(false)
-  const [activePage, setActivePage] = useState<'sports' | 'games'>('sports')
+  const [activePage, setActivePage] = useState<'sports' | 'games' | 'football'>('sports')
+  const [selectedMatchDate, setSelectedMatchDate] = useState('')
+  const [selectedMatchTime, setSelectedMatchTime] = useState('')
   const [featuredGameRequest, setFeaturedGameRequest] = useState<{id:string;token:number}|null>(null)
   function openFeaturedGame(id:string) { setFeaturedGameRequest(current => ({id,token:(current?.token ?? 0)+1})); openGames() }
 
@@ -255,11 +257,19 @@ export default function App() {
     if (window.history.state?.betnovaPage === 'games') window.history.back()
     else setActivePage('sports')
   }
+  function openFootball() {
+    if (activePage !== 'football') window.history.pushState({ ...window.history.state, betnovaPage: 'football' }, '', '#football')
+    setSport('Football')
+    setEventView('upcoming')
+    setShowFavorites(false)
+    setLeague('All matches')
+    setActivePage('football')
+  }
   useEffect(() => {
     const handleBack = (event: PopStateEvent) => {
       const overlays = Array.isArray(event.state?.betnovaOverlays) ? event.state.betnovaOverlays as string[] : []
       applyOverlayStack(overlays, { betnovaDetailMatch: event.state?.betnovaDetailMatch })
-      setActivePage(event.state?.betnovaPage === 'games' ? 'games' : 'sports')
+      setActivePage(event.state?.betnovaPage === 'games' ? 'games' : event.state?.betnovaPage === 'football' ? 'football' : 'sports')
     }
     window.addEventListener('popstate', handleBack)
     return () => window.removeEventListener('popstate', handleBack)
@@ -602,8 +612,10 @@ export default function App() {
   const filteredMatches = useMemo(() => matches.filter(m =>
     (!showFavorites || favoriteIds.includes(String(m.id))) &&
     (league === 'All matches' || m.league === league) &&
-    (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase())
-  ), [matches, league, query, showFavorites, favoriteIds])
+    (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase()) &&
+    (!selectedMatchDate || (m.startsAt ? new Date(m.startsAt).toLocaleDateString('en-CA') === selectedMatchDate : false)) &&
+    (!selectedMatchTime || (m.startsAt ? new Date(m.startsAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) >= selectedMatchTime : false))
+  ), [matches, league, query, showFavorites, favoriteIds, selectedMatchDate, selectedMatchTime])
 
   const visibleMatches = useMemo(
     () => filteredMatches.slice(0, visibleMatchLimit),
@@ -720,7 +732,7 @@ export default function App() {
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
       <header className="topbar">
         <a className="brand nova-brand-lockup" href="#" onClick={event => { event.preventDefault(); goHome() }}><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">B</span><i/></span><span className="nova-brand-word">BETNOVA</span></a>
-        <nav className="desktop-nav"><button className={activePage === 'sports' ? 'active' : ''} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}>{t('sports')}</button><button className={activePage === 'games' ? 'active' : ''} onClick={() => openGames()}>{language === 'ar' ? 'الألعاب' : 'Games'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => { setActivePage('sports'); openEventView('results') }}>{t('results')}</button></nav>
+        <nav className="desktop-nav"><button className={activePage === 'sports' ? 'active' : ''} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}>{t('sports')}</button><button className={activePage === 'football' ? 'active' : ''} onClick={openFootball}>⚽ {language === 'ar' ? 'كرة القدم' : 'Football'}</button><button className={activePage === 'games' ? 'active' : ''} onClick={() => openGames()}>{language === 'ar' ? 'الألعاب' : 'Games'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => { setActivePage('sports'); openEventView('results') }}>{t('results')}</button></nav>
         <div className="top-actions">{activePage === 'games' && <button className="games-page-back games-page-back-top" type="button" onClick={closeGames}><ArrowRight size={16}/>{language === 'ar' ? 'العودة إلى الرياضة' : 'Back to sports'}</button>}<button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <><button className="wallet-open-btn deposit-open-btn" onClick={() => openWallet('deposit')}><Wallet size={15}/> {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(walletBalance)} DZD</button><button className="account-open-btn" onClick={() => openOverlay('account')}><UserRound size={15}/> My account</button></>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => openOverlay('notifications')}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => openOverlay('bets')}>{t("my_bets")}</button>{isAdminUser && <button className="admin-open-btn" onClick={() => openOverlay('admin')}>{t('admin')}</button>}</> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); openOverlay('auth') }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); openOverlay('auth') }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
       </header>
 
@@ -735,7 +747,7 @@ export default function App() {
           <button className={showFavorites ? 'rail-item selected' : 'rail-item'} onClick={() => { setActivePage('sports'); setShowFavorites(!showFavorites); setEventView('upcoming') }}><Star size={18}/> Favourites <span className="rail-count">{favoriteIds.length}</span></button>
           <div className="rail-separator"/>
           <div className="rail-heading">{t("sports_heading")}</div>
-          {sports.map((s, i) => <button key={s} onClick={() => setSport(s)} className={sport === s ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
+          {sports.map((s, i) => <button key={s} onClick={() => { if (s === 'Football') openFootball(); else { setSport(s); setActivePage('sports') } }} className={(s === 'Football' ? activePage === 'football' : sport === s && activePage === 'sports') ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
           <div className="rail-promo"><div className="promo-orb"><Sparkles size={20}/></div><b>{t("new_way")}</b><p>{t("sports_reimagined")}</p><span>{t("discover_betnova")} <ArrowRight size={13}/></span></div>
         </aside>
 
@@ -776,8 +788,9 @@ export default function App() {
             </div>
             <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>
             <div className="filter-row"><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("search")}/></label></div>
-            {!showFavorites && <div className="competition-browser" aria-label="Browse upcoming competitions">
-              <div className="competition-browser-top"><span>Browse by competition</span><small>{competitionOptions.length} competitions · {matches.length} matches</small></div>
+            {activePage === 'football' && !showFavorites && <div className="competition-browser" aria-label="Browse upcoming competitions">
+              <div className="competition-browser-top"><span>{language === 'ar' ? 'البطولات والدوريات' : 'Browse by competition'}</span><small>{competitionOptions.length} competitions · {matches.length} matches</small></div>
+              <div className="filter-row competition-date-row"><label className="search-field"><span>{language === 'ar' ? 'التاريخ' : 'Date'}</span><input aria-label="Filter matches by date" type="date" value={selectedMatchDate} onChange={event => setSelectedMatchDate(event.target.value)}/></label><label className="search-field"><span>{language === 'ar' ? 'ابتداءً من الوقت' : 'From time'}</span><input aria-label="Filter matches from time" type="time" value={selectedMatchTime} onChange={event => setSelectedMatchTime(event.target.value)}/></label><button type="button" className="competition-chip" onClick={() => { setSelectedMatchDate(''); setSelectedMatchTime('') }}>{language === 'ar' ? 'مسح التاريخ والوقت' : 'Clear date & time'}</button></div>
               <div className="competition-chip-list competition-all-row">
                 <button type="button" className={league === 'All matches' ? 'competition-chip selected' : 'competition-chip'} onClick={() => setLeague('All matches')}>All competitions <b>{matches.length}</b></button>
               </div>
@@ -814,10 +827,11 @@ export default function App() {
         </aside>
       </main>
 
-      <nav className="mobile-nav"><button className={activePage === 'sports' ? 'mobile-active' : ''} onClick={() => { setActivePage('sports'); openEventView("upcoming") }}><Trophy size={19}/>{t("sports")}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>openOverlay('mobileSlip')}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => openOverlay('mobileMore')}><Menu size={19}/>{t("menu")}</button></nav>
+      <nav className="mobile-nav"><button className={activePage === 'football' ? 'mobile-active' : ''} onClick={openFootball}><Trophy size={19}/>{language === 'ar' ? 'كرة القدم' : 'Football'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>openOverlay('mobileSlip')}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => openOverlay('mobileMore')}><Menu size={19}/>{t("menu")}</button></nav>
       {mobileMoreOpen && <div className="mobile-more-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('mobileMore') }}>
         <section className="mobile-more-panel" role="dialog" aria-modal="true" aria-label={t("menu")}>
           <div className="mobile-more-header"><div><b>BETNOVA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => closeOverlay('mobileMore')} aria-label={t("close")}><X size={18}/></button></div>
+          <button onClick={() => { closeMobileMenuToPage(); openFootball() }}><Trophy size={17}/>{language === 'ar' ? 'كرة القدم' : 'Football'}</button>
           <button onClick={() => { closeMobileMenuToPage(); openGames() }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
           <button onClick={() => { closeMobileMenuToPage(); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           {userEmail ? <>
