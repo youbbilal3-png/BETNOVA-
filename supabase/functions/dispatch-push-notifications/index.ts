@@ -62,7 +62,8 @@ async function getFirebaseAccessToken(clientEmail: string, privateKey: string) {
   return cachedAccessToken.value;
 }
 
-const categoryByEvent: Record<string, "goals" | "red_cards" | "half_time" | "full_time"> = {
+const categoryByEvent: Record<string, "match_start" | "goals" | "red_cards" | "half_time" | "full_time"> = {
+  match_start: "match_start",
   goal: "goals",
   red_card: "red_cards",
   half_time: "half_time",
@@ -70,6 +71,7 @@ const categoryByEvent: Record<string, "goals" | "red_cards" | "half_time" | "ful
 };
 
 const copy: Record<string, { title: string; body: string }> = {
+  match_start: { title: "BETNOVA • بداية المباراة", body: "انطلقت المباراة التي تتابعها." },
   goals: { title: "BETNOVA • هدف / Goal", body: "تم تسجيل هدف في المباراة التي تتابعها." },
   red_cards: { title: "BETNOVA • بطاقة حمراء", body: "تم إشهار بطاقة حمراء في المباراة التي تتابعها." },
   half_time: { title: "BETNOVA • نهاية الشوط الأول", body: "انتهى الشوط الأول من المباراة التي تتابعها." },
