@@ -117,7 +117,7 @@ Deno.serve(async (req: Request) => {
         period: "match_start",
         event_data: { source: "live_feed", confirmed: true },
         occurred_at: occurredAt,
-      }, { onConflict: "provider,provider_event_id", ignoreDuplicates: true })
+      }, { onConflict: "provider,provider_event_id" })
       .select("id").maybeSingle();
     if (error) {
       providerErrors.push("could not store match-start event");
@@ -540,8 +540,7 @@ Deno.serve(async (req: Request) => {
       }
       const fixture = await getFixture(targetFixtureId);
       if (!fixture) continue;
-      const createdAsLive = fixturesCreated > 0 && fixture.status === "live";
-      if ((fixture.status === "scheduled" || createdAsLive) && isNearKickoff(startTime)) {
+      if (isNearKickoff(startTime)) {
         await recordMatchStart(targetFixtureId, new Date().toISOString());
       }
       const baselineReady = homeScore + awayScore === 0;
@@ -581,7 +580,7 @@ Deno.serve(async (req: Request) => {
 
     const fixture = await getFixture(link.fixture_id);
     if (!fixture) continue;
-    if (fixture.status === "scheduled" && isNearKickoff(startTime)) {
+    if (isNearKickoff(startTime)) {
       await recordMatchStart(link.fixture_id, new Date().toISOString());
     }
     fixturesMatched++; // Count existing mappings too; previously only newly-created links were counted.
