@@ -25,7 +25,7 @@ type Counts = { sports: number; competitions: number; teams: number; fixtures: n
 type Deposit = { id: string; user_id: string; payment_method: string; amount: number; currency: string; sender_reference: string | null; proof_path: string | null; created_at: string }
 type Withdrawal = { id: string; user_id: string; payment_method: string; amount: number; currency: string; destination_details: string; created_at: string }
 type BonusWithdrawal = { id:string; user_id:string; payment_method:string; amount:number; currency:string; bonus_amount_usd:number; destination_details:string; created_at:string }
-type PaymentMethod = { id: string; code: string; display_name: string; is_enabled: boolean; supported_currencies: string[]; instructions: Record<string, unknown> }
+type PaymentMethod = { id: string; code: string; display_name: string; is_enabled: boolean; is_withdrawal_enabled: boolean; supported_currencies: string[]; instructions: Record<string, unknown> }
 
 const money = (amount: number, currency: string) => new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
 
@@ -72,7 +72,7 @@ export default function AdminOverview({ onClose }: Props) {
       supabase.from('deposit_requests').select('id,user_id,payment_method,amount,currency,sender_reference,proof_path,created_at').eq('status', 'pending').order('created_at', { ascending: true }),
       supabase.from('withdrawal_requests').select('id,user_id,payment_method,amount,currency,destination_details,created_at').eq('status', 'pending').order('created_at', { ascending: true }),
       supabase.from('bonus_withdrawal_requests').select('id,user_id,payment_method,amount,currency,bonus_amount_usd,destination_details,created_at').eq('status','pending').order('created_at',{ascending:true}),
-      supabase.from('payment_methods').select('id,code,display_name,is_enabled,supported_currencies,instructions').order('sort_order')
+      supabase.from('payment_methods').select('id,code,display_name,is_enabled,is_withdrawal_enabled,supported_currencies,instructions').order('sort_order')
     ])
     if (d.error) throw d.error
     if (w.error) throw w.error
@@ -238,6 +238,18 @@ export default function AdminOverview({ onClose }: Props) {
     finally { setBusyId(null) }
   }
 
+  async function toggleWithdrawalMethod(method: PaymentMethod) {
+    if (!supabase) return
+    setBusyId(method.id); setError(''); setNotice('')
+    try {
+      const { error: updateError } = await supabase.from('payment_methods').update({ is_withdrawal_enabled: !method.is_withdrawal_enabled }).eq('id', method.id)
+      if (updateError) throw updateError
+      setNotice(`${method.display_name} withdrawal ${method.is_withdrawal_enabled ? 'disabled' : 'enabled'}.`)
+      await loadFinance()
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not update withdrawal method.') }
+    finally { setBusyId(null) }
+  }
+
   async function togglePaymentMethod(method: PaymentMethod) {
     if (!supabase) return
     const hasInstructions = Object.values(method.instructions ?? {}).some(value => typeof value === 'string' && value.trim().length > 0)
@@ -358,7 +370,7 @@ export default function AdminOverview({ onClose }: Props) {
                 <textarea className="admin-instructions-editor" value={instructionDrafts[method.id] ?? JSON.stringify(Object.keys(method.instructions ?? {}).length ? method.instructions : { account_name: '', account_number: '', instructions: '' }, null, 2)} onChange={event => setInstructionDrafts(current => ({ ...current, [method.id]: event.target.value }))} rows={5} aria-label={`Instructions for ${method.display_name}`} />
               </label>
               <small>Use account_name, account_number and instructions. For Binance/RedotPay crypto transfers, include the exact asset and network in instructions. Never enter a password, private key, seed phrase or verification code. Save the details first, then enable this method.</small>
-              <div className="admin-finance-actions"><button disabled={busyId === method.id} onClick={() => void saveInstructions(method)}>Save instructions</button><button className="admin-method-toggle" disabled={busyId === method.id} onClick={() => void togglePaymentMethod(method)}>{method.is_enabled ? 'Disable method' : 'Enable method'}</button></div>
+              <div className="admin-finance-actions"><button disabled={busyId === method.id} onClick={() => void saveInstructions(method)}>Save instructions</button><button className="admin-method-toggle" disabled={busyId === method.id} onClick={() => void togglePaymentMethod(method)}>{method.is_enabled ? 'Disable deposits' : 'Enable deposits'}</button><button className="admin-method-toggle" disabled={busyId === method.id} onClick={() => void toggleWithdrawalMethod(method)}>{method.is_withdrawal_enabled ? 'Disable withdrawals' : 'Enable withdrawals'}</button></div>
             </article>)}
           </div>}
           <div className="admin-safety-note"><ShieldCheck size={15}/> Deposit approvals credit the wallet atomically. Withdrawals reserve funds until you mark the external transfer paid or reject the request.</div>
