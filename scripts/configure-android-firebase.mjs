@@ -11,15 +11,15 @@ for (const file of [rootBuild, appBuild, googleServices]) {
 
 let root = fs.readFileSync(rootBuild, 'utf8')
 if (!root.includes('com.google.gms:google-services')) {
-  const dependencies = /dependencies\\s*\\{/
+  const dependencies = /dependencies\s*\{/
   if (!dependencies.test(root)) throw new Error('Could not find Android root Gradle buildscript dependencies')
-  root = root.replace(dependencies, match => match + "\\n        classpath 'com.google.gms:google-services:4.4.2'")
+  root = root.replace(dependencies, match => match + "\n        classpath 'com.google.gms:google-services:4.4.2'")
   fs.writeFileSync(rootBuild, root)
 }
 
 let app = fs.readFileSync(appBuild, 'utf8')
 if (!app.includes("com.google.gms.google-services")) {
-  app += "\\n\\n// Configure Firebase Cloud Messaging from google-services.json\\napply plugin: 'com.google.gms.google-services'\\n"
+  app += "\n\n// Configure Firebase Cloud Messaging from google-services.json\napply plugin: 'com.google.gms.google-services'\n"
   fs.writeFileSync(appBuild, app)
 }
 
