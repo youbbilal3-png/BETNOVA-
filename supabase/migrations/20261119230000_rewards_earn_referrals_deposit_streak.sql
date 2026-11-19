@@ -77,14 +77,6 @@ create policy "Users read own earn submissions" on public.earn_post_submissions
   for select to authenticated using (user_id=(select auth.uid()));
 create policy "Admins read earn submissions" on public.earn_post_submissions
   for select to authenticated using (public.betnova_is_admin());
-create policy "Users submit own earn posts" on public.earn_post_submissions
-  for insert to authenticated with check (
-    user_id=(select auth.uid()) and status='pending'
-    and reward_amount=50 and currency='DZD'
-    and reviewed_by is null and reviewed_at is null and wallet_ledger_id is null
-    and proof_path like ((select auth.uid())::text || '/%')
-  );
-
 create policy "Users read referrals they invited" on public.referrals
   for select to authenticated using (referrer_user_id=(select auth.uid()));
 create policy "Admins read referrals" on public.referrals
@@ -95,7 +87,7 @@ create policy "Admins read deposit streak claims" on public.deposit_streak_claim
   for select to authenticated using (public.betnova_is_admin());
 
 revoke all on public.earn_post_submissions,public.referral_codes,public.referrals,public.deposit_streak_claims from anon,authenticated;
-grant select,insert on public.earn_post_submissions to authenticated;
+grant select on public.earn_post_submissions to authenticated;
 grant select on public.referrals,public.deposit_streak_claims to authenticated;
 
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
