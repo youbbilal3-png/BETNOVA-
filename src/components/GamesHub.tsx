@@ -39,6 +39,8 @@ export default function GamesHub(){
   const [crashAt,setCrashAt]=useState(0)
   const [multiplier,setMultiplier]=useState(1)
   const [crashActive,setCrashActive]=useState(false)
+  const [crashExploding,setCrashExploding]=useState(false)
+  const [crashCountdown,setCrashCountdown]=useState<number|null>(null)
   const [appleLevel,setAppleLevel]=useState(0)
   const [appleDone,setAppleDone]=useState(false)
   const [appleTraps,setAppleTraps]=useState<number[]>(()=>newAppleTraps())
@@ -59,17 +61,19 @@ export default function GamesHub(){
   const resetDemo=()=>{
     if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;setSlotSpinning(false)
     setPracticeResult('');setPracticeCount(0);setCrashAt(0);setMultiplier(1)
-    setCrashActive(false);setAppleLevel(0);setAppleDone(false);setAppleTraps(newAppleTraps());setApplePicks([]);setPlinkoSlot(null);setPlinkoDropping(false)
+    setCrashActive(false);setCrashExploding(false);setCrashCountdown(null);setAppleLevel(0);setAppleDone(false);setAppleTraps(newAppleTraps());setApplePicks([]);setPlinkoSlot(null);setPlinkoDropping(false)
     setSlotSymbols(['🍒','⭐','🍋']);setRouletteNumber(null);setRouletteSpinning(false);setCardHand([]);setDealerHand([]);setBlackjackDone(false);setBaccaratHand(null)
   }
   const closeGame=()=>{setSelected(null);resetDemo()}
   useEffect(()=>{if(!selected)return;const previous=document.activeElement as HTMLElement|null;modalRef.current?.focus();const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape'){closeGame();return}if(event.key==='Tab'){const nodes=modalRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])');if(!nodes?.length){event.preventDefault();modalRef.current?.focus();return}const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}};window.addEventListener('keydown',onKeyDown);return()=>{window.removeEventListener('keydown',onKeyDown);if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;previous?.focus()}},[selected])
-  useEffect(()=>{if(!crashActive)return;const timer=window.setTimeout(()=>{const next=Number((multiplier+0.05).toFixed(2));setMultiplier(next);if(next>=crashAt){setCrashActive(false);setPracticeResult(arabic?`انتهت الجولة عند ${next.toFixed(2)}×. لا توجد أرباح أو تغييرات في الرصيد.`:`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)}},220);return()=>window.clearTimeout(timer)},[crashActive,crashAt,multiplier,arabic])
+  useEffect(()=>{if(!crashActive)return;const timer=window.setTimeout(()=>{const next=Number((multiplier+0.05).toFixed(2));setMultiplier(next);if(next>=crashAt){setCrashActive(false);setCrashExploding(true);setPracticeResult(arabic?`انفجرت المروحية عند ${next.toFixed(2)}×. جولة تدريبية جديدة بعد العد التنازلي.`:`Helicopter crashed at ${next.toFixed(2)}×. A new practice round starts after the countdown.`)}},220);return()=>window.clearTimeout(timer)},[crashActive,crashAt,multiplier,arabic])
   const startCrash=()=>{
-    setCrashAt(1.25+Math.random()*4.75);setMultiplier(1);setCrashActive(true)
+    setCrashAt(1.25+Math.random()*4.75);setMultiplier(1);setCrashExploding(false);setCrashCountdown(null);setCrashActive(true)
     setPracticeResult(arabic?'بدأ المضاعف. تقدّم بحذر أو أوقف الجولة التدريبية.':'Multiplier is live. Advance carefully or stop this practice round.')
     setPracticeCount(value=>value+1)
   }
+  useEffect(()=>{if(!crashExploding)return;const timer=window.setTimeout(()=>{setCrashExploding(false);setCrashCountdown(7)},950);return()=>window.clearTimeout(timer)},[crashExploding])
+  useEffect(()=>{if(crashCountdown===null)return;if(crashCountdown===0){setCrashCountdown(null);startCrash();return}const timer=window.setTimeout(()=>setCrashCountdown(value=>value===null?null:value-1),1000);return()=>window.clearTimeout(timer)},[crashCountdown])
   const cashOutCrash=()=>{
     if(!crashActive)return
     setCrashActive(false)
@@ -130,32 +134,35 @@ export default function GamesHub(){
         <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
         <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
         {selected.id==='crash'&&<div className="game-practice-controls crash-controls">
-          <div className={`crash-flight-stage ${crashActive?'is-flying':multiplier>1?'flight-ended':'flight-ready'}`} role="img" aria-label={arabic?'طائرة كراش تطير داخل مسار ثلاثي الأبعاد':'Crash airplane flying through a 3D flight arena'}>
+          <div className={`crash-flight-stage ${crashActive?'is-flying':crashExploding?'is-exploding':multiplier>1?'flight-ended':'flight-ready'}`} role="img" aria-label={arabic?'طائرة كراش تطير داخل مسار ثلاثي الأبعاد':'Crash airplane flying through a 3D flight arena'}>
             <div className="crash-sky-grid"/><div className="crash-sun-glow"/><div className="crash-cloud cloud-a"/><div className="crash-cloud cloud-b"/>
             <div className="crash-mountains mountain-back"/><div className="crash-mountains mountain-front"/>
             <div className="crash-flight-path"/><div className="crash-flight-trail"/>
-            <div className="crash-plane">
-              <svg viewBox="0 0 220 150" aria-hidden="true">
+            <div className={`crash-helicopter ${crashActive?'helicopter-flying':crashExploding?'helicopter-crashed':'helicopter-idle'}`} aria-hidden="true">
+              <svg viewBox="0 0 180 120">
                 <defs>
-                  <linearGradient id="bnPlaneBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffffff"/><stop offset=".42" stopColor="#c9e9ff"/><stop offset="1" stopColor="#5b91c9"/></linearGradient>
-                  <linearGradient id="bnPlaneWing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#e9f8ff"/><stop offset="1" stopColor="#5586bd"/></linearGradient>
-                  <linearGradient id="bnPlaneGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#9df4ff"/><stop offset="1" stopColor="#17618d"/></linearGradient>
+                  <linearGradient id="bnHeliBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#a8ffe7"/><stop offset=".42" stopColor="#20c99b"/><stop offset="1" stopColor="#08765f"/></linearGradient>
+                  <linearGradient id="bnHeliGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#b9f6ff"/><stop offset="1" stopColor="#256e9d"/></linearGradient>
                 </defs>
-                <path d="M18 91 L72 79 L99 22 Q105 11 114 22 L137 70 L194 83 Q205 87 198 96 L139 103 L119 132 Q112 141 104 132 L87 105 L25 105 Q11 104 18 91Z" fill="url(#bnPlaneWing)" stroke="#e6f8ff" strokeWidth="2.4"/>
-                <path d="M22 94 Q103 65 204 87 Q213 91 203 98 Q110 111 22 101Z" fill="url(#bnPlaneBody)" stroke="#f4fbff" strokeWidth="2"/>
-                <path d="M103 83 Q111 54 128 79 L145 91 Q124 96 103 92Z" fill="url(#bnPlaneGlass)" stroke="#e8fbff" strokeWidth="2"/>
-                <path d="M45 91 L73 86 L84 97 L46 99Z" fill="#5a8bb9" opacity=".85"/>
-                <path d="M156 89 L190 91 L157 98Z" fill="#74a9d6"/>
-                <path d="M106 24 L116 42 L126 72 L112 68 L98 39Z" fill="#ffffff" opacity=".55"/>
-                <path d="M20 96 L5 92 M20 101 L4 103" stroke="#a8eaff" strokeWidth="3" strokeLinecap="round"/>
-                <circle cx="25" cy="95" r="4" fill="#75edff"/><circle cx="25" cy="95" r="8" fill="#75edff" opacity=".2"/>
+                <g className="heli-rotor"><path d="M88 26 L92 26 L92 13 L88 13Z" fill="#d8fff6"/><path d="M38 12 Q90 3 142 12" fill="none" stroke="#d8fff6" strokeWidth="4" strokeLinecap="round"/><path d="M54 17 Q90 12 126 17" fill="none" stroke="#42e5bd" strokeWidth="2" strokeLinecap="round"/></g>
+                <path d="M46 65 L16 58 L12 62 L45 72Z" fill="#1cbf9b" stroke="#9affdf" strokeWidth="2"/>
+                <path d="M17 55 L9 48 L7 51 L12 60Z" fill="#9affdf"/><path d="M15 61 L5 68 L9 71 L18 65Z" fill="#9affdf"/>
+                <path d="M39 67 Q45 43 79 42 L112 46 Q133 49 139 69 Q136 91 112 94 L61 93 Q36 90 39 67Z" fill="url(#bnHeliBody)" stroke="#b8ffe9" strokeWidth="2.5"/>
+                <path d="M83 47 Q110 42 125 57 L130 73 L91 73Z" fill="url(#bnHeliGlass)" stroke="#d9fff6" strokeWidth="2"/>
+                <path d="M92 77 L128 77 Q124 90 108 91 L88 88Z" fill="#075d54" opacity=".8"/>
+                <path d="M60 93 L56 100 M115 94 L119 100 M49 101 L126 101" stroke="#b8ffe9" strokeWidth="4" strokeLinecap="round"/>
+                <path d="M84 40 L94 29 L101 40" fill="none" stroke="#79f4d2" strokeWidth="3"/>
+                <circle cx="138" cy="69" r="3" fill="#ffe58b"/><circle cx="138" cy="69" r="7" fill="#ffe58b" opacity=".22"/>
+                <path d="M52 58 Q67 45 82 49" fill="none" stroke="#ffffff" strokeWidth="2" opacity=".5"/>
               </svg>
             </div>
+            {crashExploding&&<div className="crash-explosion" aria-label={arabic?'انفجار المروحية':'Helicopter explosion'}><span>✦</span><b>BOOM</b></div>}
+            {crashCountdown!==null&&<div className="crash-countdown"><small>{arabic?'الجولة التالية تبدأ خلال':'NEXT ROUND IN'}</small><strong>{crashCountdown}</strong><small>{arabic?'ثوانٍ':'SECONDS'}</small></div>}
             <div className="crash-stage-hud"><span>{arabic?'الرحلة المباشرة':'LIVE FLIGHT'}</span><b>{multiplier.toFixed(2)}×</b></div>
             <div className="crash-stage-bottom"><span>BETNOVA AIR</span><span>{crashActive?(arabic?'في الجو':'IN FLIGHT'):multiplier>1?(arabic?'انتهت الجولة':'ROUND ENDED'):(arabic?'جاهز للإقلاع':'READY FOR TAKEOFF')}</span></div>
           </div>
           <div className={`crash-multiplier ${crashActive?'rising':''}`} aria-live="polite">{multiplier.toFixed(2)}<small>×</small></div>
-          {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:<div className="game-action-row"><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>}
+          {!crashActive&&!crashExploding&&crashCountdown===null?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:crashActive?<div className="game-action-row"><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>:<div className="game-detail-done crash-auto-status">{crashExploding?(arabic?'جاري الانفجار...':'CRASH EFFECT...'):(arabic?'استعد للجولة التالية':'NEXT ROUND COUNTDOWN')}</div>}
         </div>}
         {selected.id==='apple'&&<div className="game-practice-controls">
           <div className="apple-board" aria-label={arabic?'خمسة صفوف من التفاحات، اختر تفاحة آمنة في كل صف':'Five rows of apples, choose one safe apple in each row'}>{Array.from({length:APPLE_ROWS},(_,row)=><div className="apple-row" key={row}>{Array.from({length:APPLE_COLUMNS},(_,col)=>{const chosen=applePicks[row]===col;const revealed=row<appleLevel||(appleDone&&row===appleLevel);const trap=appleTraps[row]===col;return <button key={col} type="button" disabled={appleDone||row!==appleLevel} className={`${chosen?'chosen ':''}${revealed&&trap?'trap ':''}${revealed&&chosen&&!trap?'safe ':''}${row>appleLevel?'locked':''}`} onClick={()=>pickApple(col)} aria-label={`${arabic?'الصف':'Row'} ${row+1}, ${arabic?'التفاحة':'apple'} ${col+1}`}>{revealed?(trap?'💣':chosen?'🍏':'🍎'):'🍏'}</button>})}</div>)}</div>
