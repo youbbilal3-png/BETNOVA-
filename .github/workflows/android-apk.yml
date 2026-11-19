@@ -10,6 +10,7 @@ on:
       - firebase/android-config
     paths:
       - 'src/**'
+      - 'supabase/functions/**'
       - 'public/**'
       - 'package.json'
       - 'vite.config.ts'
@@ -35,6 +36,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check notification Edge Functions
+        run: |
+          deno check supabase/functions/live-event-ingest/index.ts
+          deno check supabase/functions/dispatch-push-notifications/index.ts
 
       - name: Setup Java
         uses: actions/setup-java@v5
