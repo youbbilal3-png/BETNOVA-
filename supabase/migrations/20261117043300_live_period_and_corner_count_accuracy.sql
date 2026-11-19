@@ -1,24 +1,18 @@
--- The preceding migration already normalizes first-half goal counting.
--- This migration only corrects the total-corners aggregate when its older
--- count(*) expression is still present; the following migration nests count.
+-- Final idempotent verification of the live-period and corner-event fixes.
+-- The prior migration performs the replacement. PostgreSQL may normalize the
+-- function definition after CREATE OR REPLACE, so this migration verifies
+-- semantic markers instead of trying to replace the same source text again.
 do $migration$
 declare
   v_definition text;
-  v_corner_old text := $old$select count(*)::integer into v_event_count
-         from public.fixture_events e
-         where e.fixture_id=v_event.fixture_id
-           and e.provider=v_event.provider
-           and e.event_type='corner';$old$;
-  v_corner_new text := $new$select coalesce(sum(greatest(coalesce((e.event_data->>'count')::integer,1),1)),0)::integer into v_event_count
-         from public.fixture_events e
-         where e.fixture_id=v_event.fixture_id
-           and e.provider=v_event.provider
-           and e.event_type='corner';$new$;
 begin
-  select pg_get_functiondef('public.betnova_process_live_event(uuid)'::regprocedure) into v_definition;
-  if position(v_corner_old in v_definition)>0 then
-    v_definition:=replace(v_definition,v_corner_old,v_corner_new);
+  select pg_get_functiondef('public.betnova_process_live_event(uuid)'::regprocedure)
+    into v_definition;
+  if position('between 0 and 45' in v_definition)=0 then
+    raise exception 'First-half live-period fallback is missing';
   end if;
-  execute v_definition;
+  if position('source_event' in v_definition)=0 then
+    raise exception 'Source-event corner count path is missing';
+  end if;
 end
 $migration$;
