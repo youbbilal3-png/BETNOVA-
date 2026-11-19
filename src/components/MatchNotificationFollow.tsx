@@ -13,6 +13,8 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
   language?: string
 }) {
   const isArabic = language === 'ar'
+  const isFrench = language === 'fr'
+  const localize = (ar: string, en: string, fr: string) => isArabic ? ar : isFrench ? fr : en
   const [userId, setUserId] = useState<string | null>(null)
   const [targets, setTargets] = useState<Target[]>([])
   const [active, setActive] = useState<Record<FollowTarget, boolean>>({ fixture: false, home: false, away: false })
@@ -44,12 +46,12 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
         .from('fixtures').select('id,home_team_id,away_team_id').eq('id', fixtureId).maybeSingle()
       if (!mounted) return
       if (fixtureError || !fixture) {
-        setMessage(isArabic ? 'تعذر تحميل خيارات متابعة المباراة.' : 'Could not load match follow options.')
+        setMessage(localize('تعذر تحميل خيارات متابعة المباراة.', 'Could not load match follow options.', 'Impossible de charger les options de suivi du match.'))
         setLoading(false)
         return
       }
       const nextTargets: Target[] = [
-        { key: 'fixture', type: 'fixture', id: fixture.id, label: isArabic ? 'هذه المباراة' : 'This match' },
+        { key: 'fixture', type: 'fixture', id: fixture.id, label: localize('هذه المباراة', 'This match', 'Ce match') },
         { key: 'home', type: 'team', id: fixture.home_team_id, label: homeName },
         { key: 'away', type: 'team', id: fixture.away_team_id, label: awayName },
       ]
@@ -58,7 +60,7 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
         .from('notification_subscriptions').select('target_type,target_id').eq('user_id', userId)
         .in('target_id', nextTargets.map(target => target.id))
       if (!mounted) return
-      if (error) setMessage(isArabic ? 'تعذر تحميل اشتراكاتك.' : 'Could not load your follows.')
+      if (error) setMessage(localize('تعذر تحميل اشتراكاتك.', 'Could not load your follows.', 'Impossible de charger vos suivis.'))
       else {
         const rows = subscriptions ?? []
         setActive({
@@ -70,11 +72,11 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
       setLoading(false)
     })()
     return () => { mounted = false }
-  }, [userId, fixtureId, homeName, awayName, isArabic])
+  }, [userId, fixtureId, homeName, awayName, isArabic, isFrench])
 
   const toggle = async (key: FollowTarget) => {
     if (!supabase || !userId) {
-      setMessage(isArabic ? 'سجّل الدخول أولاً لمتابعة المباريات والفرق.' : 'Sign in to follow matches and teams.')
+      setMessage(localize('سجّل الدخول أولاً لمتابعة المباريات والفرق.', 'Sign in to follow matches and teams.', 'Connectez-vous pour suivre les matchs et les équipes.'))
       return
     }
     const target = targets.find(item => item.key === key)
@@ -87,22 +89,22 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
       : await supabase.from('notification_subscriptions').upsert({
           user_id: userId, target_type: target.type, target_id: target.id,
         }, { onConflict: 'user_id,target_type,target_id', ignoreDuplicates: true })
-    if (result.error) setMessage(isArabic ? 'لم يتم حفظ التغيير. حاول مرة أخرى.' : 'Could not save this change. Please try again.')
+    if (result.error) setMessage(localize('لم يتم حفظ التغيير. حاول مرة أخرى.', 'Could not save this change. Please try again.', 'Impossible d’enregistrer cette modification. Réessayez.'))
     else setActive(current => ({ ...current, [key]: !currentlyActive }))
     setBusy(null)
   }
 
-  if (!userId) return <div className="bn-match-follow"><div className="bn-match-follow-title"><Bell size={17}/><b>{isArabic ? 'تنبيهات المباراة والفريق' : 'Match & team alerts'}</b></div><p>{isArabic ? 'سجّل الدخول لتتمكن من متابعة هذه المباراة أو أي من الفريقين.' : 'Sign in to follow this match or either team.'}</p></div>
+  if (!userId) return <div className="bn-match-follow"><div className="bn-match-follow-title"><Bell size={17}/><b>{localize('تنبيهات المباراة والفريق', 'Match & team alerts', 'Alertes match et équipe')}</b></div><p>{localize('سجّل الدخول لتتمكن من متابعة هذه المباراة أو أي من الفريقين.', 'Sign in to follow this match or either team.', 'Connectez-vous pour suivre ce match ou l’une des deux équipes.')}</p></div>
 
   return <div className="bn-match-follow">
-    <div className="bn-match-follow-title"><Bell size={17}/><div><b>{isArabic ? 'متابعة وتنبيهات' : 'Follow & get alerts'}</b><small>{isArabic ? 'اختر المباراة أو الفرق التي تريد متابعتها.' : 'Choose this match or teams to follow.'}</small></div></div>
+    <div className="bn-match-follow-title"><Bell size={17}/><div><b>{localize('متابعة وتنبيهات', 'Follow & get alerts', 'Suivre et recevoir des alertes')}</b><small>{localize('اختر المباراة أو الفرق التي تريد متابعتها.', 'Choose this match or teams to follow.', 'Choisissez ce match ou les équipes à suivre.')}</small></div></div>
     <div className="bn-match-follow-options">
       {targets.map(target => <div className="bn-match-follow-option" key={target.key}>
         <span>{target.label}</span>
         <button type="button" role="switch" aria-checked={active[target.key]} disabled={loading || busy !== null} className={active[target.key] ? 'is-on' : ''} onClick={() => void toggle(target.key)}><span/></button>
       </div>)}
     </div>
-    <div className="bn-match-follow-safe"><ShieldCheck size={14}/>{isArabic ? 'يمكنك تغيير اختياراتك في أي وقت.' : 'You can change these follows at any time.'}</div>
+    <div className="bn-match-follow-safe"><ShieldCheck size={14}/>{localize('يمكنك تغيير اختياراتك في أي وقت.', 'You can change these follows at any time.', 'Vous pouvez modifier vos suivis à tout moment.')}</div>
     {message && <p className="bn-match-follow-message" role="status">{message}</p>}
   </div>
 }
