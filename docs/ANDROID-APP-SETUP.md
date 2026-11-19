@@ -8,7 +8,8 @@ BETNOVA is a React + Vite app with a Capacitor 8 Android wrapper. The Android ap
 - Display name: `BETNOVA`
 - Bundled web assets: `dist/`
 - Firebase Android project: `betnova-8daa3`
-- Firebase Android configuration: `google-services.json`
+- Firebase Android configuration: `google-services.json` (package ID verified against `com.betnova.app`)
+- Android build workflow configures the Google Services Gradle plugin after Capacitor sync so FCM can consume the Firebase Android configuration.
 - Android build workflow: `.github/workflows/android-apk.yml`
 - Current CI artifact: temporary debug APK for device testing only; it is not a production release.
 
