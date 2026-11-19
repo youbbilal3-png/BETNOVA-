@@ -54,7 +54,7 @@ export default function NativeAppGate() {
       hasChecked.current = true
       setChecking(false)
     }
-  }, [isNative]
+  }, [isNative])
 
   useEffect(() => {
     if (!isNative) return
