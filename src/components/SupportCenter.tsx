@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleHelp, Mail, MessageCircle, Send, ShieldCheck, Sparkles, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
@@ -26,7 +26,7 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
     return () => { active = false }
   }, [])
 
-  async function submitRequest(event: React.FormEvent<HTMLFormElement>) {
+  async function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!supabase) { setError('Support is temporarily unavailable. Please try again later.'); return }
     if (message.trim().length < 12) { setError('Please provide a little more detail (at least 12 characters).'); return }
