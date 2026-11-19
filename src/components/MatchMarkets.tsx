@@ -19,6 +19,11 @@ const cleanMarketName = (raw: string) => String(raw ?? '')
   .replace(/\s{2,}/g, ' ')
   .trim()
   .replace(/^[:.\s]+|[:.\s]+$/g, '') || 'Market';
+const marketIdentity = (market: Market) => {
+  const key = String(market.market_key || market.market_type || '').toLowerCase()
+  const line = market.settlement_rule?.line
+  return key + '|' + String(line ?? cleanMarketName(market.name).toLowerCase())
+}
 const isMatchWinnerMarket = (market: Market) => {
   const key = String(market.market_key || market.market_type || '').toLowerCase()
   const name = String(market.name || '').toLowerCase()
