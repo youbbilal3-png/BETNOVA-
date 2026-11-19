@@ -105,7 +105,7 @@ create policy "Users read own bonus wallet" on public.bonus_wallet_accounts
 create policy "Users read own bonus ledger" on public.bonus_ledger
  for select to authenticated using(user_id=(select auth.uid()));
 create policy "Users and admins read bonus withdrawal requests" on public.bonus_withdrawal_requests
- for select to authenticated using(user_id=(select auth.uid()) or (select public.betnova_is_admin()));
+ for select to authenticated using(user_id=(select auth.uid()) or exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
 create policy "Users read own wallet accounts" on public.wallet_accounts for select to authenticated using(user_id=(select auth.uid()));
 create policy "Admins manage wallet accounts" on public.wallet_accounts for all to authenticated using(exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin')) with check(exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
 create policy "Users read own wallet ledger" on public.wallet_ledger for select to authenticated using(user_id=(select auth.uid()));
