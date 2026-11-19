@@ -124,6 +124,10 @@
 .wallet-form input:focus,.wallet-form select:focus,.wallet-form textarea:focus{border-color:#62bd91;box-shadow:0 0 0 3px #27a87618}
 .wallet-instructions{background:#edf6ed;border:1px solid #dcecdf;border-radius:11px;padding:11px 13px;color:#547261;font-size:9px;line-height:1.6}
 .wallet-instructions p{margin:3px 0}
+.wallet-receiving-detail{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 10px;margin:5px 0 8px!important;padding:9px 10px;border:1px solid #d4e8d8;border-radius:9px;background:#fff;min-width:0}
+.wallet-receiving-detail>b{grid-column:1/-1;color:#315f49;font-size:9px}
+.wallet-receiving-detail>span{display:block;min-width:0;overflow-wrap:anywhere;word-break:break-word;color:#183f30;font-size:11px;font-weight:800;line-height:1.45}
+.wallet-receiving-detail>button{justify-self:end;align-self:center;position:static;flex:none;min-width:58px;min-height:34px;margin:0;padding:0 11px;border:1px solid #16815e;border-radius:8px;background:#16815e;color:#fff;font-size:10px;font-weight:900;white-space:nowrap;box-shadow:none}
 .wallet-submit{border:0;border-radius:10px;background:linear-gradient(135deg,#138761,#21b783);color:#fff;padding:12px;font-size:10px;font-weight:900;box-shadow:0 4px 10px #13876125}
 .wallet-submit:disabled{opacity:.45;cursor:not-allowed}
 .wallet-footnote{display:flex;align-items:center;gap:6px;color:#82978a;font-size:8px;margin:0}
@@ -246,7 +250,7 @@
 .mobile-more-header small{display:block;margin-top:3px;color:#91a397;font-size:9px}
 .mobile-more-panel>button{width:100%;min-height:45px;display:flex;align-items:center;gap:12px;border:1px solid #e7eee6;border-radius:11px;background:#fff;color:#456b58;padding:0 13px;text-align:start;font-size:12px;font-weight:800}
 .mobile-more-panel>button:active{background:#e5f4e9;color:#16845f}
-.mobile-more-language{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;gap:9px;margin-top:auto;padding:13px;border:1px solid #167c5d;border-radius:13px;background:linear-gradient(135deg,#0e624b,#138361);color:#eafff3;font-size:12px;font-weight:800;box-shadow:0 -8px 22px #163c2c12}
+.mobile-more-language{position:relative;z-index:2;display:flex;align-items:center;gap:9px;margin:2px 0 12px;padding:12px;border:1px solid #167c5d;border-radius:13px;background:linear-gradient(135deg,#0e624b,#138361);color:#eafff3;font-size:12px;font-weight:800;box-shadow:0 5px 16px #163c2c18;flex:none}
 .mobile-more-language svg{flex:none;color:#c5f16d}
 .mobile-more-language select{margin-left:auto;max-width:150px;min-width:112px;min-height:38px;padding:0 10px;border:1px solid #46b88b;border-radius:9px;outline:0;background:#0b4e3c;color:#fff;color-scheme:dark;font-size:12px;font-weight:800;cursor:pointer}
 .mobile-more-language select option{background:#0b4e3c;color:#fff}
