@@ -830,7 +830,7 @@ export default function App() {
             {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { closeOverlay('mobileMore'); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
-            <button onClick={() => { setAuthMode("login"); openFromMobileMenu('auth') }}><ArrowRight size={17}/>{t("login")}</button>
+            <button onClick={() => { setAuthMode("login"); openOverlay('auth') }}><ArrowRight size={17}/>{t("login")}</button>
             <button onClick={() => { setAuthMode("signup"); openOverlay('auth') }}><ShieldCheck size={17}/>{t("join")}</button>
           </>}
           <button onClick={() => { openOverlay('settings') }}><Settings size={17}/>{t("settings")}</button>
