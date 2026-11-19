@@ -152,7 +152,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     const pair = limits[currency]; const minimum = pair[0]; const maximum = pair[1]
     const usdValue = currency === 'DZD' ? numericAmount/260 : currency === 'EUR' ? numericAmount/0.9 : numericAmount
     if (!Number.isFinite(numericAmount) || numericAmount < minimum || numericAmount > maximum) { setError('Withdrawal limits: ' + minimum + '–' + maximum + ' ' + currency + '.'); return }
-    if (usdValue > bonus.available_balance + 0.0001) { setError('{t('insufficient_bonus_balance')}'); return }
+    if (usdValue > bonus.available_balance + 0.0001) { setError(t('insufficient_bonus_balance')); return }
     if (!destination.trim() || destination.trim().length < 4) { setError(t('receiving_placeholder')); return }
     setBusy(true); setError(''); setNotice('')
     try {
@@ -195,7 +195,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
       {tab === 'deposit' && <form className="wallet-form" onSubmit={submitDeposit}>
         <div className="wallet-method-section"><label>{t('payment_method')}</label><div className="wallet-method-grid">{methods.map(item => { const supportsCurrency = item.supported_currencies.includes(currency); const available = item.is_enabled && supportsCurrency; return <button type="button" key={item.code} disabled={!available} className={['wallet-method-card', method === item.code ? 'active' : '', !available ? 'unavailable' : ''].filter(Boolean).join(' ')} onClick={() => setMethod(item.code)} aria-pressed={method === item.code}><PaymentMethodLogo code={item.code} size={42}/><span><b>{item.display_name}</b><small>{supportsCurrency ? (available ? currency : t('not_configured')) : t('available_label') + ' ' + item.supported_currencies.join(' / ')}</small></span><i>{method === item.code ? '✓' : available ? '›' : '•'}</i></button> })}</div><small className="wallet-method-hint">{t('wallet_method_hint')}</small></div>
         {selectedMethod && <div className="wallet-instructions">
-          {receivingDetail && <p className="wallet-receiving-detail"><b>{receivingLabel}</b> <span>{receivingDetail}</span><button type="button" onClick={() => { void navigator.clipboard?.writeText(receivingDetail) }}{t('copy')}</button></p>}
+          {receivingDetail && <p className="wallet-receiving-detail"><b>{receivingLabel}</b> <span>{receivingDetail}</span><button type="button" onClick={() => { void navigator.clipboard?.writeText(receivingDetail) }}>{t('copy')}</button></p>}
           {instructionText && <p>{instructionText}</p>}
           {!receivingDetail && !instructionText && <p>{t('payment_instructions_pending')}</p>}
         </div>}
