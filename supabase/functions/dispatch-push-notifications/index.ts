@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
   // The Supabase gateway verifies the JWT; require the exact server-only service-role
   // credential as an additional guard so authenticated app users cannot dispatch alerts.
   const authorization = req.headers.get("authorization") ?? "";
-  const suppliedToken = authorization.replace(/^Bearer\\s+/i, "");
+  const suppliedToken = authorization.replace(/^Bearer\s+/i, "");
   if (!suppliedToken || suppliedToken.length !== serviceKey.length) return json({ error: "Unauthorized" }, 401);
   let authDiff = 0;
   for (let i = 0; i < serviceKey.length; i++) authDiff |= serviceKey.charCodeAt(i) ^ suppliedToken.charCodeAt(i);
