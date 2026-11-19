@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useLanguage } from '../i18n'
+import '../games-hub.css'
 import { ArrowRight, Crown, Gem, Grid3X3, Play, Sparkles, X, Zap, RotateCw } from 'lucide-react'
 
 type Category = 'all' | 'games' | 'slots' | 'casino'
