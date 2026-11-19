@@ -30,6 +30,8 @@ create table public.earn_post_submissions (
 create unique index earn_post_submissions_url_unique on public.earn_post_submissions(lower(post_url));
 create unique index earn_post_submissions_proof_hash_unique on public.earn_post_submissions(proof_sha256);
 create index earn_post_submissions_status_created_idx on public.earn_post_submissions(status,created_at);
+create index earn_post_submissions_user_created_idx on public.earn_post_submissions(user_id,created_at desc);
+create index earn_post_submissions_reviewed_by_idx on public.earn_post_submissions(reviewed_by);
 
 create table public.referral_codes (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -53,6 +55,7 @@ create table public.referrals (
 );
 create index referrals_referrer_created_idx on public.referrals(referrer_user_id,created_at desc);
 create index referrals_status_created_idx on public.referrals(status,created_at);
+create index referrals_reviewed_by_idx on public.referrals(reviewed_by);
 
 create table public.deposit_streak_claims (
   id uuid primary key default gen_random_uuid(),
@@ -73,18 +76,18 @@ alter table public.referral_codes enable row level security;
 alter table public.referrals enable row level security;
 alter table public.deposit_streak_claims enable row level security;
 
-create policy "Users read own earn submissions" on public.earn_post_submissions
-  for select to authenticated using (user_id=(select auth.uid()));
-create policy "Admins read earn submissions" on public.earn_post_submissions
-  for select to authenticated using (public.betnova_is_admin());
-create policy "Users read referrals they invited" on public.referrals
-  for select to authenticated using (referrer_user_id=(select auth.uid()));
-create policy "Admins read referrals" on public.referrals
-  for select to authenticated using (public.betnova_is_admin());
-create policy "Users read own deposit streak claims" on public.deposit_streak_claims
-  for select to authenticated using (user_id=(select auth.uid()));
-create policy "Admins read deposit streak claims" on public.deposit_streak_claims
-  for select to authenticated using (public.betnova_is_admin());
+create policy "Users and admins read earn submissions" on public.earn_post_submissions
+  for select to authenticated using (
+    user_id=(select auth.uid()) or (select public.betnova_is_admin())
+  );
+create policy "Referrers and admins read referrals" on public.referrals
+  for select to authenticated using (
+    referrer_user_id=(select auth.uid()) or (select public.betnova_is_admin())
+  );
+create policy "Users and admins read deposit streak claims" on public.deposit_streak_claims
+  for select to authenticated using (
+    user_id=(select auth.uid()) or (select public.betnova_is_admin())
+  );
 
 revoke all on public.earn_post_submissions,public.referral_codes,public.referrals,public.deposit_streak_claims from anon,authenticated;
 grant select on public.earn_post_submissions to authenticated;
@@ -98,12 +101,13 @@ create policy "Users upload own earn proof" on storage.objects
   for insert to authenticated with check (
     bucket_id='earn-proofs' and (storage.foldername(name))[1]=(select auth.uid())::text
   );
-create policy "Users read own earn proof" on storage.objects
+create policy "Users and admins read earn proofs" on storage.objects
   for select to authenticated using (
-    bucket_id='earn-proofs' and (storage.foldername(name))[1]=(select auth.uid())::text
+    bucket_id='earn-proofs' and (
+      (storage.foldername(name))[1]=(select auth.uid())::text
+      or (select public.betnova_is_admin())
+    )
   );
-create policy "Admins read earn proofs" on storage.objects
-  for select to authenticated using (bucket_id='earn-proofs' and public.betnova_is_admin());
 
 create or replace function public.betnova_get_referral_code()
 returns text
