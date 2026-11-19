@@ -310,3 +310,6 @@
  .apple-odds-fruits span{font-size:17px}
  .apple-odds-pick{min-width:98px;padding:5px 6px}
 }
+
+.crash-inline-cashout{margin-top:7px;min-height:43px}
+.game-detail-modal.game-coral .crash-inline-cashout{margin:5px 0 0;min-height:41px}
