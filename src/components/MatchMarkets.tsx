@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, Clock3, LoaderCircle, Radio, RefreshCw } from 'lucide-react'
+import { ChevronDown, Clock3, LoaderCircle, Radio } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
 
@@ -62,7 +62,6 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
   const [hasLoaded, setHasLoaded] = useState(false)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState('')
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [clock, setClock] = useState(Date.now())
 
 
@@ -140,7 +139,6 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
         if (!previous || Date.parse(market.last_updated_at) > Date.parse(previous.last_updated_at)) unique.set(key, market);
       }
       setMarkets(Array.from(unique.values()))
-      setLastUpdated(new Date())
     }
     setLoading(false)
   }
