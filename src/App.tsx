@@ -213,6 +213,15 @@ export default function App() {
   const [supportOpen, setSupportOpen] = useState(false)
   const [responsibleOpen, setResponsibleOpen] = useState(false)
   const [walletOpen, setWalletOpen] = useState(false)
+  async function signOutCurrentUser() {
+    if (!supabase) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('device_push_tokens').delete().eq('user_id', user.id)
+    }
+    await supabase.auth.signOut()
+  }
+
   function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') {
     setWalletInitialTab(tab)
     const current = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []
@@ -908,7 +917,7 @@ export default function App() {
             <button onClick={() => { closeMobileMenuToPage(); openOverlay('mobileSlip') }}><Wallet size={17}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
               {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
-            <button onClick={() => { closeOverlay('mobileMore'); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
+            <button onClick={() => { closeOverlay('mobileMore'); void signOutCurrentUser() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
             <button onClick={() => { setAuthMode("login"); openOverlay('auth') }}><ArrowRight size={17}/>{t("login")}</button>
             <button onClick={() => { setAuthMode("signup"); openOverlay('auth') }}><ShieldCheck size={17}/>{t("join")}</button>
