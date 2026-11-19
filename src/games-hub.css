@@ -100,3 +100,11 @@
 [dir="rtl"] .game-tile-copy>button{flex-direction:row-reverse}
 [dir="rtl"] .game-art-code{left:auto;right:14px}
 @media(max-width:600px){.slot-reels span{min-height:62px;font-size:29px}.roulette-wheel{width:126px;height:126px}.roulette-wheel span{transform-origin:5px 58px}.practice-playing-cards span{width:58px;height:82px}}
+
+
+.plinko-board{display:grid;gap:10px;padding:14px 10px 10px;border:1px solid color-mix(in srgb,var(--game-glow) 38%,transparent);border-radius:15px;background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--game-glow) 18%,transparent),#081326 78%);overflow:hidden}
+.plinko-pegs{display:grid;gap:8px;justify-items:center;min-height:102px}
+.plinko-peg-row{display:flex;justify-content:center;gap:15px}
+.plinko-peg-row i{display:block;width:6px;height:6px;border-radius:50%;background:linear-gradient(145deg,#fff,#77dce9 55%,#5571ba);box-shadow:0 0 9px #6ce4f4aa}
+.plinko-slots{margin-top:2px}
+.plinko-slots span{height:28px;font-size:8px}
