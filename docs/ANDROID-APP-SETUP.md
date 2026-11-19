@@ -28,14 +28,13 @@ Push delivery is not live until the Edge Functions are deployed and the followin
 
 | Secret | Required by |
 |---|---|
-| `BETNOVA_NOTIFICATION_DISPATCH_SECRET` | `dispatch-push-notifications`, `live-event-ingest`, `sportsapi-live-sync`, `fivedollar-football-sync` |
 | `FIREBASE_PROJECT_ID` | `dispatch-push-notifications` |
 | `FIREBASE_CLIENT_EMAIL` | `dispatch-push-notifications` |
 | `FIREBASE_PRIVATE_KEY` | `dispatch-push-notifications` |
 
 Use the Firebase service-account credentials for the BETNOVA project and grant only the Firebase Cloud Messaging permission needed to send messages. Store the private key only in Supabase Edge Function secrets. Never paste it into chat, commit it to GitHub, or place it in the Android app.
 
-The dispatch secret must be the same value in all four functions listed above. It is a separate random secret, not the Firebase private key.
+Internal dispatch calls are authenticated with the existing server-only Supabase service-role credential. Keep JWT verification enabled on `dispatch-push-notifications`; the service-role key must never be exposed to the Android or web client.
 
 ## Mandatory app updates
 
