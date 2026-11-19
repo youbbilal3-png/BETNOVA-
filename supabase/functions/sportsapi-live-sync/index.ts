@@ -3,8 +3,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const API_BASE = "https://api.sportsapi.app/v2";
 const PROVIDER = "sportsapi";
-const DAILY_REQUEST_LIMIT = 95;
-const MAX_REQUESTS_PER_RUN = 8;
+const DAILY_REQUEST_LIMIT = 900;
+const FULL_MODE_REQUEST_LIMIT = 2;
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, x-betnova-sync-secret",
@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration is incomplete" }, 503);
 
   const supabase = createClient(supabaseUrl, serviceKey, {
@@ -105,24 +105,35 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  async function recordMatchStart(fixtureId: string, providerFixtureId: number, occurredAt: string) {
+  async function recordMatchStart(fixtureId: string, occurredAt: string) {
+    // One canonical kickoff event prevents duplicate alerts when both live providers
+    // observe the same fixture.
     const { data: event, error } = await supabase.from("fixture_events")
       .upsert({
         fixture_id: fixtureId,
-        provider: PROVIDER,
-        provider_event_id: providerFixtureId + ":match_start",
+        provider: "betnova_notifications",
+        provider_event_id: fixtureId + ":match_start",
         event_type: "match_start",
         period: "match_start",
-        event_data: { source: PROVIDER, confirmed: true },
+        event_data: { source: "live_feed", confirmed: true },
         occurred_at: occurredAt,
       }, { onConflict: "provider,provider_event_id", ignoreDuplicates: true })
       .select("id").maybeSingle();
     if (error) {
-      console.error("Could not store match-start event", error.message);
+      providerErrors.push("could not store match-start event");
       return;
     }
     if (event?.id) await dispatchVerifiedPush(event.id);
   }
+
+  function isNearKickoff(startTime: Date) {
+    const delta = Date.now() - startTime.getTime();
+    return Number.isFinite(delta) && delta >= -5 * 60_000 && delta <= 15 * 60_000;
+  }
+  let requestBody: any = {};
+  try { requestBody = await req.json(); } catch { requestBody = {}; }
+  const mode = requestBody?.mode === "scores" ? "scores" : "full";
+  const requestLimit = mode === "scores" ? 1 : FULL_MODE_REQUEST_LIMIT;
 
   let requestsMade = 0;
   let quotaLimited = false;
@@ -136,7 +147,7 @@ Deno.serve(async (req: Request) => {
   let finalized = 0;
 
   async function providerGet(path: string): Promise<any | null> {
-    if (requestsMade >= MAX_REQUESTS_PER_RUN || quotaLimited || providerLimited) return null;
+    if (requestsMade >= requestLimit || quotaLimited || providerLimited) return null;
     const { data: allowed, error: reserveError } = await supabase.rpc(
       "betnova_reserve_sportsapi_request",
       { p_daily_limit: DAILY_REQUEST_LIMIT },
@@ -151,13 +162,23 @@ Deno.serve(async (req: Request) => {
         headers: { "Authorization": "Bearer " + apiKey, "Accept": "application/json" },
         signal: AbortSignal.timeout(12000),
       });
-      if (response.status === 429) {
-        providerLimited = true;
-        return null;
-      }
       const raw = await response.text();
       let body: any = null;
       try { body = raw ? JSON.parse(raw) : null; } catch { body = null; }
+      if (response.status === 429) {
+        const providerCode = String(body?.error?.code ?? body?.code ?? "");
+        if (providerCode === "quota_exceeded") {
+          quotaLimited = true;
+          // Stop further local reservations for the UTC day if the provider's
+          // actual plan quota is lower than our beta-safe internal ceiling.
+          await supabase.from("sportsapi_api_usage")
+            .update({ request_count: DAILY_REQUEST_LIMIT, updated_at: new Date().toISOString() })
+            .eq("usage_date", new Date().toISOString().slice(0, 10));
+        } else {
+          providerLimited = true;
+        }
+        return null;
+      }
       if (!response.ok) {
         providerErrors.push("provider HTTP " + response.status);
         return null;
@@ -367,11 +388,6 @@ Deno.serve(async (req: Request) => {
       }
       inserted++;
       storedEvents.push({ id: stored.id });
-      // Only newly observed goals after a trusted zero-score baseline can alert.
-      // Historical baseline goals and provider correction replays never generate a fresh alert.
-      if (!baselineOnly && baselineReady && !isCorrection) {
-        await dispatchVerifiedPush(stored.id, true);
-      }
     }
 
     if (!(baselineOnly || !baselineReady)) {
@@ -389,6 +405,12 @@ Deno.serve(async (req: Request) => {
         settled += Number(count ?? 0);
         goalEventsProcessed++;
       }
+    }
+
+    // Only newly reconciled goals are sent; historical baselines and corrections are excluded.
+    // Do not alert for historical baselines or any provider correction/VAR replay.
+    if (!baselineOnly && baselineReady && !isCorrection) {
+      for (const stored of storedEvents) await dispatchVerifiedPush(stored.id, true);
     }
 
     const newLastGoalCount = activeGoals.length;
@@ -458,7 +480,6 @@ Deno.serve(async (req: Request) => {
         await holdSportsApiFixture(providerFixtureId, "full-time event could not be stored");
         return false;
       }
-      await dispatchVerifiedPush(fullTimeEvent.id);
       const { error: fullTimeSettleError } = await supabase.rpc(
         "betnova_process_live_event", { p_event_id: fullTimeEvent.id },
       );
@@ -467,6 +488,7 @@ Deno.serve(async (req: Request) => {
         await holdSportsApiFixture(providerFixtureId, "full-time settlement failed");
         return false;
       }
+      await dispatchVerifiedPush(fullTimeEvent.id);
     }
     return true;
   }
@@ -483,7 +505,10 @@ Deno.serve(async (req: Request) => {
 
   const seenProviderIds = new Set<number>();
   for (const item of liveScores) {
-    if (requestsMade >= MAX_REQUESTS_PER_RUN || quotaLimited || providerLimited) break;
+    // The single live-scores response contains every in-play fixture. Keep
+    // processing all score rows even after the optional detail-request budget
+    // is used; only stop when the provider quota or rate limit blocks us.
+    if (quotaLimited || providerLimited) break;
     const providerFixtureId = Number(item?.id);
     const homeName = String(item?.home?.name ?? "");
     const awayName = String(item?.away?.name ?? "");
@@ -515,6 +540,10 @@ Deno.serve(async (req: Request) => {
       }
       const fixture = await getFixture(targetFixtureId);
       if (!fixture) continue;
+      const createdAsLive = fixturesCreated > 0 && fixture.status === "live";
+      if ((fixture.status === "scheduled" || createdAsLive) && isNearKickoff(startTime)) {
+        await recordMatchStart(targetFixtureId, new Date().toISOString());
+      }
       const baselineReady = homeScore + awayScore === 0;
       const { data: insertedLink, error: linkError } = await supabase.from("sportsapi_fixture_links")
         .insert({
@@ -537,14 +566,11 @@ Deno.serve(async (req: Request) => {
       }
       link = insertedLink;
       fixturesMatched++;
-      if (fixture.status === "scheduled") {
-        await recordMatchStart(targetFixtureId, providerFixtureId, new Date().toISOString());
-      }
       await supabase.from("fixtures").update({
         status: "live", home_score: homeScore, away_score: awayScore, updated_at: new Date().toISOString(),
       }).eq("id", targetFixtureId);
       await invalidateLivePrices(targetFixtureId);
-      if (!baselineReady && requestsMade < MAX_REQUESTS_PER_RUN) {
+      if (mode !== "scores" && !baselineReady && requestsMade < requestLimit) {
         await fetchAndProcessGoals(providerFixtureId, targetFixtureId, link, { home: homeScore, away: awayScore }, true);
         const { data: refreshedLink } = await supabase.from("sportsapi_fixture_links")
           .select("*").eq("provider_fixture_id", providerFixtureId).maybeSingle();
@@ -555,9 +581,10 @@ Deno.serve(async (req: Request) => {
 
     const fixture = await getFixture(link.fixture_id);
     if (!fixture) continue;
-    if (fixture.status === "scheduled") {
-      await recordMatchStart(link.fixture_id, providerFixtureId, new Date().toISOString());
+    if (fixture.status === "scheduled" && isNearKickoff(startTime)) {
+      await recordMatchStart(link.fixture_id, new Date().toISOString());
     }
+    fixturesMatched++; // Count existing mappings too; previously only newly-created links were counted.
     const previousHome = Number(link.last_home_score ?? homeScore);
     const previousAway = Number(link.last_away_score ?? awayScore);
     const changed = previousHome !== homeScore || previousAway !== awayScore;
@@ -590,7 +617,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!Boolean(link.baseline_ready)) {
-      if (requestsMade < MAX_REQUESTS_PER_RUN) {
+      if (mode !== "scores" && requestsMade < requestLimit) {
         await fetchAndProcessGoals(providerFixtureId, link.fixture_id, { ...link, baseline_ready: false }, { home: homeScore, away: awayScore }, true);
       }
       continue;
@@ -603,15 +630,15 @@ Deno.serve(async (req: Request) => {
     const needsEventReconciliation = nextHold ||
       Number(link.last_processed_goal_count ?? 0) !== homeScore + awayScore ||
       (nextObservations >= 2 && Boolean(eventSnapshotPredatesScore));
-    if (needsEventReconciliation && nextObservations >= 2 && stableSince > 0 &&
-        Date.now() - stableSince >= 90000 && requestsMade < MAX_REQUESTS_PER_RUN) {
+    if (mode !== "scores" && needsEventReconciliation && nextObservations >= 2 && stableSince > 0 &&
+        Date.now() - stableSince >= 90000 && requestsMade < requestLimit) {
       await fetchAndProcessGoals(providerFixtureId, link.fixture_id, { ...link, settlement_hold: nextHold }, { home: homeScore, away: awayScore }, false);
     }
   }
 
   // A finished fixture disappears from /livescores. Confirm its final state once,
   // then process final goals and full-time only when the score/event list agrees.
-  if (requestsMade < MAX_REQUESTS_PER_RUN && !quotaLimited && !providerLimited) {
+  if (mode !== "scores" && requestsMade < requestLimit && !quotaLimited && !providerLimited) {
     const { data: missingLinks } = await supabase.from("sportsapi_fixture_links")
       .select("*")
       .eq("last_status", "inprogress")
@@ -622,7 +649,7 @@ Deno.serve(async (req: Request) => {
       .limit(7);
 
     for (const link of missingLinks ?? []) {
-      if (requestsMade >= MAX_REQUESTS_PER_RUN || quotaLimited || providerLimited) break;
+      if (requestsMade >= requestLimit || quotaLimited || providerLimited) break;
       if (seenProviderIds.has(Number(link.provider_fixture_id))) continue;
       const detail = await providerGet("/fixtures/" + Number(link.provider_fixture_id));
       if (!detail || typeof detail !== "object") continue;
@@ -659,12 +686,11 @@ Deno.serve(async (req: Request) => {
             }, { onConflict: "provider,provider_event_id" })
             .select("id").maybeSingle();
           if (!fullTimeError && fullTimeEvent?.id) {
-            // Final whistle is authoritative here; notification failures are isolated from settlement.
-            await dispatchVerifiedPush(fullTimeEvent.id);
             const { error: settleError } = await supabase.rpc(
               "betnova_process_live_event", { p_event_id: fullTimeEvent.id },
             );
             if (!settleError) {
+              await dispatchVerifiedPush(fullTimeEvent.id);
               finalized++;
               settlementCompleted = true;
             } else {
