@@ -200,7 +200,7 @@ export default function App() {
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
   const [adminOpen, setAdminOpen] = useState(false)
   const [walletOpen, setWalletOpen] = useState(false)
-  function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') { setWalletInitialTab(tab); openOverlay('wallet'); setMobileMoreOpen(false) }
+  function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') { setWalletInitialTab(tab); const stack = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []; if (stack.includes('mobileMore')) openFromMobileMenu('wallet'); else openOverlay('wallet') }
   const [betsOpen, setBetsOpen] = useState(false)
   const [activePage, setActivePage] = useState<'sports' | 'games'>('sports')
   const [featuredGameRequest, setFeaturedGameRequest] = useState<{id:string;token:number}|null>(null)
@@ -210,6 +210,14 @@ export default function App() {
     const current = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []
     window.history.pushState({ ...window.history.state, betnovaOverlays: [...current, id], ...extra }, '', window.location.href)
     applyOverlayStack([...current, id], extra)
+  }
+  function openFromMobileMenu(id: string) {
+    const current = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []
+    const menuIndex = current.lastIndexOf('mobileMore')
+    const base = menuIndex >= 0 ? current.filter((_, index) => index !== menuIndex) : current
+    window.history.replaceState({ ...window.history.state, betnovaOverlays: base }, '', window.location.href)
+    applyOverlayStack(base)
+    openOverlay(id)
   }
   function applyOverlayStack(stack: string[], extra: Record<string, unknown> = {}) {
     setAccountOpen(stack.includes('account'))
@@ -814,19 +822,19 @@ export default function App() {
           <button onClick={() => { setMobileMoreOpen(false); openGames() }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
           <button onClick={() => { setMobileMoreOpen(false); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           {userEmail ? <>
-            <button className="mobile-account-entry" onClick={() => { closeOverlay('mobileMore'); openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
+            <button className="mobile-account-entry" onClick={() => { openFromMobileMenu('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>Deposit</button>
-            <button onClick={() => { closeOverlay('mobileMore'); openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
-            <button onClick={() => { closeOverlay('mobileMore'); openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
+            <button onClick={() => { openFromMobileMenu('bets') }}><Activity size={17}/>{t("my_bets")}</button>
+            <button onClick={() => { openFromMobileMenu('notifications') }}><Bell size={17}/>{t("notifications")}</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("responsible")?.scrollIntoView({behavior:"smooth"}) }}><ShieldCheck size={17}/>Responsible play</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("help")?.scrollIntoView({behavior:"smooth"}) }}><CircleHelp size={17}/>Help & support</button>
-            {isAdminUser && <button onClick={() => { closeOverlay('mobileMore'); openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
+            {isAdminUser && <button onClick={() => { openFromMobileMenu('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { setMobileMoreOpen(false); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
             <button onClick={() => { setMobileMoreOpen(false); setAuthMode("login"); openOverlay('auth') }}><ArrowRight size={17}/>{t("login")}</button>
-            <button onClick={() => { closeOverlay('mobileMore'); setAuthMode("signup"); openOverlay('auth') }}><ShieldCheck size={17}/>{t("join")}</button>
+            <button onClick={() => { setAuthMode("signup"); openFromMobileMenu('auth') }}><ShieldCheck size={17}/>{t("join")}</button>
           </>}
-          <button onClick={() => { closeOverlay('mobileMore'); openOverlay('settings') }}><Settings size={17}/>{t("settings")}</button>
+          <button onClick={() => { openFromMobileMenu('settings') }}><Settings size={17}/>{t("settings")}</button>
           <div className="mobile-more-language"><Globe2 size={16}/><span>{t("language")}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></div>
         </section>
       </div>}
