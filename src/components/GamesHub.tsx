@@ -134,7 +134,7 @@ export default function GamesHub(){
         <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
         <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
         {selected.id==='crash'&&<div className="game-practice-controls crash-controls">
-          <div className={`crash-flight-stage ${crashActive?'is-flying':crashExploding?'is-exploding':multiplier>1?'flight-ended':'flight-ready'}`} role="img" aria-label={arabic?'طائرة كراش تطير داخل مسار ثلاثي الأبعاد':'Crash airplane flying through a 3D flight arena'}>
+          <div className={`crash-flight-stage ${crashActive?'is-flying':crashExploding?'is-exploding':multiplier>1?'flight-ended':'flight-ready'}`} style={{'--crash-flight-duration':`${Math.max(1,(crashAt-1)*4.4)}s`,'--crash-heli-left':`${5+Math.max(0,Math.min(1,(crashAt-1)/5.75))*67}%`,'--crash-heli-top':`${66-Math.max(0,Math.min(1,(crashAt-1)/5.75))*45}%`} as CSSProperties} role="img" aria-label={arabic?'طائرة كراش تطير داخل مسار ثلاثي الأبعاد':'Crash airplane flying through a 3D flight arena'}>
             <div className="crash-sky-grid"/><div className="crash-sun-glow"/><div className="crash-cloud cloud-a"/><div className="crash-cloud cloud-b"/>
             <div className="crash-mountains mountain-back"/><div className="crash-mountains mountain-front"/>
             <div className="crash-flight-path"/><div className="crash-flight-trail"/>
@@ -156,7 +156,7 @@ export default function GamesHub(){
                 <path d="M52 58 Q67 45 82 49" fill="none" stroke="#ffffff" strokeWidth="2" opacity=".5"/>
               </svg>
             </div>
-            {crashExploding&&<div className="crash-explosion" aria-label={arabic?'انفجار المروحية':'Helicopter explosion'}><span>✦</span><b>BOOM</b></div>}
+            {crashExploding&&<div className="crash-explosion" style={{left:`var(--crash-heli-left,72%)`,top:`var(--crash-heli-top,21%)`}} aria-label={arabic?'انفجار المروحية':'Helicopter explosion'}><span>✦</span><b>BOOM</b></div>}
             {crashCountdown!==null&&<div className="crash-countdown"><small>{arabic?'الجولة التالية تبدأ خلال':'NEXT ROUND IN'}</small><strong>{crashCountdown}</strong><small>{arabic?'ثوانٍ':'SECONDS'}</small></div>}
             <div className="crash-stage-hud"><span>{arabic?'الرحلة المباشرة':'LIVE FLIGHT'}</span><b>{multiplier.toFixed(2)}×</b></div>
             <div className="crash-stage-bottom"><span>BETNOVA AIR</span><span>{crashActive?(arabic?'في الجو':'IN FLIGHT'):multiplier>1?(arabic?'انتهت الجولة':'ROUND ENDED'):(arabic?'جاهز للإقلاع':'READY FOR TAKEOFF')}</span></div>
