@@ -1,13 +1,13 @@
 import { useState, type CSSProperties } from 'react'
-import { ArrowRight, Crown, Gem, Grid3X3, Play, Sparkles, Spade, X, Zap, RotateCw } from 'lucide-react'
+import { ArrowRight, Crown, Gem, Grid3X3, Play, Sparkles, X, Zap, RotateCw } from 'lucide-react'
 
 type Category = 'all' | 'games' | 'slots' | 'casino'
 type Game = { id:string; name:string; category:Exclude<Category,'all'>; tag:string; description:string; art:string; accent:string; mark:string }
 
 const games:Game[] = [
-  {id:'crash',name:'CRASH',category:'games',tag:'INSTANT GAME',description:'Watch the multiplier climb and decide when to cash out. Try a short, free interface demo.',art:'rocket',accent:'coral',mark:'🚀'},
-  {id:'apple',name:'APPLE OF FORTUNE',category:'games',tag:'SKILL & LUCK',description:'Choose an apple and reveal a practice result. This demo does not use money or real game outcomes.',art:'apple',accent:'lime',mark:'🍏'},
-  {id:'plinko',name:'PLINKO',category:'games',tag:'INSTANT GAME',description:'Drop a practice ball through the pins and reveal its landing slot.',art:'plinko',accent:'cyan',mark:'🔮'},
+  {id:'crash',name:'CRASH',category:'games',tag:'INSTANT GAME',description:'Start a free round, watch the practice multiplier rise and choose when to stop.',art:'rocket',accent:'coral',mark:'🚀'},
+  {id:'apple',name:'APPLE OF FORTUNE',category:'games',tag:'SKILL & LUCK',description:'Pick safe apples across three practice levels. This demo uses no money or real game outcomes.',art:'apple',accent:'lime',mark:'🍏'},
+  {id:'plinko',name:'PLINKO',category:'games',tag:'INSTANT GAME',description:'Drop a practice ball through a pin field and reveal its landing slot.',art:'plinko',accent:'cyan',mark:'🔮'},
   {id:'lucky-fruits',name:'LUCKY FRUITS',category:'slots',tag:'CLASSIC SLOTS',description:'A bright fruit-machine theme with polished reels, rich symbols and a modern arcade finish.',art:'fruits',accent:'pink',mark:'🍒'},
   {id:'pharaoh',name:"PHARAOH'S GOLD",category:'slots',tag:'ADVENTURE SLOTS',description:'An elegant ancient-Egypt inspired slot concept with gold, lapis tones and royal symbols.',art:'pharaoh',accent:'gold',mark:'𓂀'},
   {id:'space-spin',name:'SPACE SPIN',category:'slots',tag:'COSMIC SLOTS',description:'A futuristic slot concept with planets, glowing stars and a deep-space atmosphere.',art:'space',accent:'violet',mark:'🪐'},
@@ -20,28 +20,70 @@ const categoryLabels:Record<Category,string>={all:'ALL GAMES',games:'GAMES',slot
 const categoryIcons:Record<Category,typeof Grid3X3>={all:Grid3X3,games:Zap,slots:Gem,casino:Crown}
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
 
-function runPractice(game:Game){
-  switch(game.id){
-    case 'crash': { const point=(1+Math.random()*7).toFixed(2); return `Practice round ended at ${point}×. No cash-out or balance was involved.` }
-    case 'apple': return Math.random()>.28?'Safe apple revealed! Choose again in a new practice round.':'This pick was a trap in the practice demo. Start a new round.'
-    case 'plinko': return `Ball landed in slot ${Math.floor(Math.random()*9)+1} of 9. Practice result only.`
-    case 'lucky-fruits':
-    case 'pharaoh':
-    case 'space-spin': return `Practice spin: ${choose(['🍒  ⭐  🍋','💎  💎  🍀','𓂀  👑  ✨','🪐  🌟  💫','🍋  🍒  🍒'])}. Demo symbols only.`
-    case 'roulette': { const n=Math.floor(Math.random()*37); return `Practice wheel: ${n} · ${n===0?'GREEN':n%2?'RED':'BLACK'}. No real roulette result.` }
-    case 'blackjack': { const a=Math.floor(Math.random()*10)+2,b=Math.floor(Math.random()*10)+2; return `Practice hand: ${a} + ${b} = ${a+b}. This is a simplified preview, not a full blackjack round.` }
-    case 'baccarat': { const p=Math.floor(Math.random()*10),b=Math.floor(Math.random()*10); return `Practice deal · Player: ${p} · Banker: ${b}. Simplified preview only.` }
-    default: return 'Practice preview completed.'
-  }
-}
-
 export default function GamesHub(){
   const [category,setCategory]=useState<Category>('all')
   const [selected,setSelected]=useState<Game|null>(null)
   const [practiceResult,setPracticeResult]=useState('')
   const [practiceCount,setPracticeCount]=useState(0)
+  const [crashAt,setCrashAt]=useState(0)
+  const [multiplier,setMultiplier]=useState(1)
+  const [crashActive,setCrashActive]=useState(false)
+  const [appleLevel,setAppleLevel]=useState(0)
+  const [appleDone,setAppleDone]=useState(false)
+  const [plinkoSlot,setPlinkoSlot]=useState<number|null>(null)
   const visible=games.filter(game=>category==='all'||game.category===category)
-  const closeGame=()=>{setSelected(null);setPracticeResult('');setPracticeCount(0)}
+  const resetDemo=()=>{
+    setPracticeResult('');setPracticeCount(0);setCrashAt(0);setMultiplier(1)
+    setCrashActive(false);setAppleLevel(0);setAppleDone(false);setPlinkoSlot(null)
+  }
+  const closeGame=()=>{setSelected(null);resetDemo()}
+  const startCrash=()=>{
+    setCrashAt(1.25+Math.random()*4.75);setMultiplier(1);setCrashActive(true)
+    setPracticeResult('Multiplier is live. Advance carefully or cash out in this practice demo.')
+    setPracticeCount(value=>value+1)
+  }
+  const advanceCrash=()=>{
+    if(!crashActive)return
+    const next=Number((multiplier+0.25).toFixed(2))
+    if(next>=crashAt){
+      setMultiplier(next);setCrashActive(false)
+      setPracticeResult(`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)
+    }else setMultiplier(next)
+  }
+  const cashOutCrash=()=>{
+    if(!crashActive)return
+    setCrashActive(false)
+    setPracticeResult(`Practice cash-out at ${multiplier.toFixed(2)}×. This is a display-only result; no winnings were created.`)
+  }
+  const pickApple=()=>{
+    if(appleDone)return
+    if(Math.random()<0.27){
+      setAppleDone(true);setPracticeResult(`Trap revealed at level ${appleLevel+1}. Start a fresh practice round to try again.`)
+    }else{
+      const next=appleLevel+1;setAppleLevel(next)
+      if(next>=3){setAppleDone(true);setPracticeResult('Three safe picks! Practice level completed. No prize or balance was awarded.')}
+      else setPracticeResult(`Safe apple! Level ${next} of 3 completed. Continue or finish this practice round.`)
+    }
+    setPracticeCount(value=>value+1)
+  }
+  const dropPlinko=()=>{
+    const slot=Math.floor(Math.random()*9)+1
+    setPlinkoSlot(slot);setPracticeCount(value=>value+1)
+    setPracticeResult(`The practice ball landed in slot ${slot} of 9. No prize or balance was awarded.`)
+  }
+  const runOtherDemo=()=>{
+    if(!selected)return
+    let result=''
+    switch(selected.id){
+      case 'lucky-fruits':
+      case 'pharaoh':
+      case 'space-spin': result=`Practice spin: ${choose(['🍒  ⭐  🍋','💎  💎  🍀','𓂀  👑  ✨','🪐  🌟  💫','🍋  🍒  🍒'])}. Demo symbols only.`;break
+      case 'roulette': {const n=Math.floor(Math.random()*37);result=`Practice wheel: ${n} · ${n===0?'GREEN':n%2?'RED':'BLACK'}. No real roulette result.`;break}
+      case 'blackjack': {const a=Math.floor(Math.random()*10)+2,b=Math.floor(Math.random()*10)+2;result=`Practice hand: ${a} + ${b} = ${a+b}. Simplified preview, not a full blackjack round.`;break}
+      case 'baccarat': {const p=Math.floor(Math.random()*10),b=Math.floor(Math.random()*10);result=`Practice deal · Player: ${p} · Banker: ${b}. Simplified preview only.`;break}
+    }
+    setPracticeResult(result);setPracticeCount(value=>value+1)
+  }
   return <section className="games-hub" id="games">
     <div className="games-hub-head">
       <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>ENTER THE <em>PLAY ZONE</em></h2><p>Discover a new dimension of play.</p></div>
@@ -53,23 +95,35 @@ export default function GamesHub(){
     <div className="games-grid">
       {visible.map((game,index)=><article className={`game-tile game-${game.accent}`} key={game.id} style={{'--game-index':index} as CSSProperties}>
         <div className={`game-art art-${game.art}`} aria-hidden="true">
-          <div className="game-art-glow"/>
-          <div className="game-art-object">{game.mark}</div>
+          <div className="game-art-glow"/><div className="game-art-object">{game.mark}</div>
           <span className="game-art-orbit orbit-one"/><span className="game-art-orbit orbit-two"/>
           <span className="game-art-shine">✦</span><span className="game-art-code">BETNOVA / PLAY</span>
         </div>
-        <div className="game-tile-copy"><div className="game-tile-meta"><span>{game.tag}</span><span className="game-live-dot"/></div><h3>{game.name}</h3><p>{game.description}</p><button type="button" onClick={()=>{setSelected(game);setPracticeResult('');setPracticeCount(0)}}>EXPLORE GAME <ArrowRight size={14}/></button></div>
+        <div className="game-tile-copy"><div className="game-tile-meta"><span>{game.tag}</span><span className="game-live-dot"/></div><h3>{game.name}</h3><p>{game.description}</p><button type="button" onClick={()=>{setSelected(game);resetDemo()}}>EXPLORE GAME <ArrowRight size={14}/></button></div>
       </article>)}
     </div>
-    <div className="games-safety-note"><Sparkles size={15}/><span>Free interface demonstrations only. No deposits, wagers, cash-out, prizes or real-money play are enabled.</span></div>
+    <div className="games-safety-note"><Sparkles size={15}/><span>Free practice demonstrations only. No deposits, wagers, cash-out value, prizes or real-money play are enabled.</span></div>
     {selected&&<div className="game-detail-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)closeGame()}}>
       <section className={`game-detail-modal game-${selected.accent}`} role="dialog" aria-modal="true" aria-labelledby="game-detail-title">
         <button className="game-detail-close" type="button" onClick={closeGame} aria-label="Close"><X size={18}/></button>
         <div className={`game-detail-art art-${selected.art}`}><span>{selected.mark}</span><i/><b>BETNOVA</b></div>
         <div className="games-kicker"><Sparkles size={14}/> FREE PRACTICE · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{selected.description}</p>
         <div className="game-coming-soon"><Play size={15}/> DEMO MODE · NO MONEY OR BETS</div>
-        {practiceResult&&<div className="game-practice-result" role="status"><strong>ROUND {practiceCount}</strong><span>{practiceResult}</span></div>}
-        <button className="game-detail-done" type="button" onClick={()=>{setPracticeResult(runPractice(selected));setPracticeCount(value=>value+1)}}><RotateCw size={15}/> TRY FREE DEMO</button>
+        {selected.id==='crash'&&<div className="game-practice-controls">
+          <div className="crash-multiplier">{multiplier.toFixed(2)}<small>×</small></div>
+          {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> START PRACTICE ROUND</button>:<div className="game-action-row"><button type="button" onClick={advanceCrash}>NEXT STEP +0.25×</button><button type="button" onClick={cashOutCrash}>STOP HERE</button></div>}
+        </div>}
+        {selected.id==='apple'&&<div className="game-practice-controls">
+          <div className="apple-levels">{[0,1,2].map(i=><span key={i} className={i<appleLevel?'safe':''}>{i<appleLevel?'✓':'🍏'}</span>)}</div>
+          <button className="game-detail-done" type="button" disabled={appleDone} onClick={pickApple}>PICK NEXT APPLE · LEVEL {Math.min(appleLevel+1,3)}</button>
+        </div>}
+        {selected.id==='plinko'&&<div className="game-practice-controls">
+          <div className="plinko-slots">{Array.from({length:9},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div>
+          <button className="game-detail-done" type="button" onClick={dropPlinko}><Play size={15}/> DROP PRACTICE BALL</button>
+        </div>}
+        {!['crash','apple','plinko'].includes(selected.id)&&<button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> TRY FREE DEMO</button>}
+        {practiceResult&&<div className="game-practice-result" role="status"><strong>{practiceCount===0?'PRACTICE UPDATE':`ROUND ${practiceCount}`}</strong><span>{practiceResult}</span></div>}
+        <button className="game-detail-secondary" type="button" onClick={resetDemo}>RESET PRACTICE</button>
         <button className="game-detail-secondary" type="button" onClick={closeGame}>CLOSE</button>
       </section>
     </div>}
