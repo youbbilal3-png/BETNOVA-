@@ -12,6 +12,8 @@ import './betnova-premium-theme.css'
 import './nova-arena-home.css'
 import './install-app.css'
 import InstallAppPrompt from './components/InstallAppPrompt'
+import NativeAppGate from './native/NativeAppGate'
+import './native/native-app-gate.css'
 import { LanguageProvider } from './i18n'
 
 if ('serviceWorker' in navigator) {
@@ -22,6 +24,6 @@ if ('serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <LanguageProvider><App /><InstallAppPrompt /></LanguageProvider>
+    <LanguageProvider><App /><InstallAppPrompt /><NativeAppGate /></LanguageProvider>
   </React.StrictMode>,
 )
