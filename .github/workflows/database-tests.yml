@@ -32,6 +32,7 @@ jobs:
         with:
           version: latest
 
+      # Run against a clean local database; never link or connect to production.
       - name: Start isolated local Supabase stack and apply migrations
         run: supabase start
 
