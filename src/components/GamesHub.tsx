@@ -20,6 +20,8 @@ const games:Game[] = [
 const categoryIcons:Record<Category,typeof Grid3X3>={all:Grid3X3,games:Zap,slots:Gem,casino:Crown}
 const arabicDescriptions:Record<string,string>={crash:'ابدأ جولة تدريبية مجانية، راقب المضاعف واختر وقت التوقف.',apple:'اختر التفاحات الآمنة عبر ثلاثة مستويات تدريبية دون أموال أو نتائج حقيقية.',plinko:'أسقط كرة تدريبية عبر المسامير وشاهد خانة الهبوط.', 'lucky-fruits':'تصميم فواكه كلاسيكي بألوان زاهية وبكرات عصرية.',pharaoh:'أجواء مصرية قديمة أنيقة مع الذهب والرموز الملكية.','space-spin':'تصميم فضائي مستقبلي بالكواكب والنجوم والألوان المتوهجة.',roulette:'تصميم أنيق لعجلة روليت أوروبية ذات صفر واحد.',blackjack:'تصميم لطاولة بلاك جاك بأوراق واضحة وأجواء راقية.',baccarat:'تصميم أنيق لطاولة باكارات بين اللاعب والمصرف.'}
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
+const rouletteReds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36])
+const cardLabel=(value:number)=>value===11?'A':value===10?'10':String(value)
 
 export default function GamesHub(){
   const {language}=useLanguage()
@@ -49,7 +51,7 @@ export default function GamesHub(){
   useEffect(()=>{if(!selected)return;const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape')closeGame()};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown)},[selected])
   const startCrash=()=>{
     setCrashAt(1.25+Math.random()*4.75);setMultiplier(1);setCrashActive(true)
-    setPracticeResult('Multiplier is live. Advance carefully or cash out in this practice demo.')
+    setPracticeResult(arabic?'بدأ المضاعف. تقدّم بحذر أو أوقف الجولة التدريبية.':'Multiplier is live. Advance carefully or stop this practice round.')
     setPracticeCount(value=>value+1)
   }
   const advanceCrash=()=>{
@@ -57,29 +59,29 @@ export default function GamesHub(){
     const next=Number((multiplier+0.25).toFixed(2))
     if(next>=crashAt){
       setMultiplier(next);setCrashActive(false)
-      setPracticeResult(`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)
+      setPracticeResult(arabic?`انتهت الجولة عند ${next.toFixed(2)}×. لا توجد أرباح أو تغييرات في الرصيد.`:`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)
     }else setMultiplier(next)
   }
   const cashOutCrash=()=>{
     if(!crashActive)return
     setCrashActive(false)
-    setPracticeResult(`Practice cash-out at ${multiplier.toFixed(2)}×. This is a display-only result; no winnings were created.`)
+    setPracticeResult(arabic?`أوقفت الجولة عند ${multiplier.toFixed(2)}×. نتيجة للعرض فقط دون أرباح.`:`Practice stop at ${multiplier.toFixed(2)}×. Display-only result; no winnings were created.`)
   }
   const pickApple=()=>{
     if(appleDone)return
     if(Math.random()<0.27){
-      setAppleDone(true);setPracticeResult(`Trap revealed at level ${appleLevel+1}. Start a fresh practice round to try again.`)
+      setAppleDone(true);setPracticeResult(arabic?`ظهرت التفاحة الخاسرة في المستوى ${appleLevel+1}. أعد التجربة للمحاولة مجدداً.`:`Trap revealed at level ${appleLevel+1}. Start a fresh practice round to try again.`)
     }else{
       const next=appleLevel+1;setAppleLevel(next)
-      if(next>=3){setAppleDone(true);setPracticeResult('Three safe picks! Practice level completed. No prize or balance was awarded.')}
-      else setPracticeResult(`Safe apple! Level ${next} of 3 completed. Continue or finish this practice round.`)
+      if(next>=3){setAppleDone(true);setPracticeResult(arabic?'ثلاث تفاحات آمنة! اكتمل المستوى التدريبي دون جوائز أو رصيد.':'Three safe picks! Practice level completed. No prize or balance was awarded.')}
+      else setPracticeResult(arabic?`تفاحة آمنة! أكملت المستوى ${next} من 3. يمكنك المتابعة.`:`Safe apple! Level ${next} of 3 completed. Continue this practice round.`)
     }
     setPracticeCount(value=>value+1)
   }
   const dropPlinko=()=>{
     const slot=Math.floor(Math.random()*9)+1
     setPlinkoSlot(slot);setPracticeCount(value=>value+1)
-    setPracticeResult(`The practice ball landed in slot ${slot} of 9. No prize or balance was awarded.`)
+    setPracticeResult(arabic?`استقرت الكرة في الخانة ${slot} من أصل 9. لا توجد جائزة أو إضافة رصيد.`:`The practice ball landed in slot ${slot} of 9. No prize or balance was awarded.`)
   }
   const runOtherDemo=()=>{
     if(!selected)return
@@ -87,10 +89,10 @@ export default function GamesHub(){
     switch(selected.id){
       case 'lucky-fruits':
       case 'pharaoh':
-      case 'space-spin': {const symbols=selected.id==='lucky-fruits'?['🍒','🍋','🍉','🍇','⭐','7️⃣']:selected.id==='pharaoh'?['𓂀','👑','⚱️','🐪','💎','☀️']:['🪐','🌟','🚀','🌙','💫','👾'];const reels=[choose(symbols),choose(symbols),choose(symbols)];setSlotSymbols(reels);result=`Practice spin: ${reels.join('  ')}. Display-only symbols; no payout.`;break}
-      case 'roulette': {const n=Math.floor(Math.random()*37);setRouletteNumber(n);result=`Practice wheel: ${n} · ${n===0?'GREEN':n%2?'RED':'BLACK'}. No real roulette result.`;break}
-      case 'blackjack': {const cards=[Math.floor(Math.random()*10)+2,Math.floor(Math.random()*10)+2];setCardHand(cards);result=`Practice hand: ${cards[0]} + ${cards[1]} = ${cards[0]+cards[1]}. Simplified preview only.`;break}
-      case 'baccarat': {const p=Math.floor(Math.random()*10),b=Math.floor(Math.random()*10);setBaccaratHand({player:p,banker:b});result=`Practice deal · Player: ${p} · Banker: ${b}. Simplified preview only.`;break}
+      case 'space-spin': {const symbols=selected.id==='lucky-fruits'?['🍒','🍋','🍉','🍇','⭐','7️⃣']:selected.id==='pharaoh'?['𓂀','👑','⚱️','🐪','💎','☀️']:['🪐','🌟','🚀','🌙','💫','👾'];const reels=[choose(symbols),choose(symbols),choose(symbols)];setSlotSymbols(reels);const match=reels.every(s=>s===reels[0]);result=arabic?`نتيجة اللف: ${reels.join('  ')}. ${match?'تطابق رمزي في العرض التجريبي!':'لا يوجد تطابق هذه المرة.'} لا توجد أرباح أو جوائز.`:`Practice spin: ${reels.join('  ')}. ${match?'Three matching symbols!':'No match this time.'} Display-only; no payout.`;break}
+      case 'roulette': {const n=Math.floor(Math.random()*37);setRouletteNumber(n);const color=n===0?'GREEN':rouletteReds.has(n)?'RED':'BLACK';result=arabic?`نتيجة العجلة التدريبية: ${n} · ${color==='GREEN'?'أخضر':color==='RED'?'أحمر':'أسود'}. ليست نتيجة رهان حقيقي.`:`Practice wheel: ${n} · ${color}. No real roulette result.`;break}
+      case 'blackjack': {const cards=[Math.floor(Math.random()*10)+2,Math.floor(Math.random()*10)+2];setCardHand(cards);const total=cards.reduce((sum,n)=>sum+n,0);result=arabic?`أوراق التدريب: ${cards.map(cardLabel).join(' + ')} = ${total}. عرض مبسط فقط.`:`Practice hand: ${cards.map(cardLabel).join(' + ')} = ${total}. Simplified preview only.`;break}
+      case 'baccarat': {const p=Math.floor(Math.random()*10),b=Math.floor(Math.random()*10);setBaccaratHand({player:p,banker:b});result=arabic?`توزيع تدريبي · اللاعب: ${p} · المصرف: ${b}. عرض مبسط فقط.`:`Practice deal · Player: ${p} · Banker: ${b}. Simplified preview only.`;break}
     }
     setPracticeResult(result);setPracticeCount(value=>value+1)
   }
@@ -132,10 +134,10 @@ export default function GamesHub(){
           <button className="game-detail-done" type="button" onClick={dropPlinko}><Play size={15}/> {labels.drop}</button>
         </div>}
         {['lucky-fruits','pharaoh','space-spin'].includes(selected.id)&&<div className="game-practice-controls"><div className="slot-reels" aria-label="Practice slot reels">{slotSymbols.map((symbol,i)=><span key={i}>{symbol}</span>)}</div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
-        {selected.id==='roulette'&&<div className="game-practice-controls"><div className="roulette-preview"><div className="roulette-wheel"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><b>{rouletteNumber===null?'?':rouletteNumber}</b></div><small>{rouletteNumber===null?'READY TO SPIN':rouletteNumber===0?'GREEN ZERO':rouletteNumber%2?'RED RESULT':'BLACK RESULT'}</small></div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
+        {selected.id==='roulette'&&<div className="game-practice-controls"><div className="roulette-preview"><div className="roulette-wheel"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><b>{rouletteNumber===null?'?':rouletteNumber}</b></div><small>{rouletteNumber===null?'READY TO SPIN':rouletteNumber===0?(arabic?'صفر أخضر':'GREEN ZERO'):rouletteReds.has(rouletteNumber)?(arabic?'نتيجة حمراء':'RED RESULT'):(arabic?'نتيجة سوداء':'BLACK RESULT')}</small></div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
         {selected.id==='blackjack'&&<div className="game-practice-controls"><div className="practice-playing-cards">{(cardHand.length?cardHand:['?','?']).map((card,i)=><span key={i}>{card}</span>)}</div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
-        {selected.id==='baccarat'&&<div className="game-practice-controls"><div className="baccarat-preview"><div><small>PLAYER</small><strong>{baccaratHand?.player??'—'}</strong></div><div><small>BANKER</small><strong>{baccaratHand?.banker??'—'}</strong></div></div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
-        {practiceResult&&<div className="game-practice-result" role="status"><strong>{practiceCount===0?'PRACTICE UPDATE':`ROUND ${practiceCount}`}</strong><span>{practiceResult}</span></div>}
+        {selected.id==='baccarat'&&<div className="game-practice-controls"><div className="baccarat-preview"><div><small>{arabic?'اللاعب':'PLAYER'}</small><strong>{baccaratHand?.player??'—'}</strong></div><div><small>{arabic?'المصرف':'BANKER'}</small><strong>{baccaratHand?.banker??'—'}</strong></div></div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
+        {practiceResult&&<div className="game-practice-result" role="status"><strong>{arabic?`الجولة ${practiceCount}`:practiceCount===0?'PRACTICE UPDATE':`ROUND ${practiceCount}`}</strong><span>{practiceResult}</span></div>}
         <button className="game-detail-secondary" type="button" onClick={resetDemo}>{labels.reset}</button>
         <button className="game-detail-secondary" type="button" onClick={closeGame}>{labels.close}</button>
       </section>
