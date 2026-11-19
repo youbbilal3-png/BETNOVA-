@@ -78,3 +78,25 @@
 .game-detail-modal{max-height:min(90vh,760px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#7186aa55 transparent}
 .game-detail-modal:focus{outline:none}
 @media(max-width:600px){.game-detail-backdrop{padding:10px}.game-detail-modal{padding:17px;border-radius:19px}.game-detail-art{height:118px}.crash-multiplier{min-height:70px;font-size:32px}}
+
+
+/* Dedicated game surfaces for slot reels and table previews */
+.slot-reels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:13px;border:1px solid color-mix(in srgb,var(--game-glow) 42%,transparent);border-radius:15px;background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--game-glow) 18%,transparent),#081326 78%);box-shadow:inset 0 2px 12px #0008}
+.slot-reels span{display:grid;place-items:center;min-height:76px;border:1px solid #ffffff20;border-radius:12px;background:linear-gradient(160deg,#f7fbff,#aebed2 55%,#73839b);color:#14223a;font-size:36px;text-shadow:0 2px 2px #fff9;box-shadow:0 5px 12px #0007,inset 0 1px #fff}
+.roulette-preview{display:grid;justify-items:center;gap:8px;padding:12px;border:1px solid color-mix(in srgb,var(--game-glow) 35%,transparent);border-radius:15px;background:#071326}
+.roulette-wheel{position:relative;display:grid;place-items:center;width:142px;height:142px;border:8px solid #c69a54;border-radius:50%;background:conic-gradient(#b92f42 0 9.73%,#182332 9.73% 19.46%,#b92f42 19.46% 29.19%,#182332 29.19% 38.92%,#b92f42 38.92% 48.65%,#182332 48.65% 58.38%,#b92f42 58.38% 68.11%,#182332 68.11% 77.84%,#b92f42 77.84% 87.57%,#182332 87.57% 97.3%,#218c63 97.3%);box-shadow:0 0 0 4px #6e502b,0 10px 24px #0009,inset 0 0 0 3px #f5d58a}
+.roulette-wheel span{position:absolute;top:5px;left:calc(50% - 5px);color:#fff;font-size:8px;font-weight:900;transform-origin:5px 66px}
+.roulette-wheel span:nth-child(2){transform:rotate(60deg)}.roulette-wheel span:nth-child(3){transform:rotate(120deg)}.roulette-wheel span:nth-child(4){transform:rotate(180deg)}.roulette-wheel span:nth-child(5){transform:rotate(240deg)}.roulette-wheel span:nth-child(6){transform:rotate(300deg)}
+.roulette-wheel b{display:grid;place-items:center;width:48px;height:48px;border:3px solid #d8b56f;border-radius:50%;background:#101d30;color:#fff;font-size:21px;box-shadow:0 3px 9px #0009}
+.roulette-preview small{color:var(--game-glow);font-size:9px;font-weight:950;letter-spacing:1.2px}
+.practice-playing-cards{display:flex;justify-content:center;gap:12px;padding:16px;border:1px solid color-mix(in srgb,var(--game-glow) 35%,transparent);border-radius:14px;background:radial-gradient(ellipse,#1c674e,#0b2d2a 75%)}
+.practice-playing-cards span{display:grid;place-items:center;width:66px;height:91px;border:1px solid #d9e4ee;border-radius:9px;background:linear-gradient(145deg,#fff,#e1e8ef);color:#14233b;font-size:28px;font-weight:1000;box-shadow:0 6px 12px #0008}
+.baccarat-preview{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;border:1px solid color-mix(in srgb,var(--game-glow) 35%,transparent);border-radius:14px;background:radial-gradient(ellipse,#1b5e50,#0a2c2a 75%)}
+.baccarat-preview>div{display:grid;justify-items:center;gap:7px;padding:12px;border:1px solid #ffffff22;border-radius:10px;background:#ffffff0b}
+.baccarat-preview small{color:#d4e8e2;font-size:9px;font-weight:950;letter-spacing:1px}
+.baccarat-preview strong{display:grid;place-items:center;width:43px;height:43px;border-radius:10px;background:linear-gradient(145deg,#fff,#dbe5ec);color:#17243a;font-size:22px}
+[dir="rtl"] .games-hub{text-align:right}
+[dir="rtl"] .games-kicker,[dir="rtl"] .games-safety-note{flex-direction:row}
+[dir="rtl"] .game-tile-copy>button{flex-direction:row-reverse}
+[dir="rtl"] .game-art-code{left:auto;right:14px}
+@media(max-width:600px){.slot-reels span{min-height:62px;font-size:29px}.roulette-wheel{width:126px;height:126px}.roulette-wheel span{transform-origin:5px 58px}.practice-playing-cards span{width:58px;height:82px}}
