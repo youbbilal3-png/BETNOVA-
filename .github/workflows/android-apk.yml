@@ -19,6 +19,8 @@ on:
       - 'vite.config.ts'
       - 'capacitor.config.ts'
       - 'google-services.json'
+      - 'scripts/**'
+      - '.gitignore'
       - '.github/workflows/android-apk.yml'
   push:
     branches:
@@ -34,6 +36,8 @@ on:
       - 'vite.config.ts'
       - 'capacitor.config.ts'
       - 'google-services.json'
+      - 'scripts/**'
+      - '.gitignore'
       - '.github/workflows/android-apk.yml'
 
 permissions:
@@ -44,7 +48,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-debug-apk:
+  build-android-apks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout BETNOVA
