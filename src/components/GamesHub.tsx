@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from 'react'
+import { useLanguage } from '../i18n'
 import { ArrowRight, Crown, Gem, Grid3X3, Play, Sparkles, X, Zap, RotateCw } from 'lucide-react'
 
 type Category = 'all' | 'games' | 'slots' | 'casino'
@@ -18,6 +19,7 @@ const games:Game[] = [
 
 const categoryLabels:Record<Category,string>={all:'ALL GAMES',games:'GAMES',slots:'SLOTS',casino:'CASINO'}
 const categoryIcons:Record<Category,typeof Grid3X3>={all:Grid3X3,games:Zap,slots:Gem,casino:Crown}
+const arabicDescriptions:Record<string,string>={crash:'ابدأ جولة تدريبية مجانية، راقب المضاعف واختر وقت التوقف.',apple:'اختر التفاحات الآمنة عبر ثلاثة مستويات تدريبية دون أموال أو نتائج حقيقية.',plinko:'أسقط كرة تدريبية عبر المسامير وشاهد خانة الهبوط.', 'lucky-fruits':'تصميم فواكه كلاسيكي بألوان زاهية وبكرات عصرية.',pharaoh:'أجواء مصرية قديمة أنيقة مع الذهب والرموز الملكية.','space-spin':'تصميم فضائي مستقبلي بالكواكب والنجوم والألوان المتوهجة.',roulette:'تصميم أنيق لعجلة روليت أوروبية ذات صفر واحد.',blackjack:'تصميم لطاولة بلاك جاك بأوراق واضحة وأجواء راقية.',baccarat:'تصميم أنيق لطاولة باكارات بين اللاعب والمصرف.'}
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
 
 export default function GamesHub(){
@@ -86,11 +88,11 @@ export default function GamesHub(){
   }
   return <section className="games-hub" id="games">
     <div className="games-hub-head">
-      <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>ENTER THE <em>PLAY ZONE</em></h2><p>Discover a new dimension of play.</p></div>
+      <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>{labels.heading} <em>{labels.zone}</em></h2><p>{labels.subtitle}</p></div>
       <div className="games-head-orb" aria-hidden="true"><span>BN</span></div>
     </div>
     <div className="games-category-tabs" role="tablist" aria-label="Game categories">
-      {(['all','games','slots','casino'] as Category[]).map(key=>{const Icon=categoryIcons[key];return <button key={key} type="button" role="tab" aria-selected={category===key} className={category===key?'active':''} onClick={()=>setCategory(key)}><Icon size={15}/>{categoryLabels[key]}<span>{key==='all'?games.length:games.filter(game=>game.category===key).length}</span></button>})}
+      {(['all','games','slots','casino'] as Category[]).map(key=>{const Icon=categoryIcons[key];return <button key={key} type="button" role="tab" aria-selected={category===key} className={category===key?'active':''} onClick={()=>setCategory(key)}><Icon size={15}/>{labels[key]}<span>{key==='all'?games.length:games.filter(game=>game.category===key).length}</span></button>})}
     </div>
     <div className="games-grid">
       {visible.map((game,index)=><article className={`game-tile game-${game.accent}`} key={game.id} style={{'--game-index':index} as CSSProperties}>
@@ -99,32 +101,32 @@ export default function GamesHub(){
           <span className="game-art-orbit orbit-one"/><span className="game-art-orbit orbit-two"/>
           <span className="game-art-shine">✦</span><span className="game-art-code">BETNOVA / PLAY</span>
         </div>
-        <div className="game-tile-copy"><div className="game-tile-meta"><span>{game.tag}</span><span className="game-live-dot"/></div><h3>{game.name}</h3><p>{game.description}</p><button type="button" onClick={()=>{setSelected(game);resetDemo()}}>EXPLORE GAME <ArrowRight size={14}/></button></div>
+        <div className="game-tile-copy"><div className="game-tile-meta"><span>{game.tag}</span><span className="game-live-dot"/></div><h3>{game.name}</h3><p>{arabic?(arabicDescriptions[game.id]??game.description):game.description}</p><button type="button" onClick={()=>{setSelected(game);resetDemo()}}>{labels.explore} <ArrowRight size={14}/></button></div>
       </article>)}
     </div>
-    <div className="games-safety-note"><Sparkles size={15}/><span>Free practice demonstrations only. No deposits, wagers, cash-out value, prizes or real-money play are enabled.</span></div>
+    <div className="games-safety-note"><Sparkles size={15}/><span>{labels.safety}</span></div>
     {selected&&<div className="game-detail-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)closeGame()}}>
       <section className={`game-detail-modal game-${selected.accent}`} role="dialog" aria-modal="true" aria-labelledby="game-detail-title">
         <button className="game-detail-close" type="button" onClick={closeGame} aria-label="Close"><X size={18}/></button>
         <div className={`game-detail-art art-${selected.art}`}><span>{selected.mark}</span><i/><b>BETNOVA</b></div>
-        <div className="games-kicker"><Sparkles size={14}/> FREE PRACTICE · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{selected.description}</p>
-        <div className="game-coming-soon"><Play size={15}/> DEMO MODE · NO MONEY OR BETS</div>
+        <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
+        <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
         {selected.id==='crash'&&<div className="game-practice-controls">
           <div className="crash-multiplier">{multiplier.toFixed(2)}<small>×</small></div>
-          {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> START PRACTICE ROUND</button>:<div className="game-action-row"><button type="button" onClick={advanceCrash}>NEXT STEP +0.25×</button><button type="button" onClick={cashOutCrash}>STOP HERE</button></div>}
+          {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:<div className="game-action-row"><button type="button" onClick={advanceCrash}>{labels.next}</button><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>}
         </div>}
         {selected.id==='apple'&&<div className="game-practice-controls">
           <div className="apple-levels">{[0,1,2].map(i=><span key={i} className={i<appleLevel?'safe':''}>{i<appleLevel?'✓':'🍏'}</span>)}</div>
-          <button className="game-detail-done" type="button" disabled={appleDone} onClick={pickApple}>PICK NEXT APPLE · LEVEL {Math.min(appleLevel+1,3)}</button>
+          <button className="game-detail-done" type="button" disabled={appleDone} onClick={pickApple}>{labels.pick} · LEVEL {Math.min(appleLevel+1,3)}</button>
         </div>}
         {selected.id==='plinko'&&<div className="game-practice-controls">
           <div className="plinko-slots">{Array.from({length:9},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div>
-          <button className="game-detail-done" type="button" onClick={dropPlinko}><Play size={15}/> DROP PRACTICE BALL</button>
+          <button className="game-detail-done" type="button" onClick={dropPlinko}><Play size={15}/> {labels.drop}</button>
         </div>}
-        {!['crash','apple','plinko'].includes(selected.id)&&<button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> TRY FREE DEMO</button>}
+        {!['crash','apple','plinko'].includes(selected.id)&&<button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button>}
         {practiceResult&&<div className="game-practice-result" role="status"><strong>{practiceCount===0?'PRACTICE UPDATE':`ROUND ${practiceCount}`}</strong><span>{practiceResult}</span></div>}
-        <button className="game-detail-secondary" type="button" onClick={resetDemo}>RESET PRACTICE</button>
-        <button className="game-detail-secondary" type="button" onClick={closeGame}>CLOSE</button>
+        <button className="game-detail-secondary" type="button" onClick={resetDemo}>{labels.reset}</button>
+        <button className="game-detail-secondary" type="button" onClick={closeGame}>{labels.close}</button>
       </section>
     </div>}
   </section>
