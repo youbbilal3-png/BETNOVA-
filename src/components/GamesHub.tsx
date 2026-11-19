@@ -58,7 +58,7 @@ export default function GamesHub(){
   }
   const closeGame=()=>{setSelected(null);resetDemo()}
   useEffect(()=>{if(!selected)return;const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape')closeGame()};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown)},[selected])
-  useEffect(()=>{if(!crashActive)return;const timer=window.setInterval(()=>{setMultiplier(current=>{const next=Number((current+0.05).toFixed(2));if(next>=crashAt){setCrashActive(false);setPracticeResult(arabic?`انتهت الجولة عند ${next.toFixed(2)}×. لا توجد أرباح أو تغييرات في الرصيد.`:`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)}return next})},220);return()=>window.clearInterval(timer)},[crashActive,crashAt,arabic])
+  useEffect(()=>{if(!crashActive)return;const timer=window.setTimeout(()=>{const next=Number((multiplier+0.05).toFixed(2));setMultiplier(next);if(next>=crashAt){setCrashActive(false);setPracticeResult(arabic?`انتهت الجولة عند ${next.toFixed(2)}×. لا توجد أرباح أو تغييرات في الرصيد.`:`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)}},220);return()=>window.clearTimeout(timer)},[crashActive,crashAt,multiplier,arabic])
   const startCrash=()=>{
     setCrashAt(1.25+Math.random()*4.75);setMultiplier(1);setCrashActive(true)
     setPracticeResult(arabic?'بدأ المضاعف. تقدّم بحذر أو أوقف الجولة التدريبية.':'Multiplier is live. Advance carefully or stop this practice round.')
