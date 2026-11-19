@@ -7,7 +7,7 @@ const gradlePath = path.join(root, 'android', 'app', 'build.gradle')
 
 const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'))
 const versionName = String(policy.latestVersion ?? '').trim()
-const match = versionName.match(/^(\\d+)\\.(\\d+)(?:\\.(\\d+))?$/)
+const match = versionName.match(/^(\d+)\.(\d+)(?:\.(\d+))?$/)
 if (!match) {
   throw new Error('public/app-version.json latestVersion must use MAJOR.MINOR or MAJOR.MINOR.PATCH')
 }
@@ -21,18 +21,18 @@ if (!Number.isSafeInteger(versionCode) || versionCode < 1 || versionCode > 2_100
 }
 
 let gradle = fs.readFileSync(gradlePath, 'utf8')
-if (!/defaultConfig\\s*\\{/.test(gradle)) {
+if (!/defaultConfig\s*\{/.test(gradle)) {
   throw new Error('Could not find defaultConfig in generated Android app/build.gradle')
 }
-if (/versionCode\\s+\\d+/.test(gradle)) {
-  gradle = gradle.replace(/versionCode\\s+\\d+/, `versionCode ${versionCode}`)
+if (/versionCode\s+\d+/.test(gradle)) {
+  gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`)
 } else {
-  gradle = gradle.replace(/(defaultConfig\\s*\\{)/, `$1\\n        versionCode ${versionCode}`)
+  gradle = gradle.replace(/(defaultConfig\s*\{)/, `$1\n        versionCode ${versionCode}`)
 }
-if (/versionName\\s+["'][^"']+["']/.test(gradle)) {
-  gradle = gradle.replace(/versionName\\s+["'][^"']+["']/, `versionName "${versionName}"`)
+if (/versionName\s+["'][^"']+["']/.test(gradle)) {
+  gradle = gradle.replace(/versionName\s+["'][^"']+["']/, `versionName "${versionName}"`)
 } else {
-  gradle = gradle.replace(/(defaultConfig\\s*\\{)/, `$1\\n        versionName "${versionName}"`)
+  gradle = gradle.replace(/(defaultConfig\s*\{)/, `$1\n        versionName "${versionName}"`)
 }
 
 fs.writeFileSync(gradlePath, gradle)
