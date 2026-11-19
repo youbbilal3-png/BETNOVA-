@@ -1,0 +1,18 @@
+.bn-notification-settings{margin:18px 0;padding:16px;border:1px solid rgba(115,150,138,.22);border-radius:16px;background:rgba(8,20,18,.55);color:inherit}
+.bn-notification-heading{display:flex;align-items:center;gap:10px;margin-bottom:14px;color:#b7f7d2}
+.bn-notification-heading>div,.bn-notification-master>div,.bn-notification-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.bn-notification-heading b,.bn-notification-master b,.bn-notification-row b{font-size:13px;font-weight:750}
+.bn-notification-heading small,.bn-notification-master small,.bn-notification-row small,.bn-notification-footnote,.bn-notification-message{font-size:11px;line-height:1.5;color:#9caaa4}
+.bn-notification-master{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid rgba(150,180,165,.13);border-bottom:1px solid rgba(150,180,165,.13)}
+.bn-notification-list{display:flex;flex-direction:column}
+.bn-notification-row{display:grid;grid-template-columns:20px minmax(0,1fr) 42px;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(150,180,165,.1);color:#b7c5be}
+.bn-notification-row:last-child{border-bottom:0}
+.bn-notification-row b{color:#edf6f1}
+.bn-notification-row small{color:#92a39a}
+.bn-notification-master button,.bn-notification-row button{width:38px;height:22px;padding:2px;border:0;border-radius:20px;background:#3b4943;display:flex;align-items:center;justify-content:flex-start;flex-shrink:0;cursor:pointer}
+.bn-notification-master button span,.bn-notification-row button span{display:block;width:18px;height:18px;border-radius:50%;background:#dce6e0;transition:transform .18s ease}
+.bn-notification-master button.is-on,.bn-notification-row button.is-on{background:#13a66a}
+.bn-notification-master button.is-on span,.bn-notification-row button.is-on span{transform:translateX(16px)}
+.bn-notification-master button:disabled,.bn-notification-row button:disabled{opacity:.48;cursor:not-allowed}
+.bn-notification-footnote{margin:12px 0 0}
+.bn-notification-message{margin:10px 0 0;color:#b7f7d2}
