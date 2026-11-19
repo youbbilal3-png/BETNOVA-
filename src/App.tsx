@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Menu, Search, Settings, ShieldCheck, Sparkles, Star, Trophy, UserRound, Wallet, X } from 'lucide-react'
 import AuthPanel from './components/AuthPanel'
 import AccountPanel from './components/AccountPanel'
@@ -7,7 +7,7 @@ import WalletPanel from './components/WalletPanel'
 import MatchMarkets from './components/MatchMarkets'
 import MatchStatistics from './components/MatchStatistics'
 import MyBetsPanel from './components/MyBetsPanel'
-import GamesHub from './components/GamesHub'
+const GamesHub = lazy(() => import('./components/GamesHub'))
 import { languages, useLanguage } from './i18n'
 import { supabase } from './lib/supabase'
 
@@ -687,7 +687,7 @@ export default function App() {
 
           <div className="quick-stats"><div><span className="stat-icon"><Activity size={17}/></span><span><b>{t("live_energy")}</b><small>{t("follow_action")}</small></span></div><div><span className="stat-icon teal"><Globe2 size={17}/></span><span><b>{t("global_sports")}</b><small>{t("every_corner")}</small></span></div><div><span className="stat-icon lime"><ShieldCheck size={17}/></span><span><b>{t("player_first")}</b><small>{t("safety_design")}</small></span></div></div>
 
-          {activePage === 'games' ? <GamesHub /> : <><section className="events-section" id="events">
+          {activePage === 'games' ? <Suspense fallback={<div className="games-loading" role="status">BETNOVA</div>}><GamesHub /></Suspense> : <><section className="events-section" id="events">
             <div className="section-heading"><div><div className="eyebrow dark"><span/> {t("today_lineup")}</div><h2>{showFavorites ? t('your_favourites') : eventView === 'live' ? t('live_events') : eventView === 'results' ? t('latest_results') : t('featured_events_title')} <span className="heading-star">✳</span></h2><p>{t("find_moments")}</p></div><button className="view-all" onClick={() => openEventView('upcoming')}>{t("upcoming_schedule")} <ArrowRight size={15}/></button></div>
             <div className="event-view-tabs" role="tablist" aria-label="Event type">
               <button className={eventView === 'upcoming' ? 'event-view active' : 'event-view'} onClick={() => setEventView('upcoming')}>{t("upcoming")}</button>
