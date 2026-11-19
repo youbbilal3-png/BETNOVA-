@@ -904,7 +904,7 @@ export default function App() {
           {userEmail ? <>
             <button className="mobile-account-entry" onClick={() => { openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>{t('deposit')}</button>
-            <button onClick={() => { openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
+            <button onClick={() => { closeMobileMenuToPage(); openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
               {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { closeOverlay('mobileMore'); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
