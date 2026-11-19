@@ -63,7 +63,7 @@ function countryFlagForCompetition(competition: string, country: string) {
   const normalize = (value: string) => value.trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
   const countryName = normalize(country || '')
   const competitionName = normalize(competition || '')
-  if (/\\b(algeria|algerian|algerie|dz)\\b/.test(competitionName)) return '🇩🇿'
+  if (/\b(algeria|algerian|algerie|dz)\b/.test(competitionName)) return '🇩🇿'
   const countryFlags: Record<string, string> = {
     algeria: '🇩🇿', dz: '🇩🇿', 'algerie': '🇩🇿',
     france: '🇫🇷', fr: '🇫🇷', england: '🇬🇧', 'united kingdom': '🇬🇧', uk: '🇬🇧', gb: '🇬🇧',
