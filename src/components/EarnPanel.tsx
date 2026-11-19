@@ -36,6 +36,17 @@ export default function EarnPanel({ onClose, language = 'en' }: Props) {
     let parsed: URL
     try { parsed = new URL(postUrl.trim()) } catch { setMessage(ar ? 'أدخل رابط منشور صحيحًا.' : 'Enter a valid post URL.'); return }
     if (!['http:','https:'].includes(parsed.protocol)) { setMessage(ar ? 'الرابط غير صالح.' : 'Invalid post URL.'); return }
+    const host = parsed.hostname.toLowerCase().replace(/^www\\./, '')
+    const allowedHosts: Record<string,string[]> = {
+      facebook: ['facebook.com','fb.watch'],
+      instagram: ['instagram.com'],
+      tiktok: ['tiktok.com'],
+      youtube: ['youtube.com','youtu.be'],
+    }
+    if (!allowedHosts[platform]?.some(domain => host === domain || host.endsWith('.' + domain))) {
+      setMessage(ar ? 'يجب أن يكون الرابط من المنصة المختارة.' : 'The URL must belong to the selected platform.')
+      return
+    }
     if (proof.size > 5 * 1024 * 1024 || !['image/jpeg','image/png','image/webp'].includes(proof.type)) {
       setMessage(ar ? 'الصورة يجب أن تكون JPG أو PNG أو WEBP وأقل من 5 ميغابايت.' : 'Use a JPG, PNG, or WEBP image under 5 MB.'); return
     }
