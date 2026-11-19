@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
         period: "match_start",
         event_data: { source: "live_feed", confirmed: true },
         occurred_at: occurredAt,
-      }, { onConflict: "provider,provider_event_id", ignoreDuplicates: true })
+      }, { onConflict: "provider,provider_event_id" })
       .select("id").maybeSingle();
     if (error) {
       errors.push("could not store match-start event");
