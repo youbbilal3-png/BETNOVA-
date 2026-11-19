@@ -159,7 +159,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       setRealBetMessage(error instanceof Error?error.message:'The round could not be confirmed. Retry safely; duplicate requests use the same round key.')
     }finally{setRealBetBusy(false)}
   }
-  const paidTableUnavailable=selected?.id==='blackjack'||selected?.id==='baccarat'
+  const paidTableUnavailable=selected?.id==='blackjack'
   return <section className="games-hub" id="games">
     <div className="games-hub-head">
       <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>{labels.heading} <em>{labels.zone}</em></h2><p>{labels.subtitle}</p></div>
@@ -231,7 +231,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
         <section className="arcade-wager-panel" aria-label={arabic?'رهان بأموال حقيقية':'Real-money game wager'}>
           <div className="arcade-wager-heading"><span>{arabic?'رهان حقيقي':'REAL MONEY ROUND'}</span><b>{selected.id==='roulette'?'94.86%':'95%'} RTP</b></div>
           {paidTableUnavailable?
-            <p className="arcade-wager-note">{arabic?'المراهنة المالية على ألعاب الورق ستُفعّل بعد اكتمال قواعد اللعب والتسوية الخاصة بها.':'Real-money card-table play will be enabled after its complete card rules and settlement are implemented.'}</p>:
+            <p className="arcade-wager-note">{arabic?'المراهنة المالية على البلاك جاك ستُفعّل بعد اكتمال قواعد السحب والوقوف والتسوية.':'Real-money blackjack will be enabled after its full hit/stand round settlement is implemented.'}</p>:
             <>
               <div className="arcade-wallet-line"><span>{arabic?'رصيدك الحقيقي':'Available real balance'}</span><strong>{realBalance===null?'—':realBalance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' DZD'}</strong></div>
               <label className="arcade-wager-field"><span>{arabic?'مبلغ الرهان (DZD)':'Stake (DZD)'}</span><input type="number" min="0.01" max="1000000" step="0.01" inputMode="decimal" value={realStake} onChange={event=>setRealStake(event.target.value)} disabled={realBetBusy}/></label>
@@ -245,7 +245,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
               <p className="arcade-wager-note">{arabic?'النتيجة تُولّد على الخادم. النسبة المعروضة عائد نظري طويل الأجل وليست ضماناً لنتيجة جولة.':'The server generates each result. Published RTP is a long-run theoretical return, not a promise about any single round.'}</p>
               <button className="arcade-wager-submit" type="button" onClick={playRealRound} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ تنفيذ الجولة...':'PROCESSING ROUND'):arabic?'ضع الرهان والعب':'PLACE BET & PLAY'}</button>
               {realBetMessage&&<p className="arcade-wager-error" role="alert">{realBetMessage}</p>}
-              {realBetResult&&<div className="arcade-wager-receipt" role="status"><strong>{String(realBetResult.result??'ROUND SETTLED')}</strong><span>{arabic?'الرهان':'Stake'}: {Number(realBetResult.stake??0).toFixed(2)} DZD</span><span>{arabic?'العائد':'Payout'}: {Number(realBetResult.payout??0).toFixed(2)} DZD</span><span>{arabic?'الربح/الخسارة الصافية':'Net result'}: {Number(realBetResult.net_result??0).toFixed(2)} DZD</span><small>{arabic?'رقم الجولة':'Round ID'}: {String(realBetResult.round_id??'')}</small></div>}
+              {realBetResult&&<div className="arcade-wager-receipt" role="status"><strong>{String(realBetResult.result??'ROUND SETTLED')}</strong><span>{arabic?'الرهان':'Stake'}: {Number(realBetResult.stake??0).toFixed(2)} DZD</span><span>{arabic?'العائد':'Payout'}: {Number(realBetResult.payout??0).toFixed(2)} DZD</span><span>{arabic?'الربح/الخسارة الصافية':'Net result'}: {Number(realBetResult.net_result??0).toFixed(2)} DZD</span><small>{arabic?'رقم الجولة':'Round ID'}: {String(realBetResult.round_id??'')}</small>{realBetResult.details&&<small>{JSON.stringify(realBetResult.details)}</small>}</div>}
             </>}
         </section>
         <button className="game-detail-secondary" type="button" onClick={resetDemo}>{labels.reset}</button>
