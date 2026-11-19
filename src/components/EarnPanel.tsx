@@ -47,8 +47,11 @@ export default function EarnPanel({ onClose, language = 'en' }: Props) {
       const path = `${user.id}/${crypto.randomUUID()}.${extension}`
       const { error: uploadError } = await supabase.storage.from('earn-proofs').upload(path, proof, { contentType: proof.type, upsert: false })
       if (uploadError) throw uploadError
+      const digest = await crypto.subtle.digest('SHA-256', await proof.arrayBuffer())
+      const proofHash = Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, '0')).join('')
       const { error: insertError } = await supabase.from('earn_post_submissions').insert({
-        user_id: user.id, platform, post_url: parsed.toString(), proof_path: path, reward_amount: 50, currency: 'DZD', status: 'pending',
+        user_id: user.id, platform, post_url: parsed.toString(), proof_path: path, proof_sha256: proofHash,
+        reward_amount: 50, currency: 'DZD', status: 'pending',
       })
       if (insertError) {
         await supabase.storage.from('earn-proofs').remove([path])
