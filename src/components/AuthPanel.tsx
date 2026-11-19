@@ -67,6 +67,7 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
               display_name: displayName.trim(),
               country_code: 'DZ',
               preferred_currency: preferredCurrency,
+              referral_code: new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase() || null,
             },
             emailRedirectTo: 'https://betnova-8daa3.web.app/',
           },
