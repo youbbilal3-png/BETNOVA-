@@ -525,23 +525,6 @@ export default function App() {
               cardCaption = cleanMarketDisplayName(String(fallback.name || 'Available odds'))
             }
           }
-          if (!cardPicks.length && sportSlug === 'football' && row.status === 'scheduled') {
-            // Clearly labelled practice-only prices. These are never inserted into the
-            // real markets tables and cannot reach the cash-wallet betting RPC.
-            const trainingPrices = ['2.60', '3.20', '2.80']
-            const trainingLabels = ['Home', 'Draw', 'Away']
-            cardPicks = trainingPrices.map((price, index) => ({
-              selectionId: `demo:${row.id}:${index}`,
-              marketId: 'demo-training',
-              marketKey: 'training_match_result',
-              marketLabel: 'Training match result',
-              selectionLabel: trainingLabels[index],
-              odds: price,
-              isDemo: true,
-            }))
-            cardLabels = trainingLabels
-            cardCaption = 'BETNOVA ESTIMATE'
-          }
           const startsAt = new Date(row.starts_at)
           return {
             id: row.id,
@@ -695,10 +678,6 @@ export default function App() {
       setBetMessage('')
       return
     }
-    if (selected.length && Boolean(selected[0].isDemo) !== Boolean(selection.isDemo)) {
-      setBetMessage('Practice selections and verified real odds cannot be mixed in one slip.')
-      return
-    }
     if (selected.length >= 20) {
       setBetMessage('A bet slip can contain up to 20 selections.')
       return
@@ -708,7 +687,7 @@ export default function App() {
     const afterMarketReplacement = selected.filter(item => !(String(item.match.id) === matchKey && item.marketKey === selection.marketKey))
     const remainingSameMatchPicks = afterMarketReplacement.filter(item => String(item.match.id) === matchKey)
     if (remainingSameMatchPicks.length > 0) {
-      const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey, isDemo: selection.isDemo }
+      const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }
       const incompatible = remainingSameMatchPicks.find(item => builderConflict(
         { marketKey: item.marketKey, label: item.label },
         { marketKey: candidate.marketKey, label: candidate.label }
@@ -716,63 +695,79 @@ export default function App() {
       setBetMessage(incompatible ? 'These two selections contradict each other.' : 'Only one selection per match is currently supported.')
       return
     }
-    const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey, isDemo: selection.isDemo }
+    const candidate = { match, label: selection.marketLabel + ' · ' + selection.selectionLabel, odd: selection.odds, selectionId: selection.selectionId, marketId: selection.marketId, marketKey: selection.marketKey }
     setSelected([...afterMarketReplacement, candidate])
     setBetMessage('')
   }
 
   async function placeBet() {
-    if (selected.some(item => item.isDemo)) {
-      const stake = Number(betStake)
-      if (!Number.isFinite(stake) || stake <= 0) { setBetMessage('Enter a practice stake greater than zero. No real money is used.'); return }
-      try {
-        const ticket = {
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          currency: betCurrency,
-          stake,
-          selections: selected.map(item => ({ match: item.match.home + ' – ' + item.match.away, league: item.match.league, pick: item.label, odds: item.odd })),
-          combinedOdds: selected.reduce((total, item) => total * Number(item.odd), 1),
-          mode: 'PRACTICE_ONLY',
-        }
-        const previous = JSON.parse(localStorage.getItem('betnova-practice-bets-v1') || '[]')
-        localStorage.setItem('betnova-practice-bets-v1', JSON.stringify([ticket, ...previous].slice(0, 50)))
-        setSelected([])
-        setBetStake('')
-        setBetMessage('Practice bet saved on this device. No wallet, deposit, or real-money balance was used.')
-      } catch {
-        setBetMessage('Could not save the practice ticket on this device. Please check browser storage.')
-      }
+    if (!supabase) { setBetMessage('Betting service is unavailable. Please try again later.'); return }
+    if (!selected.length) { setBetMessage('Choose at least one verified market.'); return }
+    if (hasSameMatchBuilder) { setBetMessage('Choose only one selection per match for now.'); return }
+    const stake = Number(betStake)
+    if (!Number.isFinite(stake) || stake <= 0 || Math.round(stake * 100) !== stake * 100) {
+      setBetMessage('Enter a valid stake in DZD (maximum two decimal places).')
       return
     }
-    if (!supabase) { setBetMessage('Betting service is unavailable. Please try again later.'); return }
-    if (!selected.length) { setBetMessage('Choose at least one market.'); return }
-    if (hasSameMatchBuilder) { setBetMessage('Choose only one selection per match for now.'); return }
-    setBetBusy(true); setBetMessage('')
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (selected.some(item => !uuidPattern.test(item.selectionId))) {
+      setBetMessage('One of your selections is not a verified market. Remove it and choose a real price again.')
+      return
+    }
+    setBetBusy(true)
+    setBetMessage('')
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError) throw authError
       if (!user) {
-        setAuthMode('login'); openOverlay('auth')
-        setBetMessage('Sign in to place a bet with your wallet balance.')
+        setAuthMode('login')
+        openOverlay('auth')
+        setBetMessage('Sign in to place a bet with your available wallet balance.')
         return
       }
-      const stake = Number(betStake)
-      if (!Number.isFinite(stake) || stake <= 0) { setBetMessage('Enter a valid stake.'); return }
-      const { data, error: betError } = await supabase.rpc('betnova_place_bet', {
+      // Deposits and the visible wallet balance are held in DZD. Read the authoritative
+      // wallet immediately before submitting; the RPC locks it and repeats all checks.
+      const { data: wallet, error: walletError } = await supabase
+        .from('wallet_accounts')
+        .select('available_balance')
+        .eq('user_id', user.id)
+        .eq('currency', 'DZD')
+        .maybeSingle()
+      if (walletError) throw walletError
+      const available = Number(wallet?.available_balance ?? 0)
+      setWalletBalance(available)
+      if (available < stake) throw new Error('Insufficient available DZD balance. Deposit funds or enter a smaller stake.')
+      const { data: betId, error: betError } = await supabase.rpc('betnova_place_bet', {
         p_selections: selected.map(item => ({ selection_id: item.selectionId })),
         p_stake: stake,
-        p_currency: betCurrency,
+        p_currency: 'DZD',
         p_idempotency_key: betIdempotencyKey
       })
       if (betError) throw betError
+      if (!betId) throw new Error('No bet reference was returned. Your selections remain in the slip; check My Bets before retrying.')
+      // The RPC commits the bet, wallet debit and ledger entry atomically. A secondary
+      // balance refresh must never misreport a committed bet as failed.
+      const { data: refreshedWallet, error: refreshError } = await supabase
+        .from('wallet_accounts')
+        .select('available_balance')
+        .eq('user_id', user.id)
+        .eq('currency', 'DZD')
+        .maybeSingle()
+      if (refreshError) {
+        console.error('Bet placed; wallet refresh failed:', refreshError.message)
+        setWalletBalance(Math.max(0, available - stake))
+      } else {
+        setWalletBalance(Number(refreshedWallet?.available_balance ?? Math.max(0, available - stake)))
+      }
       setSelected([])
       setBetStake('')
       setBetIdempotencyKey(crypto.randomUUID())
-      setBetMessage(`Bet accepted. Reference: ${String(data).slice(0, 8).toUpperCase()}`)
+      setBetMessage(`Bet accepted. Reference: ${String(betId).slice(0, 8).toUpperCase()}`)
     } catch (caught) {
-      setBetMessage(caught instanceof Error ? caught.message : 'Your bet could not be placed. Please refresh the odds and try again.')
-    } finally { setBetBusy(false) }
+      setBetMessage(caught instanceof Error ? caught.message : 'Your bet could not be placed. Your selections are still in the slip.')
+    } finally {
+      setBetBusy(false)
+    }
   }
 
   // Guests use the same live match centre and market details as members; betting remains authenticated.
@@ -881,9 +876,9 @@ export default function App() {
         {activePage !== 'football' && <aside className="right-rail">
           <div className="slip-card"><div className="slip-head"><div><span className="eyebrow dark">{t('your_picks')}</span><h3>{t('bet_slip')} <span>{selected.length}</span></h3></div><button className="slip-clear" onClick={()=>setSelected([])}>{t("clear")}</button></div>
             {selected.length ? <div className="slip-selections">{selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button onClick={()=>setSelected(current=>current.filter(x=>x.selectionId!==s.selectionId))}><X size={14}/></button></div>)}</div> : <div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>{t("slip_waiting")}</b><p>{t("select_price")}</p></div>}
-            {selected.some(item => item.isDemo) ? <><p className="guest-slip-note">{t('practice_disclaimer')}</p><div className="bet-slip-stake"><label>{t('practice_stake')}<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t('practice_amount')}/></label><div><span>{t('practice_return')}</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} {betCurrency}</b></div></div></> : userEmail ? <div className="bet-slip-stake"><label>Stake<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t('potential_return')}</span><b>{(hasSameMatchBuilder ? t('combined_price_pending') : (Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2))} {betCurrency}</b></div></div> : <p className="guest-slip-note">{t('guest_signin_note')}</p>}
+            {userEmail ? <div className="bet-slip-stake"><label>Stake · DZD<input type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t('potential_return')}</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} DZD</b></div><small className="slip-balance-line">Available balance: {walletBalance.toFixed(2)} DZD</small></div> : <p className="guest-slip-note">{t('guest_signin_note')}</p>}
             {betMessage && <p className="bet-slip-message">{betMessage}</p>}
-            <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>{betBusy ? t('placing_bet') : selected.some(item => item.isDemo) ? t('save_practice_bet') : t('place_bet_action')} <ArrowRight size={15}/></button>
+            <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>{betBusy ? t('placing_bet') : t('place_bet_action')} <ArrowRight size={15}/></button>
           </div>
           <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>{t('help_support')}</b><p>{t('help_center_hint')}</p><button type="button" onClick={openSupport}>{t('help_support')} <ArrowRight size={13}/></button></div></div>
           <div className="responsible-card" id="responsible"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>{t('play_with_awareness')}</b><p>{t('responsible_card_desc')}</p><a href="#responsible">{t('learn_more')}</a></div></div>
@@ -921,7 +916,38 @@ export default function App() {
           <button className="slip-cta" onClick={() => closeOverlay('notifications')}>{t("close")}</button>
         </section>
       </div>}
-      {mobileSlip && <div className="mobile-sheet-backdrop" role="presentation" onClick={()=>closeOverlay('mobileSlip')}><section className="mobile-sheet" role="dialog" aria-modal="true" aria-label={t('bet_slip')} onClick={e=>e.stopPropagation()}><div className="sheet-handle"/><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><div className="sheet-head-actions"><button className="slip-clear" onClick={()=>setSelected([])}>{t("clear")}</button><button className="icon-btn" onClick={()=>closeOverlay('mobileSlip')} aria-label={t("close")}><X/></button></div></div>{selected.length?selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button className="slip-remove" onClick={()=>setSelected(current=>current.filter(x=>x.selectionId!==s.selectionId))} aria-label="Remove selection"><X size={16}/></button></div>):<div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>{t("slip_waiting")}</b><p>{t("select_price")}</p></div>}{selected.some(item => item.isDemo) ? <div className="bet-slip-stake"><label>{t('practice_stake')}<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t('practice_amount')}/></label><div><span>{t('practice_return')}</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} {betCurrency}</b></div></div> : userEmail ? <div className="bet-slip-stake"><label>Stake<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t("potential_return")}</span><b>{(hasSameMatchBuilder ? t('combined_price_pending') : (Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2))} {betCurrency}</b></div></div> : <p className="guest-slip-note">{t('guest_signin_note')}</p>}{betMessage&&<p className="bet-slip-message">{betMessage}</p>}<button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>{betBusy ? t('placing_bet') : selected.some(item => item.isDemo) ? t('save_practice_bet') : t('place_bet_action')} <ArrowRight size={15}/></button></section></div>}
+      {mobileSlip && <div className="mobile-sheet-backdrop" role="presentation" onClick={()=>closeOverlay('mobileSlip')}><section className="mobile-sheet" role="dialog" aria-modal="true" aria-label={t('bet_slip')} onClick={e=>e.stopPropagation()}>
+        <header className="mobile-slip-header">
+          <div className="mobile-slip-brand"><span className="mobile-slip-brand-mark">B</span><div><small>BETNOVA · SPORTS</small><h2>{t('bet_slip')}</h2></div></div>
+          <div className="mobile-slip-header-actions"><span className="mobile-slip-count">{selected.length} PICKS</span><button type="button" className="mobile-slip-close" onClick={()=>closeOverlay('mobileSlip')} aria-label={t('close')}><X size={21}/></button></div>
+        </header>
+        <div className="mobile-slip-content">
+          <div className="mobile-slip-section-title"><span>{t('your_picks')}</span><button type="button" onClick={()=>{setSelected([]);setBetMessage('')}} disabled={!selected.length}>{t('clear')}</button></div>
+          {selected.length ? <div className="mobile-slip-selections">{selected.map((item,index)=><article className="mobile-slip-selection" key={item.selectionId}>
+            <div className="mobile-slip-selection-top"><span className="mobile-slip-index">{String(index+1).padStart(2,'0')}</span><b>{item.match.home} <i>vs</i> {item.match.away}</b><button type="button" onClick={()=>setSelected(current=>current.filter(pick=>pick.selectionId!==item.selectionId))} aria-label="Remove selection"><X size={17}/></button></div>
+            <div className="mobile-slip-selection-details"><span>{item.match.league}</span><strong>{item.label}</strong><b>@ {Number(item.odd).toFixed(2)}</b></div>
+          </article>)}</div> : <div className="mobile-slip-empty"><div className="mobile-slip-empty-icon"><ArrowDownUp size={25}/></div><b>{t('slip_waiting')}</b><p>{t('select_price')}</p></div>}
+          {selected.length>0 && <>
+            <div className="mobile-slip-summary">
+              <div><span>Total selections</span><b>{selected.length}</b></div>
+              <div><span>Combined odds</span><b>{hasSameMatchBuilder ? '—' : selected.reduce((total,item)=>total*Number(item.odd),1).toFixed(2)}</b></div>
+              <div><span>Wallet balance</span><b>{walletBalance.toFixed(2)} DZD</b></div>
+            </div>
+            {userEmail ? <div className="mobile-slip-stake-card">
+              <label htmlFor="mobile-slip-stake">Stake amount <span>DZD</span></label>
+              <input id="mobile-slip-stake" type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t('enter_stake')}/>
+              <div className="mobile-slip-return"><span>Potential return</span><strong>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} DZD</strong></div>
+            </div> : <p className="guest-slip-note">{t('guest_signin_note')}</p>}
+          </>}
+          {betMessage&&<p className="bet-slip-message" role="status">{betMessage}</p>}
+        </div>
+        <footer className="mobile-slip-footer">
+          <button type="button" className="mobile-slip-place" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||!userEmail||!betStake||hasSameMatchBuilder}>
+            {betBusy ? t('placing_bet') : t('place_bet_action')} <span>{betBusy ? '…' : '→'}</span>
+          </button>
+          <small>All stakes are charged in DZD. Odds are revalidated before confirmation.</small>
+        </footer>
+      </section></div>}
       {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('matchDetails') }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => closeOverlay('matchDetails')} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">{t('match_details')}</h2><div className="detail-teams"><div><span className="detail-mark team-crest">{detailMatch.homeLogo && <img src={detailMatch.homeLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.homeMark}</span></span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark team-crest">{detailMatch.awayLogo && <img src={detailMatch.awayLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.awayMark}</span></span><b>{detailMatch.away}</b></div></div><div className="detail-winner-odds" aria-label="Match winner odds">{[0,1,2].map(i=>{const pick=detailMatch.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} className={picked?'detail-winner-pick picked':'detail-winner-pick'} onClick={()=>pick&&toggleMarketSelection(detailMatch,pick)}><span>{['Win 1','Draw','Win 2'][i]}</span><b>{pick?.odds ?? '—'}</b></button>})}</div><div className="detail-info-grid"><div><small>{detailMatch.status === 'finished' ? 'MATCH STATUS' : detailMatch.status === 'live' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? 'Live now' : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div>{detailMatch.status === 'live' && typeof detailMatch.id === 'string' && <MatchStatistics fixtureId={detailMatch.id} />}<div className="detail-market-heading"><div><span className="eyebrow dark">EXPLORE THE ODDS</span><h3>{t('markets')}</h3></div><span>{detailMatch.status === 'live' ? 'LIVE EVENT' : 'PRE-MATCH'}</span></div>{detailMatch.winnerPicks.some(pick => pick?.isDemo) ? <div className="markets-empty">BETNOVA ESTIMATE · Practice mode. Cash betting is unavailable for this event.</div> : usingDemoData || typeof detailMatch.id !== 'string' ? <div className="markets-empty">Sample fixture preview only. Verified markets are unavailable for this event.</div> : <MatchMarkets fixtureId={detailMatch.id} live={detailMatch.status === 'live'} selectedIds={selected.map(item => item.selectionId)} onSelect={selection => { if (detailMatch) toggleMarketSelection(detailMatch, selection) }} />}</section></div>}
       {selected.length > 0 && (() => {
         const combinedOdds = hasSameMatchBuilder ? null : selected.reduce((total, item) => total * Number(item.odd), 1)
@@ -935,8 +961,8 @@ export default function App() {
             </div>)}
           </div>
           <div className="quick-slip-stake">
-            <label>Stake ({betCurrency})<input type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event => setBetStake(event.target.value)} placeholder="Enter amount"/></label>
-            <div>{combinedOdds === null ? <><small>Bet Builder</small><b>Combined price pending</b><small>Potential return unavailable</small></> : <><small>Total odds</small><b>{combinedOdds.toFixed(2)}</b><small>Potential return</small><strong>{potentialReturn!.toFixed(2)} {betCurrency}</strong></>}</div>
+            <label>Stake (DZD)<input type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event => setBetStake(event.target.value)} placeholder="Enter amount"/></label>
+            <div>{combinedOdds === null ? <><small>Bet Builder</small><b>Combined price pending</b><small>Potential return unavailable</small></> : <><small>Total odds</small><b>{combinedOdds.toFixed(2)}</b><small>Potential return</small><strong>{potentialReturn!.toFixed(2)} DZD</strong></>}</div>
           </div>
           <div className="quick-slip-actions"><button type="button" className="quick-slip-clear" onClick={() => { if (window.confirm("Clear all selections from your bet slip?")) { setSelected([]); setBetMessage(""); } }}>{t('clear_all')}</button><button type="button" className="quick-slip-open" onClick={() => openOverlay('mobileSlip')}>{t('view_bet_slip')} <ArrowRight size={15}/></button></div>
         </div>
