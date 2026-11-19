@@ -8,7 +8,7 @@ create table if not exists public.earn_post_submissions (
   platform text not null check (platform in ('facebook','instagram','tiktok','youtube')),
   post_url text not null check (length(trim(post_url)) between 12 and 2048),
   proof_path text not null check (length(trim(proof_path)) between 5 and 500),
-  proof_sha256 text not null check (proof_sha256 ~ '^[a-f0-9]{64}
+  proof_sha256 text not null check (proof_sha256 ~ '^[a-f0-9]{64}$'),
   reward_amount numeric(20,2) not null default 50 check (reward_amount = 50),
   currency text not null default 'DZD' check (currency = 'DZD'),
   review_note text,
