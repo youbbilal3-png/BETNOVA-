@@ -12,3 +12,5 @@
 .bn-match-follow-option button:disabled{opacity:.5;cursor:wait}
 .bn-match-follow-safe{display:flex;align-items:center;gap:6px;margin-top:8px}
 .bn-match-follow-message{margin:8px 0 0;color:#f3c2a9}
+
+.bn-match-follow-state{margin:8px 0;padding:10px 11px;border:1px solid #ffffff12;border-radius:9px;background:#ffffff06;color:#b8cbbf;font-size:11px;line-height:1.6}
