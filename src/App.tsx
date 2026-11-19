@@ -444,7 +444,7 @@ export default function App() {
 
         if (sportError) throw sportError
         if (!sportRow) {
-          if (active) {
+          if (active && requestId === latestRequest) {
             setMatches([])
           }
           return
