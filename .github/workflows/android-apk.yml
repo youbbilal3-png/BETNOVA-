@@ -164,7 +164,6 @@ jobs:
           APK="android/app/build/outputs/apk/release/app-release.apk"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK#betnova-latest.apk" --clobber --repo "$GITHUB_REPOSITORY"
-            gh release edit "$TAG" --latest --repo "$GITHUB_REPOSITORY"
           else
             gh release create "$TAG" "$APK#betnova-latest.apk" --title "BETNOVA $VERSION" --notes "Signed BETNOVA Android release." --latest --repo "$GITHUB_REPOSITORY"
           fi
