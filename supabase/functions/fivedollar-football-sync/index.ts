@@ -69,6 +69,27 @@ Deno.serve(async (req: Request) => {
   const apiKey = String(config.api_key ?? "");
   if (!apiKey) return json({ error: "Add fivedollarfootball_api_key to Supabase Vault" }, 503);
 
+  const notificationDispatchSecret = Deno.env.get("BETNOVA_NOTIFICATION_DISPATCH_SECRET") ?? "";
+  async function dispatchVerifiedPush(eventId: string, verified = false) {
+    if (!notificationDispatchSecret) return;
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/dispatch-push-notifications`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${serviceKey}`,
+          "apikey": serviceKey,
+          "Content-Type": "application/json",
+          "x-betnova-notification-secret": notificationDispatchSecret,
+        },
+        body: JSON.stringify({ event_id: eventId, verified }),
+        signal: AbortSignal.timeout(7000),
+      });
+      if (!response.ok) console.error("Push dispatch returned", response.status);
+    } catch (error) {
+      console.error("Push dispatch failed without affecting FiveDollar sync", error);
+    }
+  }
+
   const body = await req.json().catch(() => ({}));
   const mode = body?.mode === "prematch" || body?.mode === "finalize" || body?.mode === "status" || body?.mode === "catalogue" ? body.mode : "live";
   const requestedBatch = Number(body?.batch ?? 0);
@@ -257,6 +278,7 @@ Deno.serve(async (req: Request) => {
     const events = item.events;
     const occurrences = new Map<string, number>();
     let eventTimelineChanged = false;
+    const newlyObservedGoalIds: string[] = [];
 
     for (const event of events) {
       const type = eventType(event?.type);
@@ -277,7 +299,10 @@ Deno.serve(async (req: Request) => {
       const occurredAt = minute === null ? now.toISOString() : new Date(new Date(item.kickoff_utc).getTime() + minute * 60000 + (occurrence % 60) * 1000).toISOString();
       const prior = await supabase.from("fixture_events").select("id").eq("provider", PROVIDER).eq("provider_event_id", providerEventId).maybeSingle();
       if (prior.error) throw new Error("Could not inspect existing provider event");
-      if (!prior.data) eventTimelineChanged = true;
+      if (!prior.data) {
+        eventTimelineChanged = true;
+        if (type === "goal") newlyObservedGoalIds.push(providerEventId);
+      }
       const saved = await supabase.from("fixture_events").upsert({
         fixture_id: fixtureId, provider: PROVIDER, provider_event_id: providerEventId,
         event_type: type, period: period(event?.period), minute, added_time: added,
@@ -294,6 +319,7 @@ Deno.serve(async (req: Request) => {
     // Full-time is a distinct settlement event and is written only when the
     // provider explicitly reports the fixture finished.
     let newFullTimeEvent = false;
+    let fullTimeEventId: string | null = null;
     if (item?.status === "finished") {
       const fullTimeId = String(item.id) + ":full_time";
       const priorFullTime = await supabase.from("fixture_events").select("id")
@@ -305,8 +331,10 @@ Deno.serve(async (req: Request) => {
         event_type: "full_time", period: "full_time",
         event_data: { source: PROVIDER, confirmed: true, final: true, home_score: finiteScore(item?.goals?.home), away_score: finiteScore(item?.goals?.away) },
         occurred_at: now.toISOString(),
-      }, { onConflict: "provider,provider_event_id" });
-      if (fullTime.error) throw new Error("Could not store provider full-time event");
+      }, { onConflict: "provider,provider_event_id" })
+        .select("id").maybeSingle();
+      if (fullTime.error || !fullTime.data?.id) throw new Error("Could not store provider full-time event");
+      fullTimeEventId = fullTime.data.id;
     }
 
     const [oldGoals, linkResult, fixtureResult] = await Promise.all([
@@ -404,6 +432,21 @@ Deno.serve(async (req: Request) => {
       last_event_sync_at: now.toISOString(), updated_at: now.toISOString(),
     }, { onConflict: "provider_fixture_id" });
     if (linkError) errors.push("could not save provider event checkpoint");
+
+    // The first snapshot establishes a baseline; only later newly observed goals
+    // are eligible for alerts, and only after score/retraction reconciliation succeeds.
+    if (link?.last_event_sync_at && newlyObservedGoalIds.length > 0) {
+      const { data: goalRows, error: goalLookupError } = await supabase.from("fixture_events")
+        .select("id,provider_event_id")
+        .eq("fixture_id", fixtureId).eq("provider", PROVIDER).eq("event_type", "goal")
+        .in("provider_event_id", newlyObservedGoalIds);
+      if (goalLookupError) {
+        errors.push("verified goals stored but notification lookup failed");
+      } else {
+        for (const goal of goalRows ?? []) await dispatchVerifiedPush(goal.id, true);
+      }
+    }
+    if (newFullTimeEvent && fullTimeEventId) await dispatchVerifiedPush(fullTimeEventId);
   }
 
   async function saveMarket(fixtureId: string, isLive: boolean, key: string, name: string, line: number | null, picks: Array<{name:string;key:string;price:unknown}>, period: string | null = null) {
