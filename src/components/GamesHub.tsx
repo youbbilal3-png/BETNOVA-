@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { useLanguage } from '../i18n'
 import { ArrowRight, Crown, Gem, Grid3X3, Play, Sparkles, X, Zap, RotateCw } from 'lucide-react'
 
@@ -41,6 +41,7 @@ export default function GamesHub(){
     setCrashActive(false);setAppleLevel(0);setAppleDone(false);setPlinkoSlot(null)
   }
   const closeGame=()=>{setSelected(null);resetDemo()}
+  useEffect(()=>{if(!selected)return;const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape')closeGame()};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown)},[selected])
   const startCrash=()=>{
     setCrashAt(1.25+Math.random()*4.75);setMultiplier(1);setCrashActive(true)
     setPracticeResult('Multiplier is live. Advance carefully or cash out in this practice demo.')
@@ -109,12 +110,12 @@ export default function GamesHub(){
     <div className="games-safety-note"><Sparkles size={15}/><span>{labels.safety}</span></div>
     {selected&&<div className="game-detail-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)closeGame()}}>
       <section className={`game-detail-modal game-${selected.accent}`} role="dialog" aria-modal="true" aria-labelledby="game-detail-title">
-        <button className="game-detail-close" type="button" onClick={closeGame} aria-label="Close"><X size={18}/></button>
+        <button className="game-detail-close" type="button" onClick={closeGame} aria-label={labels.close}><X size={18}/></button>
         <div className={`game-detail-art art-${selected.art}`}><span>{selected.mark}</span><i/><b>BETNOVA</b></div>
         <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
         <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
         {selected.id==='crash'&&<div className="game-practice-controls">
-          <div className="crash-multiplier">{multiplier.toFixed(2)}<small>×</small></div>
+          <div className="crash-multiplier" aria-live="polite">{multiplier.toFixed(2)}<small>×</small></div>
           {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:<div className="game-action-row"><button type="button" onClick={advanceCrash}>{labels.next}</button><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>}
         </div>}
         {selected.id==='apple'&&<div className="game-practice-controls">
