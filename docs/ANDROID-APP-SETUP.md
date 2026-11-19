@@ -56,7 +56,9 @@ A production APK requires a persistent Android release keystore. Create it once,
 - `ANDROID_KEY_ALIAS`: the alias created in the keystore.
 - `ANDROID_KEY_PASSWORD`: password for that alias.
 
-Never commit the keystore or passwords to the repository or share them in chat. The optional signed-release job is prepared in `.github/workflows/android-apk.yml`: open GitHub Actions, run **BETNOVA Android APK**, and set **Build a signed release APK** to true after all four secrets are configured. The normal workflow continues to build the debug APK without requiring signing secrets.
+Never commit the keystore or passwords to the repository or share them in chat. Generate the keystore once with a trusted JDK using `keytool -genkeypair -v -keystore betnova-release.jks -alias betnova -keyalg RSA -keysize 2048 -validity 10000`. Convert that file to a single-line base64 value for `ANDROID_KEYSTORE_BASE64` (on Linux/Termux: `base64 -w 0 betnova-release.jks`) and keep the original keystore in a secure offline backup.
+
+Add the four values under GitHub repository **Settings → Secrets and variables → Actions**. The optional signed-release job is prepared in `.github/workflows/android-apk.yml`: open GitHub Actions, run **BETNOVA Android APK**, and set **Build a signed release APK** to true after all four secrets are configured. The normal workflow continues to build the debug APK without requiring signing secrets.
 
 The debug APK uses a debug signing identity and must not be treated as a production update path. The release workflow is ready for owner-supplied signing credentials, but no production-signed APK exists yet and the forced-update download URL must remain empty until one is uploaded to a stable HTTPS location.
 
