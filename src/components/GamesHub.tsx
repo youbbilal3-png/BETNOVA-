@@ -127,7 +127,7 @@ export default function GamesHub(){
         <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
         <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
         {selected.id==='crash'&&<div className="game-practice-controls">
-          <div className="crash-multiplier" aria-live="polite">{multiplier.toFixed(2)}<small>×</small></div>
+          <div className={`crash-multiplier ${crashActive?'rising':''}`} aria-live="polite">{multiplier.toFixed(2)}<small>×</small></div>
           {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:<div className="game-action-row"><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>}
         </div>}
         {selected.id==='apple'&&<div className="game-practice-controls">
