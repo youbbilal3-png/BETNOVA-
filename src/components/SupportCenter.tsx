@@ -77,7 +77,7 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
       </div>
 
       <div className="support-content">
-        <div className="support-section-heading"><span>CONTACT OPTIONS</span><h2>{t('support_how_help')}</h2><p>{t('support_choose_method')}</p></div>
+        <div className="support-section-heading"><span>{t('support_contact_options')}</span><h2>{t('support_how_help')}</h2><p>{t('support_choose_method')}</p></div>
         <div className="support-contact-grid">
           <article className="support-contact-card support-email-card">
             <div className="support-card-icon"><Mail size={21}/></div>
@@ -96,17 +96,17 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
         </div>
 
         <section className="support-form-card" id="support-form">
-          <div className="support-form-heading"><div><span className="support-card-kicker">WE’RE LISTENING</span><h2>{t('support_request_title')}</h2><p>{t('support_request_desc')}</p></div><div className="support-form-mark"><Send size={22}/></div></div>
+          <div className="support-form-heading"><div><span className="support-card-kicker">{t('support_we_listen')}</span><h2>{t('support_request_title')}</h2><p>{t('support_request_desc')}</p></div><div className="support-form-mark"><Send size={22}/></div></div>
           {sent ? <div className="support-success"><CheckCircle2 size={25}/><div><b>{t('support_received')}</b><p>Thank you for contacting BETNOVA. {t('support_how_help')} has been added to the support inbox.</p></div><button type="button" onClick={() => setSent(false)}>{t('support_send_another')}</button></div> :
             <form onSubmit={event => void submitRequest(event)} className="support-form">
               <div className="support-form-row"><label>{t('your_name')} <span>{t('support_optional')}</span><input value={name} onChange={event => setName(event.target.value)} maxLength={100} placeholder={t('your_name')}/></label><label>{t('email_address')}<input type="email" required value={email} onChange={event => setEmail(event.target.value)} maxLength={254} placeholder="you@example.com"/></label></div>
-              <div className="support-form-row"><label>{t('support_request_title')}<select value={category} onChange={event => setCategory(event.target.value)}><option>Account & profile</option><option>Deposit</option><option>Withdrawal</option><option>Wallet & balance</option><option>Sports & markets</option><option>Games</option><option>Technical issue</option><option>Other</option></select></label><label>{t('support_request_title')}<input required value={subject} onChange={event => setSubject(event.target.value)} maxLength={140} placeholder="Briefly describe your issue"/></label></div>
-              <label className="support-message-label">{t('support_how_help')}<textarea required value={message} onChange={event => setMessage(event.target.value)} minLength={12} maxLength={4000} rows={5} placeholder="Write the details of your request here…"/></label>
+              <div className="support-form-row"><label>{t('support_request_title')}<select value={category} onChange={event => setCategory(event.target.value)}><option value="Account & profile">{t('support_category_account')}</option><option value="Deposit">{t('support_category_deposit')}</option><option value="Withdrawal">{t('support_category_withdrawal')}</option><option value="Wallet & balance">{t('support_category_wallet')}</option><option value="Sports & markets">{t('support_category_sports')}</option><option value="Games">{t('support_category_games')}</option><option value="Technical issue">{t('support_category_technical')}</option><option value="Other">{t('support_category_other')}</option></select></label><label>{t('support_request_title')}<input required value={subject} onChange={event => setSubject(event.target.value)} maxLength={140} placeholder={t('support_describe_issue')}/></label></div>
+              <label className="support-message-label">{t('support_how_help')}<textarea required value={message} onChange={event => setMessage(event.target.value)} minLength={12} maxLength={4000} rows={5} placeholder={t('support_write_request')}/></label>
               {error && <p className="support-error" role="alert">{error}</p>}
               <div className="support-submit-row"><small><ShieldCheck size={14}/> {t('support_private_note')}</small><button type="submit" disabled={busy}>{busy ? t('sending') : t('support_send')} <Send size={15}/></button></div>
             </form>}
         </section>
-        <div className="support-footer-note"><ShieldCheck size={15}/> BETNOVA Support · Please never send passwords, card PINs, private keys or verification codes.</div>
+        <div className="support-footer-note"><ShieldCheck size={15}/> {t('support_footer_privacy')}</div>
       </div>
     </section>
   </div>

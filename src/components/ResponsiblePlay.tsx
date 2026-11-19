@@ -72,7 +72,7 @@ export default function ResponsiblePlay({ onClose, userEmail, language = 'en' }:
           {sent ? <div className="responsible-success"><CheckCircle2 size={25}/><div><b>{t('support_received')}</b><p>{t('rp_received')}</p></div></div> :
             <form onSubmit={event => void submitRequest(event)}>
               <label>{t('rp_request_type')}<select value={requestType} onChange={event => setRequestType(event.target.value)}><option value="Temporary break">{t('temporary_break')}</option><option value="Self-exclusion">{t('self_exclusion')}</option></select></label>
-              {requestType === 'Temporary break' && <label>{t('rp_duration')}<select value={duration} onChange={event => setDuration(event.target.value)}><option>24 hours</option><option>7 days</option><option>30 days</option><option>90 days</option></select></label>}
+              {requestType === 'Temporary break' && <label>{t('rp_duration')}<select value={duration} onChange={event => setDuration(event.target.value)}><option value="24 hours">{t('rp_duration_24h')}</option><option value="7 days">{t('rp_duration_7d')}</option><option value="30 days">{t('rp_duration_30d')}</option><option value="90 days">{t('rp_duration_90d')}</option></select></label>}
               <label>{t('additional_details')}<textarea value={details} onChange={event => setDetails(event.target.value)} rows={3} maxLength={1000} placeholder={t('details_placeholder')}/></label>
               {!userEmail && <p className="responsible-login-note">{t('rp_login_required')}</p>}
               {error && <p className="responsible-error" role="alert">{error}</p>}
