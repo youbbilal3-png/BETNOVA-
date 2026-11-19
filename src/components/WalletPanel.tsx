@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
 
 type Props = { onClose: () => void; initialTab?: 'deposit' | 'withdraw' | 'history' }
-type Method = { code: string; display_name: string; supported_currencies: string[]; instructions: Record<string, unknown> }
+type Method = { code: string; display_name: string; is_enabled: boolean; is_withdrawal_enabled: boolean; supported_currencies: string[]; instructions: Record<string, unknown> }
 type Account = { currency: string; available_balance: number; reserved_balance: number; recovery_balance: number }
 type RequestRow = { id: string; payment_method: string; amount: number; currency: string; status: string; created_at: string }
 
@@ -42,7 +42,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     setUserId(user.id)
     const [a, m, d, w, b] = await Promise.all([
       supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance,recovery_balance').eq('user_id', user.id),
-      supabase.from('payment_methods').select('code,display_name,supported_currencies,instructions').eq('is_enabled', true).order('sort_order'),
+      supabase.from('payment_methods').select('code,display_name,is_enabled,is_withdrawal_enabled,supported_currencies,instructions').order('sort_order'),
       supabase.from('deposit_requests').select('id,payment_method,amount,currency,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
       supabase.from('withdrawal_requests').select('id,payment_method,amount,currency,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
       supabase.from('bonus_wallet_accounts').select('available_balance,reserved_balance').eq('user_id', user.id).maybeSingle()
@@ -178,7 +178,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
       {Number(account?.recovery_balance ?? 0) > 0 && <div className="wallet-recovery-notice"><b>{t('recovery_notice')}</b><span>{t('recovery_blocks_withdrawal')}</span></div>}{error && <p className="wallet-message error">{error}</p>}
       {notice && <p className="wallet-message success">{notice}</p>}
       {tab === 'deposit' && <form className="wallet-form" onSubmit={submitDeposit}>
-        <label>{t('payment_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
+        <label>{t('payment_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.is_enabled && item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
         {selectedMethod && <div className="wallet-instructions">
           {accountName && <p><b>{t('account_name')}</b> {accountName}</p>}
           {accountNumber && <p><b>{t('transfer_details')}</b> {accountNumber}</p>}
@@ -192,7 +192,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('balance_after_verification')}</p>
       </form>}
       {tab === 'withdraw' && <><div className="wallet-tabs"><button type="button" className={!bonusWithdrawMode ? 'active' : ''} onClick={() => {setBonusWithdrawMode(false);setAmount('');setError('')}}>Real balance</button><button type="button" className={bonusWithdrawMode ? 'active' : ''} onClick={() => {setBonusWithdrawMode(true);setAmount('');setError('')}}>Bonus balance</button></div>{bonusWithdrawMode && <div className="wallet-recovery-notice"><b>Bonus withdrawal condition</b><span>Complete verified deposits totaling 10 USD (2,600 DZD or 9 EUR). The deposit remains in your real-money wallet. This condition never applies to real balance withdrawals.</span></div>}<form className="wallet-form" onSubmit={bonusWithdrawMode ? submitBonusWithdrawal : submitWithdrawal}>
-        <label>{t('withdrawal_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
+        <label>{t('withdrawal_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.is_withdrawal_enabled && item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min={currency === 'DZD' ? 1000 : 1.5} max={bonusWithdrawMode ? bonus.available_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1) : Math.min(currency === 'DZD' ? 1500000 : 50000, account?.available_balance ?? 0)} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
         <button className="wallet-submit" disabled={busy || !selectedMethod || (bonusWithdrawMode ? bonus.available_balance <= 0 : !account || Number(account.available_balance) <= 0)}>{busy ? 'Submitting…' : bonusWithdrawMode ? 'Request bonus withdrawal' : 'Request withdrawal'}</button>
