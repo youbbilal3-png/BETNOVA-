@@ -18,9 +18,10 @@ const games:Game[] = [
 ]
 
 const categoryIcons:Record<Category,typeof Grid3X3>={all:Grid3X3,games:Zap,slots:Gem,casino:Crown}
-const arabicDescriptions:Record<string,string>={crash:'ابدأ جولة تدريبية مجانية، راقب المضاعف واختر وقت التوقف.',apple:'اختر التفاحات الآمنة عبر ثلاثة مستويات تدريبية دون أموال أو نتائج حقيقية.',plinko:'أسقط كرة تدريبية عبر المسامير وشاهد خانة الهبوط.', 'lucky-fruits':'تصميم فواكه كلاسيكي بألوان زاهية وبكرات عصرية.',pharaoh:'أجواء مصرية قديمة أنيقة مع الذهب والرموز الملكية.','space-spin':'تصميم فضائي مستقبلي بالكواكب والنجوم والألوان المتوهجة.',roulette:'تصميم أنيق لعجلة روليت أوروبية ذات صفر واحد.',blackjack:'تصميم لطاولة بلاك جاك بأوراق واضحة وأجواء راقية.',baccarat:'تصميم أنيق لطاولة باكارات بين اللاعب والمصرف.'}
+const arabicDescriptions:Record<string,string>={crash:'ابدأ جولة تدريبية مجانية، راقب المضاعف واختر وقت التوقف.',apple:'خمسة صفوف مليئة بالتفاحات. اختر تفاحة آمنة في كل صف وتجنب التفاحة المخفية.',plinko:'أسقط كرة تدريبية عبر المسامير وشاهد خانة الهبوط.', 'lucky-fruits':'تصميم فواكه كلاسيكي بألوان زاهية وبكرات عصرية.',pharaoh:'أجواء مصرية قديمة أنيقة مع الذهب والرموز الملكية.','space-spin':'تصميم فضائي مستقبلي بالكواكب والنجوم والألوان المتوهجة.',roulette:'تصميم أنيق لعجلة روليت أوروبية ذات صفر واحد.',blackjack:'تصميم لطاولة بلاك جاك بأوراق واضحة وأجواء راقية.',baccarat:'تصميم أنيق لطاولة باكارات بين اللاعب والمصرف.'}
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
-const newAppleTraps=()=>Array.from({length:3},()=>Math.floor(Math.random()*3))
+const APPLE_ROWS=5, APPLE_COLUMNS=5
+const newAppleTraps=()=>Array.from({length:APPLE_ROWS},()=>Math.floor(Math.random()*APPLE_COLUMNS))
 const rouletteReds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36])
 const drawCard=()=>{const value=Math.floor(Math.random()*13)+1;return value===1?11:Math.min(value,10)}
 const cardLabel=(value:number)=>value===11?'A':String(value)
@@ -75,10 +76,10 @@ export default function GamesHub(){
     setPracticeResult(arabic?`أوقفت الجولة عند ${multiplier.toFixed(2)}×. نتيجة للعرض فقط دون أرباح.`:`Practice stop at ${multiplier.toFixed(2)}×. Display-only result; no winnings were created.`)
   }
   const pickApple=(column:number)=>{
-    if(appleDone||appleLevel>=3)return
+    if(appleDone||appleLevel>=APPLE_ROWS)return
     setApplePicks(current=>[...current,column])
     if(column===appleTraps[appleLevel]){setAppleDone(true);setPracticeResult(arabic?`وجدت التفاحة الخطرة في الصف ${appleLevel+1}. انتهت الجولة التدريبية.`:`Trap apple found in row ${appleLevel+1}. Practice round over.`)}
-    else{const next=appleLevel+1;setAppleLevel(next);if(next>=3){setAppleDone(true);setPracticeResult(arabic?'ثلاث اختيارات آمنة! اكتملت الجولة التدريبية دون جوائز أو رصيد.':'Three safe picks! Practice round completed with no prize or balance award.')}else setPracticeResult(arabic?`اختيار آمن! انتقل إلى الصف ${next+1}.`:`Safe pick! Continue to row ${next+1}.`)}
+    else{const next=appleLevel+1;setAppleLevel(next);if(next>=APPLE_ROWS){setAppleDone(true);setPracticeResult(arabic?'ثلاث اختيارات آمنة! اكتملت الجولة التدريبية دون جوائز أو رصيد.':'Three safe picks! Practice round completed with no prize or balance award.')}else setPracticeResult(arabic?`اختيار آمن! انتقل إلى الصف ${next+1}.`:`Safe pick! Continue to row ${next+1}.`)}
     setPracticeCount(value=>value+1)
   }
   const dropPlinko=()=>{
@@ -128,12 +129,36 @@ export default function GamesHub(){
         <div className={`game-detail-art art-${selected.art}`}><span>{selected.mark}</span><i/><b>BETNOVA</b></div>
         <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
         <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
-        {selected.id==='crash'&&<div className="game-practice-controls">
+        {selected.id==='crash'&&<div className="game-practice-controls crash-controls">
+          <div className={`crash-flight-stage ${crashActive?'is-flying':multiplier>1?'flight-ended':'flight-ready'}`} role="img" aria-label={arabic?'طائرة كراش تطير داخل مسار ثلاثي الأبعاد':'Crash airplane flying through a 3D flight arena'}>
+            <div className="crash-sky-grid"/><div className="crash-sun-glow"/><div className="crash-cloud cloud-a"/><div className="crash-cloud cloud-b"/>
+            <div className="crash-mountains mountain-back"/><div className="crash-mountains mountain-front"/>
+            <div className="crash-flight-path"/><div className="crash-flight-trail"/>
+            <div className="crash-plane">
+              <svg viewBox="0 0 220 150" aria-hidden="true">
+                <defs>
+                  <linearGradient id="bnPlaneBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffffff"/><stop offset=".42" stopColor="#c9e9ff"/><stop offset="1" stopColor="#5b91c9"/></linearGradient>
+                  <linearGradient id="bnPlaneWing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#e9f8ff"/><stop offset="1" stopColor="#5586bd"/></linearGradient>
+                  <linearGradient id="bnPlaneGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#9df4ff"/><stop offset="1" stopColor="#17618d"/></linearGradient>
+                </defs>
+                <path d="M18 91 L72 79 L99 22 Q105 11 114 22 L137 70 L194 83 Q205 87 198 96 L139 103 L119 132 Q112 141 104 132 L87 105 L25 105 Q11 104 18 91Z" fill="url(#bnPlaneWing)" stroke="#e6f8ff" strokeWidth="2.4"/>
+                <path d="M22 94 Q103 65 204 87 Q213 91 203 98 Q110 111 22 101Z" fill="url(#bnPlaneBody)" stroke="#f4fbff" strokeWidth="2"/>
+                <path d="M103 83 Q111 54 128 79 L145 91 Q124 96 103 92Z" fill="url(#bnPlaneGlass)" stroke="#e8fbff" strokeWidth="2"/>
+                <path d="M45 91 L73 86 L84 97 L46 99Z" fill="#5a8bb9" opacity=".85"/>
+                <path d="M156 89 L190 91 L157 98Z" fill="#74a9d6"/>
+                <path d="M106 24 L116 42 L126 72 L112 68 L98 39Z" fill="#ffffff" opacity=".55"/>
+                <path d="M20 96 L5 92 M20 101 L4 103" stroke="#a8eaff" strokeWidth="3" strokeLinecap="round"/>
+                <circle cx="25" cy="95" r="4" fill="#75edff"/><circle cx="25" cy="95" r="8" fill="#75edff" opacity=".2"/>
+              </svg>
+            </div>
+            <div className="crash-stage-hud"><span>{arabic?'الرحلة المباشرة':'LIVE FLIGHT'}</span><b>{multiplier.toFixed(2)}×</b></div>
+            <div className="crash-stage-bottom"><span>BETNOVA AIR</span><span>{crashActive?(arabic?'في الجو':'IN FLIGHT'):multiplier>1?(arabic?'انتهت الجولة':'ROUND ENDED'):(arabic?'جاهز للإقلاع':'READY FOR TAKEOFF')}</span></div>
+          </div>
           <div className={`crash-multiplier ${crashActive?'rising':''}`} aria-live="polite">{multiplier.toFixed(2)}<small>×</small></div>
           {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:<div className="game-action-row"><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>}
         </div>}
         {selected.id==='apple'&&<div className="game-practice-controls">
-          <div className="apple-board" aria-label={arabic?'اختر تفاحة واحدة في كل صف':'Choose one apple in each row'}>{[0,1,2].map(row=><div className="apple-row" key={row}>{[0,1,2].map(col=>{const chosen=applePicks[row]===col;const revealed=row<appleLevel||(appleDone&&row===appleLevel);const trap=appleTraps[row]===col;return <button key={col} type="button" disabled={appleDone||row!==appleLevel} className={`${chosen?'chosen ':''}${revealed&&trap?'trap ':''}${revealed&&chosen&&!trap?'safe ':''}${row>appleLevel?'locked':''}`} onClick={()=>pickApple(col)} aria-label={`${arabic?'الصف':'Row'} ${row+1}, ${arabic?'الخيار':'choice'} ${col+1}`}>{revealed?(chosen?(trap?'💥':'🍏'):(trap?'💣':'·')):row===appleLevel?'🍏':'🔒'}</button>})}</div>)}</div>
+          <div className="apple-board" aria-label={arabic?'خمسة صفوف من التفاحات، اختر تفاحة آمنة في كل صف':'Five rows of apples, choose one safe apple in each row'}>{Array.from({length:APPLE_ROWS},(_,row)=><div className="apple-row" key={row}>{Array.from({length:APPLE_COLUMNS},(_,col)=>{const chosen=applePicks[row]===col;const revealed=row<appleLevel||(appleDone&&row===appleLevel);const trap=appleTraps[row]===col;return <button key={col} type="button" disabled={appleDone||row!==appleLevel} className={`${chosen?'chosen ':''}${revealed&&trap?'trap ':''}${revealed&&chosen&&!trap?'safe ':''}${row>appleLevel?'locked':''}`} onClick={()=>pickApple(col)} aria-label={`${arabic?'الصف':'Row'} ${row+1}, ${arabic?'التفاحة':'apple'} ${col+1}`}>{revealed?(trap?'💣':chosen?'🍏':'🍎'):'🍏'}</button>})}</div>)}</div>
         </div>}
         {selected.id==='plinko'&&<div className="game-practice-controls">
           <div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:6},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:9},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div></div>
