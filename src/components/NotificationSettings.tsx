@@ -56,66 +56,6 @@ export default function NotificationSettings({ language = 'en' }: { language?: s
     }
   }, [])
 
-  useEffect(() => {
-    if (!supabase || !userId) {
-      setPrefs(defaults)
-      setLoading(false)
-      return
-    }
-    let active = true
-    setLoading(true)
-    void supabase.from('notification_preferences').select('*').eq('user_id', userId).maybeSingle()
-      .then(({ data, error }) => {
-        if (!active) return
-        if (error) setMessage(isArabic ? 'تعذر تحميل إعدادات الإشعارات.' : 'Could not load notification preferences.')
-        else if (data) setPrefs({
-          enabled: data.enabled,
-          match_start: data.match_start,
-          goals: data.goals,
-          red_cards: data.red_cards,
-          half_time: data.half_time,
-          full_time: data.full_time,
-          bet_settlement: data.bet_settlement,
-          account_activity: data.account_activity,
-        })
-        else setPrefs(defaults)
-        setLoading(false)
-      })
-    return () => { active = false }
-  }, [userId, isArabic])
-
-  useEffect(() => {
-    if (!supabase || !userId || !isNative) return
-    let active = true
-    let registrationHandle: { remove: () => Promise<void> } | undefined
-    let errorHandle: { remove: () => Promise<void> } | undefined
-    void PushNotifications.addListener('registration', async token => {
-      if (!active || !supabase) return
-      const { error } = await supabase.from('device_push_tokens').upsert({
-        token: token.value,
-        user_id: userId,
-        platform: 'android',
-        last_seen_at: new Date().toISOString(),
-      }, { onConflict: 'token' })
-      if (error) setMessage(isArabic ? 'تعذر حفظ جهاز الإشعارات. حاول تسجيل الخروج ثم الدخول.' : 'Could not save this device for notifications. Please sign out and back in.')
-      else setMessage(isArabic ? 'تم ربط هذا الجهاز بالإشعارات.' : 'This device is registered for notifications.')
-    }).then(handle => {
-      registrationHandle = handle
-      if (!active) void handle.remove()
-    })
-    void PushNotifications.addListener('registrationError', () => {
-      if (active) setMessage(isArabic ? 'فشل تسجيل الإشعارات على هذا الجهاز.' : 'Push registration failed on this device.')
-    }).then(handle => {
-      errorHandle = handle
-      if (!active) void handle.remove()
-    })
-    return () => {
-      active = false
-      void registrationHandle?.remove()
-      void errorHandle?.remove()
-    }
-  }, [userId, isNative, isArabic])
-
   const toggle = useCallback(async (key: PreferenceKey, value: boolean) => {
     if (!supabase || !userId) {
       setMessage(isArabic ? 'سجّل الدخول أولاً لحفظ إعداداتك.' : 'Sign in first to save your preferences.')
