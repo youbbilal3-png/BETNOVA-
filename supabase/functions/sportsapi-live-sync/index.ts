@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration is incomplete" }, 503);
 
   const supabase = createClient(supabaseUrl, serviceKey, {
