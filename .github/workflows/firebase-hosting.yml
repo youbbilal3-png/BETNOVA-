@@ -43,11 +43,11 @@ jobs:
             const path = 'public/app-version.json'
             const policy = JSON.parse(fs.readFileSync(path, 'utf8'))
             const version = process.argv[2]
-            if (!/^\\d+\\.\\d+(?:\\.\\d+)?$/.test(version)) throw new Error('Invalid latest release tag')
+            if (!/^\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('Invalid latest release tag')
             policy.latestVersion = version
             policy.minimumSupportedVersion = version
             policy.downloadUrl = 'https://betnova-8daa3.web.app/downloads/betnova-latest.apk'
-            fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\\n')
+            fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\n')
             NODE
             test -s public/downloads/betnova-latest.apk
           fi
