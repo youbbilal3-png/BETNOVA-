@@ -465,7 +465,9 @@ Deno.serve(async (req: Request) => {
         await dispatchVerifiedPush(event.id, event.eventType === "goal");
       }
     }
-    if (newFullTimeEvent && fullTimeEventId) await dispatchVerifiedPush(fullTimeEventId);
+    if (link?.last_event_sync_at && newFullTimeEvent && fullTimeEventId) {
+      await dispatchVerifiedPush(fullTimeEventId);
+    }
   }
 
   async function saveMarket(fixtureId: string, isLive: boolean, key: string, name: string, line: number | null, picks: Array<{name:string;key:string;price:unknown}>, period: string | null = null) {
