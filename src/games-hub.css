@@ -126,3 +126,9 @@
 .slot-reels span.spinning{animation:slot-roll .13s linear infinite;filter:blur(.4px)}
 @keyframes slot-roll{0%{transform:translateY(-8px) rotateX(18deg);opacity:.72}50%{transform:translateY(7px) rotateX(-18deg);opacity:1}100%{transform:translateY(-8px) rotateX(18deg);opacity:.72}}
 @media(prefers-reduced-motion:reduce){.slot-reels span.spinning{animation:none!important}}
+
+.plinko-board{position:relative}
+.plinko-ball{position:absolute;z-index:3;top:8px;left:calc(50% - 7px);display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#fff,#9af8ff 38%,#3c86da 72%);color:transparent;box-shadow:0 0 14px #71efff,0 2px 5px #0009;opacity:0;pointer-events:none}
+.plinko-ball.dropping{opacity:1;animation:plinko-fall .95s cubic-bezier(.38,.02,.65,.98) forwards}
+@keyframes plinko-fall{0%{transform:translate(0,0) scale(1)}18%{transform:translate(-19px,24px) scale(.94)}36%{transform:translate(16px,48px) scale(1.02)}54%{transform:translate(-13px,70px) scale(.96)}72%{transform:translate(11px,91px) scale(1)}100%{transform:translate(0,112px) scale(.9);opacity:.3}}
+@media(prefers-reduced-motion:reduce){.plinko-ball.dropping{animation:none!important;opacity:1;transform:translateY(100px)}}
