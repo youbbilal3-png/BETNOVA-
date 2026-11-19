@@ -299,9 +299,8 @@ Deno.serve(async (req: Request) => {
       const occurredAt = minute === null ? now.toISOString() : new Date(new Date(item.kickoff_utc).getTime() + minute * 60000 + (occurrence % 60) * 1000).toISOString();
       const prior = await supabase.from("fixture_events").select("id").eq("provider", PROVIDER).eq("provider_event_id", providerEventId).maybeSingle();
       if (prior.error) throw new Error("Could not inspect existing provider event");
-      if (!prior.data) {
+      if (!prior.data && ["goal", "corner", "yellow_card", "red_card", "penalty_awarded"].includes(type)) {
         eventTimelineChanged = true;
-        if (type === "goal") newlyObservedGoalIds.push(providerEventId);
       }
       const saved = await supabase.from("fixture_events").upsert({
         fixture_id: fixtureId, provider: PROVIDER, provider_event_id: providerEventId,
