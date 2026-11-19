@@ -132,3 +132,7 @@
 .plinko-ball.dropping{opacity:1;animation:plinko-fall .95s cubic-bezier(.38,.02,.65,.98) forwards}
 @keyframes plinko-fall{0%{transform:translate(0,0) scale(1)}18%{transform:translate(-19px,24px) scale(.94)}36%{transform:translate(16px,48px) scale(1.02)}54%{transform:translate(-13px,70px) scale(.96)}72%{transform:translate(11px,91px) scale(1)}100%{transform:translate(0,112px) scale(.9);opacity:.3}}
 @media(prefers-reduced-motion:reduce){.plinko-ball.dropping{animation:none!important;opacity:1;transform:translateY(100px)}}
+
+.crash-multiplier.rising{animation:crash-pulse .55s ease-in-out infinite alternate}
+@keyframes crash-pulse{from{text-shadow:0 0 14px var(--game-glow);filter:brightness(1)}to{text-shadow:0 0 30px var(--game-glow),0 0 48px color-mix(in srgb,var(--game-glow) 35%,transparent);filter:brightness(1.22)}}
+@media(prefers-reduced-motion:reduce){.crash-multiplier.rising{animation:none!important}}
