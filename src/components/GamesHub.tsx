@@ -290,7 +290,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     if(!realAppleRound||!supabase||realBetBusy)return
     const cashoutKey=appleCashoutKey??crypto.randomUUID();if(!appleCashoutKey)setAppleCashoutKey(cashoutKey)
     setRealBetBusy(true);setRealBetMessage('')
-    try{const {data,error}=await supabase.rpc('betnova_cashout_apple_round',{p_round_id:realAppleRound.id,p_idempotency_key:cashoutKey});if(error)throw error;const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>;setRealBalance(Number(result.balance_after??realBalance??0));setRealBetResult(result);setRealAppleRound(null);setAppleDone(true);setPracticeResult(arabic?'تم سحب أرباحك وإضافتها إلى رصيدك.':'Winnings cashed out to your balance.');setRealRoundKey(crypto.randomUUID())}
+    try{const {data,error}=await supabase.rpc('betnova_cashout_apple_round',{p_round_id:realAppleRound.id,p_idempotency_key:cashoutKey});if(error)throw error;const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>;setRealBalance(Number(result.balance_after??realBalance??0));setRealBetResult(result);setAppleCashoutKey(null);setRealAppleRound(null);setAppleDone(true);setPracticeResult(arabic?'تم سحب أرباحك وإضافتها إلى رصيدك.':'Winnings cashed out to your balance.');setRealRoundKey(crypto.randomUUID())}
     catch(error){setRealBetMessage(error instanceof Error?error.message:'Apple cash-out failed.')}
     finally{setRealBetBusy(false)}
   }
