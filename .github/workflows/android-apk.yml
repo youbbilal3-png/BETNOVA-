@@ -43,7 +43,7 @@ on:
       - '.github/workflows/android-apk.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: betnova-android-build
@@ -153,3 +153,60 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish signed APK as a GitHub Release asset
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "JSON.parse(require('node:fs').readFileSync('public/app-version.json','utf8')).latestVersion")
+          TAG="v$VERSION"
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK#betnova-latest.apk" --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$TAG" --latest --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" "$APK#betnova-latest.apk" --title "BETNOVA $VERSION" --notes "Signed BETNOVA Android release." --latest --repo "$GITHUB_REPOSITORY"
+          fi
+
+      - name: Prepare stable APK URL and mandatory-update policy
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        run: |
+          VERSION=$(node -p "JSON.parse(require('node:fs').readFileSync('public/app-version.json','utf8')).latestVersion")
+          mkdir -p public/downloads
+          cp android/app/build/outputs/apk/release/app-release.apk public/downloads/betnova-latest.apk
+          node - "$VERSION" <<'NODE'
+          const fs = require('node:fs')
+          const path = 'public/app-version.json'
+          const policy = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const version = process.argv[2]
+          if (!/^\\d+\\.\\d+(?:\\.\\d+)?$/.test(version)) throw new Error('Invalid release version')
+          policy.latestVersion = version
+          policy.minimumSupportedVersion = version
+          policy.downloadUrl = 'https://betnova-8daa3.web.app/downloads/betnova-latest.apk'
+          fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\\n')
+          NODE
+
+      - name: Rebuild web assets with the published APK
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://lvhuipkfsdughearjsvy.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_31QoDyH3c357Da-yCpI1Cw_DwUb5DBy
+
+      - name: Deploy signed APK and update policy to Firebase Hosting
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BETNOVA }}
+          projectId: betnova-8daa3
+          channelId: live
+
+      - name: Verify stable APK download and mandatory-update policy
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        env:
+          RELEASE_VERSION: ${{ fromJSON(hashFiles('public/app-version.json') != '' && '1' || '1') }}
+        run: |
+          curl -fsSI https://betnova-8daa3.web.app/downloads/betnova-latest.apk | grep -E '^HTTP/.* 200'
+          curl -fsSL https://betnova-8daa3.web.app/app-version.json | node -e "let body='';process.stdin.on('data',chunk=>body+=chunk);process.stdin.on('end',()=>{const policy=JSON.parse(body);if(policy.minimumSupportedVersion!==policy.latestVersion||policy.downloadUrl!=='https://betnova-8daa3.web.app/downloads/betnova-latest.apk')process.exit(1)})"
