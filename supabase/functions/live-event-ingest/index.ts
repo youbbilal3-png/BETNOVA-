@@ -139,8 +139,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Push alerts are independent of wallet and bet settlement. A failure here must never block event ingestion.
-  const dispatchSecret = Deno.env.get("BETNOVA_NOTIFICATION_DISPATCH_SECRET");
-  if (dispatchSecret && ["match_start", "goal", "red_card", "half_time", "full_time"].includes(eventType)) {
+  if (["match_start", "goal", "red_card", "half_time", "full_time"].includes(eventType)) {
     try {
       const response = await fetch(`${supabaseUrl}/functions/v1/dispatch-push-notifications`, {
         method: "POST",
@@ -148,7 +147,6 @@ Deno.serve(async (req: Request) => {
           "Authorization": `Bearer ${serviceKey}`,
           "apikey": serviceKey,
           "Content-Type": "application/json",
-          "x-betnova-notification-secret": dispatchSecret,
         },
         body: JSON.stringify({ event_id: event.id, verified: eventType === "goal" }),
         signal: AbortSignal.timeout(7000),
