@@ -148,7 +148,7 @@ export default function AdminOverview({ onClose }: Props) {
   async function saveSupportEmail() {
     if (!supabase) return
     const value = supportEmailDraft.trim()
-    if (value && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) { setError('Enter a valid support email address.'); return }
+    if (value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) { setError('Enter a valid support email address.'); return }
     setBusyId('support-email'); setError(''); setNotice('')
     try {
       const { error: updateError } = await supabase.from('support_settings').update({ support_email: value || null, updated_at: new Date().toISOString() }).eq('id', true)
