@@ -539,3 +539,5 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .admin-payment-method-top b{flex:1}
 .admin-payment-method-top span{font-size:8px}
 @media(max-width:360px){.wallet-method-grid{grid-template-columns:1fr}.wallet-method-card{min-height:62px}}
+
+.wallet-method-hint{color:#82978a;font-size:8px;line-height:1.45}
