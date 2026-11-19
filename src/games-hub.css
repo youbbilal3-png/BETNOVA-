@@ -179,3 +179,43 @@
 .apple-row button.safe{background:linear-gradient(145deg,#3c7845,#17452e);box-shadow:0 0 15px #9cf47c55}
 @media(max-width:600px){.crash-flight-stage{height:218px;min-height:205px}.crash-plane{width:125px;height:94px}.apple-board{padding:8px;gap:6px}.apple-row{gap:4px}.apple-row button{min-height:42px;font-size:19px;border-radius:8px}}
 @media(prefers-reduced-motion:reduce){.crash-flight-stage.is-flying .crash-plane,.crash-flight-stage.flight-ended .crash-plane,.crash-flight-stage.is-flying .crash-flight-trail,.crash-flight-stage.flight-ended .crash-flight-trail,.crash-flight-stage.flight-ready .crash-plane{animation:none!important}.crash-flight-stage.is-flying .crash-plane{left:48%;bottom:42%}}
+
+
+/* Mobile-safe arcade modal: persistent close control and scrollable content */
+.game-detail-backdrop{box-sizing:border-box;align-items:center;justify-items:center;padding:12px;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain}
+.game-detail-modal{box-sizing:border-box;width:min(100%,460px);max-height:calc(100dvh - 24px);max-height:calc(100svh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:18px;padding-top:18px;scrollbar-width:thin;scrollbar-color:#6edfc477 transparent}
+.game-detail-close{position:sticky;top:0;z-index:30;align-self:flex-end;margin:0 0 -34px auto;transform:translateY(-1px);box-shadow:0 4px 14px #0008;background:#14243beF;border-color:#72e9d788}
+.game-detail-modal h3{padding-right:36px}
+[dir="rtl"] .game-detail-close{margin:0 auto -34px 0}
+[dir="rtl"] .game-detail-modal h3{padding-right:0;padding-left:36px}
+.game-detail-secondary:last-child{margin-bottom:2px}
+@media(max-width:600px){.game-detail-backdrop{padding:8px;padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom))}.game-detail-modal{width:100%;max-height:calc(100dvh - 16px);max-height:calc(100svh - 16px);padding:15px;border-radius:19px}.game-detail-close{width:38px;height:38px;margin-bottom:-38px}.game-detail-modal h3{font-size:20px}.game-detail-art{height:112px;margin-bottom:13px}.game-coming-soon{margin:11px 0;padding:9px}}
+
+/* BETNOVA green-turquoise helicopter flight and explosion */
+.crash-flight-stage{background:radial-gradient(ellipse at 70% 15%,#3df2c544,transparent 35%),linear-gradient(155deg,#123f46 0%,#0c2b38 48%,#09182d 100%);border-color:#43e5bd88}
+.crash-flight-stage:before{background:linear-gradient(180deg,#55f5d31c,transparent 52%),repeating-linear-gradient(0deg,transparent 0 31px,#5cf5d316 32px 33px),repeating-linear-gradient(90deg,transparent 0 38px,#5cf5d30e 39px 40px)}
+.crash-sky-grid{background:repeating-linear-gradient(90deg,#5cf5d333 0 1px,transparent 1px 35px),repeating-linear-gradient(0deg,#5cf5d333 0 1px,transparent 1px 27px)}
+.crash-sun-glow{background:#4df5c7}.crash-cloud{background:#c8fff02b}
+.crash-flight-path{border-color:#6bffdb55}
+.crash-flight-trail{background:linear-gradient(90deg,transparent,#31d6aa,#c4fff0);filter:drop-shadow(0 0 8px #31e6b8)}
+.crash-helicopter{position:absolute;z-index:6;left:5%;top:54%;width:84px;height:60px;transform:translateY(-50%);filter:drop-shadow(0 8px 8px #000a) drop-shadow(0 0 13px #35e8b488)}
+.crash-helicopter svg{display:block;width:100%;height:100%;overflow:visible}
+.heli-rotor{transform-box:fill-box;transform-origin:center;animation:bn-heli-rotor .11s linear infinite}
+@keyframes bn-heli-rotor{to{transform:rotate(360deg)}}
+.crash-flight-stage.is-flying .crash-helicopter{animation:bn-heli-route 22s cubic-bezier(.18,.62,.2,1) forwards}
+@keyframes bn-heli-route{0%{left:5%;top:66%;transform:translateY(-50%) rotate(-2deg) scale(.82)}24%{left:20%;top:56%;transform:translateY(-50%) rotate(-5deg) scale(.86)}50%{left:39%;top:43%;transform:translateY(-50%) rotate(-7deg) scale(.9)}76%{left:58%;top:30%;transform:translateY(-50%) rotate(-9deg) scale(.94)}100%{left:72%;top:21%;transform:translateY(-50%) rotate(-10deg) scale(.98)}}
+.crash-flight-stage.is-flying .crash-flight-trail{animation:bn-heli-trail 22s ease-out forwards}
+@keyframes bn-heli-trail{0%{left:4%;bottom:32%;width:0;opacity:0}30%{width:23%;opacity:.75}65%{width:48%;opacity:.8}100%{width:68%;opacity:.22}}
+.crash-flight-stage.is-flying .crash-cloud{animation:bn-cloud-drift 5s linear infinite}
+.crash-flight-stage.is-exploding .crash-helicopter{opacity:0;animation:none}
+.crash-explosion{position:absolute;z-index:9;left:72%;top:21%;display:grid;place-items:center;width:78px;height:78px;border-radius:50%;background:radial-gradient(circle,#fff9b5 0 8%,#ffb52d 18%,#ff692d99 43%,transparent 72%);color:#fff;font-size:9px;font-weight:1000;text-shadow:0 2px 6px #7b2100;animation:bn-boom .9s ease-out both;filter:drop-shadow(0 0 15px #ff9b38)}
+.crash-explosion span{font-size:54px;line-height:.65;color:#fff2a1}.crash-explosion b{position:absolute;bottom:0;letter-spacing:1.5px}
+@keyframes bn-boom{0%{opacity:0;transform:scale(.08)}20%{opacity:1;transform:scale(1.45)}55%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.8)}}
+.crash-countdown{position:absolute;z-index:10;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#061b22a8;backdrop-filter:blur(3px);color:#d8fff3;text-align:center}
+.crash-countdown small{font-size:8px;font-weight:900;letter-spacing:1.5px}.crash-countdown strong{font-size:48px;line-height:1;color:#5af0c2;text-shadow:0 0 24px #39e7b6}
+.crash-auto-status{opacity:.9;cursor:default}
+.crash-stage-hud b{border-color:#59e8c188;text-shadow:0 0 12px #47e6bc}.crash-stage-bottom{color:#b5ffe2aa}
+.crash-flight-stage.flight-ready .crash-helicopter{animation:bn-heli-hover 2.5s ease-in-out infinite alternate}
+@keyframes bn-heli-hover{from{transform:translateY(-50%) translateY(0)}to{transform:translateY(-50%) translateY(-5px)}}
+@media(max-width:600px){.crash-flight-stage{height:210px;min-height:200px}.crash-helicopter{width:70px;height:51px}.crash-explosion{left:70%;width:68px;height:68px}.crash-countdown strong{font-size:42px}}
+@media(prefers-reduced-motion:reduce){.crash-helicopter,.heli-rotor,.crash-explosion{animation:none!important}.crash-flight-stage.is-flying .crash-helicopter{left:42%;top:42%}.crash-countdown{backdrop-filter:none}}
