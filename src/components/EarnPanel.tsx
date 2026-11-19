@@ -81,7 +81,7 @@ export default function EarnPanel({ onClose, language = 'en' }: Props) {
   const statusLabel = (status: string) => ar ? status === 'approved' ? 'مقبول' : status === 'rejected' ? 'مرفوض' : 'قيد المراجعة' : status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Pending review'
 
   return <div className="rewards-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
-    <section className="rewards-panel earn-panel" role="dialog" aria-modal="true" aria-labelledby="earn-title">
+    <section className="rewards-panel earn-panel" dir={ar ? "rtl" : "ltr"} role="dialog" aria-modal="true" aria-labelledby="earn-title">
       <button className="rewards-close" onClick={onClose} aria-label={ar ? 'إغلاق' : 'Close'}><X size={19}/></button>
       <div className="rewards-kicker"><UploadCloud size={15}/> BETNOVA · EARN</div>
       <h2 id="earn-title">{ar ? 'اربح من نشاطك' : 'Earn with BETNOVA'}</h2>
