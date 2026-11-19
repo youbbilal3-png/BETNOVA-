@@ -62,8 +62,8 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
         {error && <p className="rewards-message">{error}</p>}
         <article className="reward-card welcome">
           <div className="reward-card-icon"><Gift size={20}/></div>
-          <div><span className="reward-eyebrow">{ar ? 'مكافأة الترحيب' : 'WELCOME BONUS'}</span><h3>{ar ? 'ما يعادل 100 دولار' : '$100 equivalent'}</h3>
-            <p>{ar ? 'تُضاف إلى محفظة المكافآت المنفصلة، وليست رصيدًا نقديًا قابلًا للسحب مباشرة. تختلف القيمة المعروضة حسب العملة المختارة عند التسجيل، وتخضع لشروط المكافأة.' : 'Credited to the separate bonus wallet, not directly withdrawable cash. The signup currency determines the displayed equivalent and bonus terms apply.'}</p>
+          <div><span className="reward-eyebrow">{ar ? 'مكافأة الترحيب' : 'WELCOME BONUS'}</span><h3>{ar ? 'مكافأة ترحيبية حتى 100 دولار' : 'Up to $100 welcome bonus'}</h3>
+            <p>{ar ? 'القيمة عند التسجيل: 25,000 دج لعملة DZD، أو 100 دولار لعملة USD، أو 90 يورو لعملة EUR. تُضاف إلى محفظة المكافآت المنفصلة وليست رصيدًا نقديًا، وتخضع لشروط المكافأة.' : 'Signup values: 25,000 DZD for DZD accounts, $100 for USD accounts, or €90 for EUR accounts. Credited to the separate bonus wallet, not cash balance; bonus terms apply.'}</p>
             {bonusUsd !== null && <b className="reward-balance">{money(bonusUsd, 'USD')} {ar ? 'رصيد المكافآت الحالي' : 'current bonus balance'}</b>}
           </div>
         </article>
