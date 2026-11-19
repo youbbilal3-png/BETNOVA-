@@ -6,6 +6,7 @@ import './rewards-center.css'
 type Props = { onClose: () => void; language?: string }
 type Claim = { id: string; currency: string; total_staked?: number; cashback_amount?: number; total_deposited?: number; reward_amount?: number; created_at: string }
 type Referral = { referred_user_id: string; status: string; created_at: string }
+type BonusBalance = { currency: string; available_balance: number }
 
 const isArabic = (language?: string) => language === 'ar'
 const money = (amount: number, currency: string) => new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
@@ -13,7 +14,7 @@ const money = (amount: number, currency: string) => new Intl.NumberFormat(undefi
 export default function RewardsPanel({ onClose, language = 'en' }: Props) {
   const ar = isArabic(language)
   const [loading, setLoading] = useState(true)
-  const [bonusUsd, setBonusUsd] = useState<number | null>(null)
+  const [bonusBalances, setBonusBalances] = useState<BonusBalance[]>([])
   const [cashback, setCashback] = useState<Claim[]>([])
   const [depositClaims, setDepositClaims] = useState<Claim[]>([])
   const [referrals, setReferrals] = useState<Referral[]>([])
@@ -27,13 +28,13 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) { setError(ar ? 'سجّل الدخول لعرض مكافآتك.' : 'Sign in to view your rewards.'); setLoading(false); return }
     const [bonus, weekly, deposits, referralRows, code] = await Promise.all([
-      supabase.from('bonus_wallet_accounts').select('available_balance').eq('user_id', user.id).maybeSingle(),
+      supabase.from('bonus_wallet_accounts').select('currency,available_balance').eq('user_id', user.id).order('currency'),
       supabase.from('weekly_cashback_claims').select('id,currency,total_staked,cashback_amount,created_at').eq('user_id', user.id).order('week_start', { ascending: false }).limit(12),
       supabase.from('deposit_streak_claims').select('id,currency,total_deposited,reward_amount,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(12),
       supabase.from('referrals').select('referred_user_id,status,created_at').eq('referrer_user_id', user.id).order('created_at', { ascending: false }).limit(50),
       supabase.rpc('betnova_get_referral_code'),
     ])
-    if (!bonus.error) setBonusUsd(Number(bonus.data?.available_balance ?? 0))
+    if (!bonus.error) setBonusBalances((bonus.data ?? []) as BonusBalance[])
     if (!weekly.error) setCashback((weekly.data ?? []) as Claim[])
     if (!deposits.error) setDepositClaims((deposits.data ?? []) as Claim[])
     if (!referralRows.error) setReferrals((referralRows.data ?? []) as Referral[])
@@ -64,7 +65,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
           <div className="reward-card-icon"><Gift size={20}/></div>
           <div><span className="reward-eyebrow">{ar ? 'مكافأة الترحيب' : 'WELCOME BONUS'}</span><h3>{ar ? 'مكافأة ترحيبية حتى 100 دولار' : 'Up to $100 welcome bonus'}</h3>
             <p>{ar ? 'القيمة عند التسجيل: 25,000 دج لعملة DZD، أو 100 دولار لعملة USD، أو 90 يورو لعملة EUR. تُضاف إلى محفظة المكافآت المنفصلة وليست رصيدًا نقديًا، وتخضع لشروط المكافأة.' : 'Signup values: 25,000 DZD for DZD accounts, $100 for USD accounts, or €90 for EUR accounts. Credited to the separate bonus wallet, not cash balance; bonus terms apply.'}</p>
-            {bonusUsd !== null && <b className="reward-balance">{money(bonusUsd, 'USD')} {ar ? 'رصيد المكافآت الحالي' : 'current bonus balance'}</b>}
+            {bonusBalances.length > 0 && <div className="reward-balance-list">{bonusBalances.map(item => <b className="reward-balance" key={item.currency}>{money(Number(item.available_balance), item.currency)} <span>{ar ? 'رصيد المكافآت' : 'bonus balance'}</span></b>)}</div>}
           </div>
         </article>
         <article className="reward-card">
