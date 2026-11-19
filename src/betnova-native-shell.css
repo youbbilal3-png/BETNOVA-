@@ -244,3 +244,13 @@ body{margin:0!important;background:radial-gradient(ellipse at 50% -18%,#1c4b37 0
  .team-mark{width:32px!important;height:32px!important}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Android WebView stability: keep the match sheet compositing lightweight. */
+.detail-backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#020805e8!important;animation:none!important}
+.detail-panel{animation:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:0 12px 28px #0008!important}
+.detail-market-heading{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.detail-section-actions{display:grid;grid-template-columns:1fr;gap:9px;margin:18px 0 10px}
+.detail-section-toggle{width:100%;min-height:46px;padding:11px 14px;border:1px solid #35513d;border-radius:12px;background:#14251c;color:#e5f4e7;font-size:12px;font-weight:800;text-align:center}
+.detail-section-toggle.primary{background:linear-gradient(110deg,#1a8056,#20a96f);border-color:#45bd7d;color:#071b10}
+.detail-section-toggle:active{transform:scale(.99)}
+@media(max-width:760px){.detail-backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;display:block!important;overflow:auto!important}.detail-panel{height:auto!important;min-height:100dvh!important;max-height:none!important;overflow:visible!important;overscroll-behavior:auto!important;animation:none!important;box-shadow:none!important}.detail-close{position:absolute!important;top:14px!important;right:13px!important}.detail-market-heading{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
