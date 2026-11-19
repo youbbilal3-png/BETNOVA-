@@ -61,3 +61,16 @@
 .game-practice-result{display:grid;gap:7px;margin:14px 0;padding:13px 14px;border:1px solid color-mix(in srgb,var(--game-glow) 42%,transparent);border-radius:12px;background:color-mix(in srgb,var(--game-glow) 9%,#091326);color:#eaf4ff;font-size:12px;line-height:1.55}
 .game-practice-result strong{color:var(--game-glow);font-size:9px;letter-spacing:1.2px}
 .game-detail-secondary{display:block;width:100%;margin-top:9px;padding:10px;border:1px solid #ffffff22;border-radius:10px;background:#ffffff08;color:#c6d5ed;font-size:9px;font-weight:900;letter-spacing:1px;cursor:pointer}
+
+.game-practice-controls{display:grid;gap:11px;margin:13px 0}
+.crash-multiplier{display:grid;place-items:center;min-height:84px;border:1px solid color-mix(in srgb,var(--game-glow) 42%,transparent);border-radius:15px;background:radial-gradient(circle,color-mix(in srgb,var(--game-glow) 19%,transparent),#081326 72%);color:#f7fbff;font-size:38px;font-weight:1000;letter-spacing:-1px;text-shadow:0 0 22px var(--game-glow)}
+.crash-multiplier small{display:inline;margin-left:3px;color:var(--game-glow);font-size:18px}
+.game-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.game-action-row button{min-height:42px;padding:9px;border:1px solid color-mix(in srgb,var(--game-glow) 45%,transparent);border-radius:10px;background:color-mix(in srgb,var(--game-glow) 13%,#111b30);color:#f5f8ff;font-size:9px;font-weight:950;letter-spacing:.6px;cursor:pointer}
+.game-detail-done:disabled{opacity:.48;cursor:not-allowed}
+.apple-levels{display:flex;justify-content:center;gap:12px;padding:10px}
+.apple-levels span{display:grid;place-items:center;width:43px;height:43px;border:1px solid #ffffff24;border-radius:13px;background:#ffffff0a;font-size:20px}
+.apple-levels span.safe{border-color:#aef77c99;background:#aef77c18;color:#bafc90}
+.plinko-slots{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
+.plinko-slots span{display:grid;place-items:center;min-width:0;height:32px;border:1px solid #ffffff20;border-radius:7px;background:#ffffff08;color:#b9c8e1;font-size:9px;font-weight:900}
+.plinko-slots span.landed{border-color:var(--game-glow);background:color-mix(in srgb,var(--game-glow) 25%,#111b30);color:#fff;box-shadow:0 0 16px color-mix(in srgb,var(--game-glow) 35%,transparent)}
