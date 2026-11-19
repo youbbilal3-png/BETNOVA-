@@ -117,6 +117,7 @@ jobs:
           test -n "$ANDROID_KEY_ALIAS"
           test -n "$ANDROID_KEY_PASSWORD"
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          test -s android/app/release.keystore
           cp scripts/android-release-signing.gradle android/app/release-signing.gradle
           printf "\\napply from: 'release-signing.gradle'\\n" >> android/app/build.gradle
         shell: bash
