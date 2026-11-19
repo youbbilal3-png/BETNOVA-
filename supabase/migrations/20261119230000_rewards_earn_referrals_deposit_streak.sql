@@ -182,7 +182,7 @@ begin
     id,wallet_account_id,user_id,currency,entry_type,amount,balance_after,reserved_after,
     reference_type,reference_id,idempotency_key,description
   ) values(
-    v_ledger_id,v_wallet.id,p_user_id,p_currency,'bonus',p_amount,
+    v_ledger_id,v_wallet.id,p_user_id,p_currency,'adjustment',p_amount,
     v_wallet.available_balance,v_wallet.reserved_balance,p_reference_type,p_reference_id,
     v_ledger_id,p_description
   );
