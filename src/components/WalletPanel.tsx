@@ -77,11 +77,11 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
   async function submitDeposit(event: FormEvent) {
     event.preventDefault()
     if (!supabase || !userId || !selectedMethod) return
-    if (!proofFile) { setError('t('add_transfer_proof')'); return }
-    if (!reference.trim()) { setError('t('transaction_reference')'); return }
-    if (proofFile.size > 5 * 1024 * 1024) { setError('t('proof_format')'); return }
+    if (!proofFile) { setError(t('add_transfer_proof')); return }
+    if (!reference.trim()) { setError(t('transaction_reference')); return }
+    if (proofFile.size > 5 * 1024 * 1024) { setError(t('proof_format')); return }
     if (!['image/jpeg','image/png','image/webp','application/pdf'].includes(proofFile.type)) {
-      setError('t('proof_format')'); return
+      setError(t('proof_format')); return
     }
     const numericAmount = Number(amount)
     const depositLimits: Record<string,[number,number]> = {DZD:[500,100000],USD:[1,5000],EUR:[1,5000]}
@@ -107,13 +107,13 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         await supabase.storage.from('deposit-proofs').remove([proofPath])
         throw requestError
       }
-      setNotice('t('deposit_sent')')
+      setNotice(t('deposit_sent'))
       setAmount(''); setReference(''); setProofFile(null)
       const fileInput = document.getElementById('wallet-proof-input') as HTMLInputElement | null
       if (fileInput) fileInput.value = ''
       await refresh()
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 't('could_not_load_wallet')')
+      setError(caught instanceof Error ? caught.message : t('could_not_load_wallet'))
     } finally { setBusy(false) }
   }
 
@@ -124,8 +124,8 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     const withdrawalLimits: Record<string,[number,number]> = {DZD:[1000,1500000],USD:[1.5,50000],EUR:[1.5,50000]}
     const [withdrawMin,withdrawMax] = withdrawalLimits[currency]
     if (!Number.isFinite(numericAmount) || numericAmount < withdrawMin || numericAmount > withdrawMax) { setError('Withdrawal limits: ' + withdrawMin + '–' + withdrawMax + ' ' + currency + '.'); return }
-    if (!destination.trim() || destination.trim().length < 4) { setError('t('receiving_placeholder')'); return }
-    if (numericAmount > Number(account?.available_balance ?? 0)) { setError('t('could_not_load_wallet')'); return }
+    if (!destination.trim() || destination.trim().length < 4) { setError(t('receiving_placeholder')); return }
+    if (numericAmount > Number(account?.available_balance ?? 0)) { setError(t('could_not_load_wallet')); return }
 
     setBusy(true); setError(''); setNotice('')
     try {
@@ -136,11 +136,11 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         p_destination_details: destination.trim()
       })
       if (requestError) throw requestError
-      setNotice('t('withdrawal_sent')')
+      setNotice(t('withdrawal_sent'))
       setAmount(''); setDestination('')
       await refresh()
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 't('could_not_load_wallet')')
+      setError(caught instanceof Error ? caught.message : t('could_not_load_wallet'))
     } finally { setBusy(false) }
   }
 
@@ -153,14 +153,14 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     const usdValue = currency === 'DZD' ? numericAmount/260 : currency === 'EUR' ? numericAmount/0.9 : numericAmount
     if (!Number.isFinite(numericAmount) || numericAmount < minimum || numericAmount > maximum) { setError('Withdrawal limits: ' + minimum + '–' + maximum + ' ' + currency + '.'); return }
     if (usdValue > bonus.available_balance + 0.0001) { setError('Insufficient available bonus balance.'); return }
-    if (!destination.trim() || destination.trim().length < 4) { setError('t('receiving_placeholder')'); return }
+    if (!destination.trim() || destination.trim().length < 4) { setError(t('receiving_placeholder')); return }
     setBusy(true); setError(''); setNotice('')
     try {
       const { error: requestError } = await supabase.rpc('betnova_request_bonus_withdrawal', {p_payment_method:selectedMethod.code,p_amount:numericAmount,p_currency:currency,p_destination_details:destination.trim()})
       if (requestError) throw requestError
-      setNotice('t('withdrawal_sent')')
+      setNotice(t('withdrawal_sent'))
       setAmount(''); setDestination(''); await refresh()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 't('could_not_load_wallet')') }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : t('could_not_load_wallet')) }
     finally { setBusy(false) }
   }
   const instructions = selectedMethod?.instructions ?? {}
