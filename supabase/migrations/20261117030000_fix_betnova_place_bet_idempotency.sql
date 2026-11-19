@@ -11,8 +11,8 @@ begin
     into v_definition;
 
   if position('v_bet_id uuid := gen_random_uuid();' in v_definition) = 0
-     or (length(v_definition) - length(replace(v_definition, v_lookup, ''))) / length(v_lookup) <> 2
-     or (length(v_definition) - length(replace(v_definition, v_old_return, ''))) / length(v_old_return) <> 2 then
+     or (length(v_definition) - length(replace(v_definition, v_lookup, ''))) / length(v_lookup) <> 1
+     or (length(v_definition) - length(replace(v_definition, v_old_return, ''))) / length(v_old_return) <> 1 then
     raise exception 'Unexpected bet placement function definition; refusing unsafe patch';
   end if;
 
