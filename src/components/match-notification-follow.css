@@ -26,3 +26,13 @@
 .bn-match-follow-event button.is-on{background:#13a66a}
 .bn-match-follow-event button.is-on>span{transform:translateX(16px)}
 .bn-match-follow-event button:disabled{opacity:.5;cursor:wait}
+
+.bn-match-follow-master{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:12px 0;border-top:1px solid #ffffff1a;border-bottom:1px solid #ffffff1a}
+.bn-match-follow-master>div{display:flex;flex-direction:column;gap:4px}
+.bn-match-follow-master b{font-size:12px;color:#edf8f1}
+.bn-match-follow-master small{font-size:10px;line-height:1.45;color:#aebed0}
+.bn-match-follow-master button{width:38px;height:22px;padding:2px;border:0;border-radius:20px;background:#3b4943;display:flex;align-items:center;justify-content:flex-start;flex-shrink:0;cursor:pointer}
+.bn-match-follow-master button>span{display:block;width:18px;height:18px;border-radius:50%;background:#dce6e0;transition:transform .18s ease}
+.bn-match-follow-master button.is-on{background:#13a66a}
+.bn-match-follow-master button.is-on>span{transform:translateX(16px)}
+.bn-match-follow-master button:disabled{opacity:.5;cursor:wait}
