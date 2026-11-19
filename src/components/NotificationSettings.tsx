@@ -21,11 +21,11 @@ const defaults: Preferences = {
 }
 
 const rows: NotificationRow[] = [
-  { key: 'match_start', icon: CalendarDays, ar: 'بداية المباراة', en: 'Match starting', hintAr: 'عند انطلاق المباراة التي تتابعها', hintEn: 'When a followed match kicks off' },
-  { key: 'goals', icon: Trophy, ar: 'الأهداف', en: 'Goals', hintAr: 'بعد تأكيد الهدف وعدم وجود مراجعة VAR معلّقة', hintEn: 'After a goal is confirmed and no VAR review is pending' },
-  { key: 'red_cards', icon: Flag, ar: 'البطاقات الحمراء', en: 'Red cards', hintAr: 'عند إشهار بطاقة حمراء', hintEn: 'When a red card is shown' },
-  { key: 'half_time', icon: Clock3, ar: 'نهاية الشوط الأول', en: 'Half-time', hintAr: 'عند نهاية الشوط الأول', hintEn: 'At the half-time whistle' },
-  { key: 'full_time', icon: CheckCircle2, ar: 'نهاية المباراة', en: 'Full-time', hintAr: 'عند نهاية المباراة', hintEn: 'At full time' },
+  { key: 'match_start', icon: CalendarDays, ar: 'بداية المباراة', en: 'Match starting', hintAr: 'عند انطلاق المباراة التي تتابعها', hintEn: 'When a followed match kicks off', available: true },
+  { key: 'goals', icon: Trophy, ar: 'الأهداف', en: 'Goals', hintAr: 'بعد تأكيد الهدف وعدم وجود مراجعة VAR معلّقة', hintEn: 'After a goal is confirmed and no VAR review is pending', available: true },
+  { key: 'red_cards', icon: Flag, ar: 'البطاقات الحمراء', en: 'Red cards', hintAr: 'عند إشهار بطاقة حمراء', hintEn: 'When a red card is shown', available: true },
+  { key: 'half_time', icon: Clock3, ar: 'نهاية الشوط الأول', en: 'Half-time', hintAr: 'عند نهاية الشوط الأول', hintEn: 'At the half-time whistle', available: true },
+  { key: 'full_time', icon: CheckCircle2, ar: 'نهاية المباراة', en: 'Full-time', hintAr: 'عند نهاية المباراة', hintEn: 'At full time', available: true },
   { key: 'bet_settlement', icon: CreditCard, ar: 'تسوية الرهانات', en: 'Bet settlement', hintAr: 'قريباً — تنبيهات تسوية القسائم', hintEn: 'Coming soon — bet slip settlement alerts', available: false },
   { key: 'account_activity', icon: ShieldCheck, ar: 'نشاط الحساب', en: 'Account activity', hintAr: 'قريباً — تحديثات الإيداع والسحب وأمان الحساب', hintEn: 'Coming soon — deposit, withdrawal and account-security updates', available: false },
 ]
