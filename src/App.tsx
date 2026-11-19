@@ -204,6 +204,22 @@ export default function App() {
   const [betsOpen, setBetsOpen] = useState(false)
   const [activePage, setActivePage] = useState<'sports' | 'games'>('sports')
 
+  function openGames() {
+    if (activePage !== 'games') window.history.pushState({ betnovaPage: 'games' }, '', '#games')
+    setActivePage('games')
+  }
+  function closeGames() {
+    setActivePage('sports')
+    if (window.history.state?.betnovaPage === 'games' && !window.history.state?.betnovaGameModal) window.history.back()
+  }
+  useEffect(() => {
+    const handleBack = (event: PopStateEvent) => {
+      setActivePage(event.state?.betnovaPage === 'games' ? 'games' : 'sports')
+    }
+    window.addEventListener('popstate', handleBack)
+    return () => window.removeEventListener('popstate', handleBack)
+  }, [])
+
   useEffect(() => {
     const client = supabase
     if (!client) return
@@ -658,8 +674,8 @@ export default function App() {
     <div className="app-shell">
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
       <header className="topbar">
-        <a className="brand nova-brand-lockup" href="#"><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">N</span><i/></span><span className="nova-brand-word">NOVA<span className="brand-accent">ARENA</span><small>THE NEXT SPORTS EXPERIENCE</small></span></a>
-        <nav className="desktop-nav"><button className={activePage === 'sports' ? 'active' : ''} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}>{t('sports')}</button><button className={activePage === 'games' ? 'active' : ''} onClick={() => setActivePage('games')}>{language === 'ar' ? 'الألعاب' : 'Games'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => { setActivePage('sports'); openEventView('results') }}>{t('results')}</button></nav>
+        <a className="brand nova-brand-lockup" href="#"><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">B</span><i/></span><span className="nova-brand-word">BETNOVA</span></a>
+        <nav className="desktop-nav"><button className={activePage === 'sports' ? 'active' : ''} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}>{t('sports')}</button><button className={activePage === 'games' ? 'active' : ''} onClick={() => openGames()}>{language === 'ar' ? 'الألعاب' : 'Games'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => { setActivePage('sports'); openEventView('results') }}>{t('results')}</button></nav>
         <div className="top-actions"><button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <><button className="wallet-open-btn deposit-open-btn" onClick={() => openWallet('deposit')}><Wallet size={15}/> {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(walletBalance)} DZD</button><button className="account-open-btn" onClick={() => setAccountOpen(true)}><UserRound size={15}/> My account</button></>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button>{isAdminUser && <button className="admin-open-btn" onClick={() => setAdminOpen(true)}>{t('admin')}</button>}</> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); setAuthOpen(true) }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
       </header>
 
@@ -669,7 +685,7 @@ export default function App() {
         <aside className="left-rail">
           <div className="rail-heading">{t("discover")} <span>•••</span></div>
           <button className={activePage === 'sports' ? 'rail-item selected' : 'rail-item'} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}><Trophy size={18}/> {t("sports")} <span className="rail-count">24</span></button>
-          <button className={activePage === 'games' ? 'rail-item selected' : 'rail-item'} onClick={() => setActivePage('games')}><Sparkles size={18}/> Games <span className="rail-count">9</span></button>
+          <button className={activePage === 'games' ? 'rail-item selected' : 'rail-item'} onClick={() => openGames()}><Sparkles size={18}/> Games <span className="rail-count">9</span></button>
           <button className="rail-item" onClick={() => { setActivePage('sports'); openEventView('live') }}><Flame size={18}/> {t("live_events")} <span className="live-count">LIVE</span></button>
           <button className={showFavorites ? 'rail-item selected' : 'rail-item'} onClick={() => { setActivePage('sports'); setShowFavorites(!showFavorites); setEventView('upcoming') }}><Star size={18}/> Favourites <span className="rail-count">{favoriteIds.length}</span></button>
           <div className="rail-separator"/>
@@ -680,14 +696,14 @@ export default function App() {
 
         <section className="main-content nova-content">
           <section className="hero">
-            <div className="hero-copy"><div className="eyebrow"><span/> {t("game_starts")} <strong className="hero-bonus-tag">100$ WELCOME BONUS · مكافأة ترحيبية</strong></div><h1>{t("feel_every")}<br/><em>{t("moment")}</em></h1><p>{t("hero_subtitle")}</p><div className="hero-actions"><button onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}>{t("explore_events_btn")} <ArrowRight size={16}/></button><span><ShieldCheck size={15}/> {t("safer_experience")}</span></div></div>
-            <div className="hero-art nova-hero-scene"><div className="nova-scene-grid"/><div className="orbit orbit-a"/><div className="orbit orbit-b"/><div className="nova-core"><div className="nova-core-inner">N</div></div><div className="nova-float-card nova-float-live"><span className="live-dot"/> LIVE ARENA <b>01</b></div><div className="nova-float-card nova-float-signal"><Sparkles size={13}/> NEXT LEVEL <b>SPORTS</b></div><div className="nova-scene-spark nova-spark-one">✦</div><div className="nova-scene-spark nova-spark-two">✧</div></div>
+            <div className="hero-copy"><div className="eyebrow"><span/> {t("game_starts")} <strong className="hero-bonus-tag"><span className="hero-bonus-amount">100$</span><span className="hero-bonus-copy">WELCOME BONUS · مكافأة ترحيبية</span></strong></div><h1>{t("feel_every")}<br/><em>{t("moment")}</em></h1><p>{t("hero_subtitle")}</p><div className="hero-actions"><button onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}>{t("explore_events_btn")} <ArrowRight size={16}/></button><span><ShieldCheck size={15}/> {t("safer_experience")}</span></div></div>
+            <div className="hero-art nova-hero-scene"><div className="nova-scene-grid"/><div className="orbit orbit-a"/><div className="orbit orbit-b"/><div className="nova-core"><div className="nova-core-inner">B</div></div><div className="nova-float-card nova-float-live"><span className="live-dot"/> LIVE ARENA <b>01</b></div><div className="nova-float-card nova-float-signal"><Sparkles size={13}/> NEXT LEVEL <b>SPORTS</b></div><div className="nova-scene-spark nova-spark-one">✦</div><div className="nova-scene-spark nova-spark-two">✧</div></div>
             <div className="hero-index">01 <span>/</span> 04</div>
           </section>
 
           <div className="quick-stats"><div><span className="stat-icon"><Activity size={17}/></span><span><b>{t("live_energy")}</b><small>{t("follow_action")}</small></span></div><div><span className="stat-icon teal"><Globe2 size={17}/></span><span><b>{t("global_sports")}</b><small>{t("every_corner")}</small></span></div><div><span className="stat-icon lime"><ShieldCheck size={17}/></span><span><b>{t("player_first")}</b><small>{t("safety_design")}</small></span></div></div>
 
-          {activePage === 'games' ? <Suspense fallback={<div className="games-loading" role="status">BETNOVA</div>}><GamesHub /></Suspense> : <><section className="events-section" id="events">
+          {activePage === 'games' ? <><button className="games-page-back" type="button" onClick={closeGames}><ArrowRight size={17}/>{language === 'ar' ? 'العودة إلى الرياضة' : 'Back to sports'}</button><Suspense fallback={<div className="games-loading" role="status">BETNOVA</div>}><GamesHub /></Suspense></> : <><section className="events-section" id="events">
             <div className="section-heading"><div><div className="eyebrow dark"><span/> {t("today_lineup")}</div><h2>{showFavorites ? t('your_favourites') : eventView === 'live' ? t('live_events') : eventView === 'results' ? t('latest_results') : t('featured_events_title')} <span className="heading-star">✳</span></h2><p>{t("find_moments")}</p></div><button className="view-all" onClick={() => openEventView('upcoming')}>{t("upcoming_schedule")} <ArrowRight size={15}/></button></div>
             <div className="event-view-tabs" role="tablist" aria-label="Event type">
               <button className={eventView === 'upcoming' ? 'event-view active' : 'event-view'} onClick={() => setEventView('upcoming')}>{t("upcoming")}</button>
@@ -737,8 +753,8 @@ export default function App() {
       <nav className="mobile-nav"><button className={activePage === 'sports' ? 'mobile-active' : ''} onClick={() => { setActivePage('sports'); openEventView("upcoming") }}><Trophy size={19}/>{t("sports")}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => setMobileMoreOpen(true)}><Menu size={19}/>{t("menu")}</button></nav>
       {mobileMoreOpen && <div className="mobile-more-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setMobileMoreOpen(false) }}>
         <section className="mobile-more-panel" role="dialog" aria-modal="true" aria-label={t("menu")}>
-          <div className="mobile-more-header"><div><b>NOVA ARENA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => setMobileMoreOpen(false)} aria-label={t("close")}><X size={18}/></button></div>
-          <button onClick={() => { setMobileMoreOpen(false); setActivePage('games') }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
+          <div className="mobile-more-header"><div><b>BETNOVA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => setMobileMoreOpen(false)} aria-label={t("close")}><X size={18}/></button></div>
+          <button onClick={() => { setMobileMoreOpen(false); openGames() }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
           <button onClick={() => { setMobileMoreOpen(false); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           {userEmail ? <>
             <button className="mobile-account-entry" onClick={() => { setMobileMoreOpen(false); setAccountOpen(true) }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
@@ -790,7 +806,7 @@ export default function App() {
       {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} initialTab={walletInitialTab} />}
       {betsOpen && <MyBetsPanel onClose={() => setBetsOpen(false)} />}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
-      <footer className="footer"><span>© 2026 NOVA ARENA · BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
+      <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
     </div>
   )
 }

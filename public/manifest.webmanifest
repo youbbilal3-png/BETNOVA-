@@ -1,13 +1,13 @@
 {
-  "name": "BETNOVA Sports",
+  "name": "BETNOVA",
   "short_name": "BETNOVA",
-  "description": "BETNOVA sports matches and statistics.",
+  "description": "BETNOVA sports, matches and games.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0b1020",
-  "theme_color": "#101a32",
+  "background_color": "#07150f",
+  "theme_color": "#0b1d13",
   "categories": [
     "sports",
     "entertainment"
