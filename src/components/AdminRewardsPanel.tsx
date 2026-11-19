@@ -33,9 +33,11 @@ export default function AdminRewardsPanel({ onClose }: Props) {
 
   async function openProof(path:string) {
     if (!supabase) return
+    const tab = window.open('about:blank','_blank')
     const { data,error } = await supabase.storage.from('earn-proofs').createSignedUrl(path,90)
-    if (error) { setMessage(error.message); return }
-    window.open(data.signedUrl,'_blank','noopener,noreferrer')
+    if (error) { tab?.close(); setMessage(error.message); return }
+    if (tab) tab.location.href = data.signedUrl
+    else setMessage('Your browser blocked the proof preview. Allow pop-ups and try again.')
   }
 
   async function reviewEarn(item:EarnItem, action:'approve'|'reject') {
