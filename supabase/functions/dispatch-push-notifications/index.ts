@@ -192,7 +192,7 @@ Deno.serve(async (req: Request) => {
       if (existing?.status === "failed" || (existing?.status === "pending" && existing.created_at < staleBefore)) {
         const { data: retryClaim, error: retryError } = await supabase.from("notification_delivery_log")
           .update({ status: "pending", sent_at: null, last_error: null, created_at: new Date().toISOString() })
-          .eq("id", existing.id).eq("status", existing.status)
+          .eq("id", existing.id).eq("status", existing.status).eq("created_at", existing.created_at)
           .select("id").maybeSingle();
         if (retryError) console.error("Could not reclaim notification delivery", retryError.message);
         claimId = retryClaim?.id ?? null;
