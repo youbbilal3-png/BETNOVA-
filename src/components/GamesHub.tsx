@@ -19,8 +19,6 @@ const games:Game[] = [
 ]
 
 const categoryIcons:Record<Category,typeof Grid3X3>={all:Grid3X3,games:Zap,slots:Gem,casino:Crown}
-const translatedGameTag=(id:string)=>{switch(id){case 'crash':case 'plinko':return t('game_tag_instant');case 'apple':return t('game_tag_skill');case 'lucky-fruits':return t('game_tag_classic');case 'pharaoh':return t('game_tag_adventure');case 'space-spin':return t('game_tag_cosmic');case 'roulette':return t('game_tag_table');case 'blackjack':case 'baccarat':return t('game_tag_cards');default:return id}}
-const translatedGameDescription=(id:string)=>{switch(id){case 'crash':return t('game_desc_crash');case 'apple':return t('game_desc_apple');case 'plinko':return t('game_desc_plinko');case 'lucky-fruits':return t('game_desc_fruits');case 'pharaoh':return t('game_desc_pharaoh');case 'space-spin':return t('game_desc_space');case 'roulette':return t('game_desc_roulette');case 'blackjack':return t('game_desc_blackjack');case 'baccarat':return t('game_desc_baccarat');default:return ''}}
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
 const APPLE_ROWS=5, APPLE_COLUMNS=5
 const newAppleTraps=()=>Array.from({length:APPLE_ROWS},()=>Math.floor(Math.random()*APPLE_COLUMNS))
@@ -33,6 +31,8 @@ const baccaratTotal=(hand:number[])=>hand.reduce((sum,value)=>sum+baccaratValue(
 export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:string;token:number}|null}){
   const {language,t}=useLanguage()
   const arabic=language==='ar'
+  const translatedGameTag=(id:string)=>{switch(id){case 'crash':case 'plinko':return t('game_tag_instant');case 'apple':return t('game_tag_skill');case 'lucky-fruits':return t('game_tag_classic');case 'pharaoh':return t('game_tag_adventure');case 'space-spin':return t('game_tag_cosmic');case 'roulette':return t('game_tag_table');case 'blackjack':case 'baccarat':return t('game_tag_cards');default:return id}}
+  const translatedGameDescription=(id:string)=>{switch(id){case 'crash':return t('game_desc_crash');case 'apple':return t('game_desc_apple');case 'plinko':return t('game_desc_plinko');case 'lucky-fruits':return t('game_desc_fruits');case 'pharaoh':return t('game_desc_pharaoh');case 'space-spin':return t('game_desc_space');case 'roulette':return t('game_desc_roulette');case 'blackjack':return t('game_desc_blackjack');case 'baccarat':return t('game_desc_baccarat');default:return ''}}
   const labels={all:t('all_games'),games:t('games'),slots:t('slots'),casino:t('casino'),heading:t('arcade_heading'),zone:t('game_zone'),subtitle:t('arcade_subtitle'),explore:t('explore_game'),safety:t('arcade_safety'),practice:t('free_practice'),demo:t('demo_mode'),start:t('start_practice'),next:t('next_step'),stop:t('stop_now'),pick:t('pick_apple'),drop:t('drop_ball'),tryDemo:t('try_demo'),reset:t('reset_practice'),close:t('close')}
   const [category,setCategory]=useState<Category>('all')
   const [selected,setSelected]=useState<Game|null>(null)
