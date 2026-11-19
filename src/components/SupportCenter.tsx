@@ -68,10 +68,10 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
         <div className="support-hero-glow"/>
         <div className="support-brand"><img src="/betnova-icon.svg" alt="BETNOVA logo"/><span>BETNOVA</span><i>{t('support_title')}</i></div>
         <div className="support-hero-copy">
-          <span className="support-eyebrow"><Sparkles size={14}/> YOUR GAME. YOUR SUPPORT.</span>
+          <span className="support-eyebrow"><Sparkles size={14}/> {t('support_eyebrow')}</span>
           <h1 id="support-title">{t('support_title')}</h1>
-          <p>BETNOVA brings sports markets, match information and an engaging gaming experience together in one place. Our support team is here to help with your account, wallet, deposits and withdrawals.</p>
-          <div className="support-hero-points"><span><ShieldCheck size={15}/> Account assistance</span><span><MessageCircle size={15}/> Direct support requests</span></div>
+          <p>{t('support_hero_desc')}</p>
+          <div className="support-hero-points"><span><ShieldCheck size={15}/> {t('support_account_assist')}</span><span><MessageCircle size={15}/> {t('support_direct_requests')}</span></div>
         </div>
         <div className="support-hero-orbit"><div className="support-orbit-ring"/><div className="support-orbit-core"><CircleHelp size={38}/></div><span>BETNOVA<br/>SUPPORT</span></div>
       </div>
@@ -83,27 +83,27 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
             <div className="support-card-icon"><Mail size={21}/></div>
             <span className="support-card-kicker">{t('support_send_email').toUpperCase()}</span>
             <h3>{t('support_send_email')}</h3>
-            <p>Use your email app to write directly to the BETNOVA team.</p>
-            {supportEmail ? <><strong className="support-email-address">{supportEmail}</strong><button type="button" onClick={composeEmail}>{t('support_compose_email')} <ArrowRight size={16}/></button></> : <span className="support-email-pending">Official email address is being configured.</span>}
+            <p>{t('support_email_hint')}</p>
+            {supportEmail ? <><strong className="support-email-address">{supportEmail}</strong><button type="button" onClick={composeEmail}>{t('support_compose_email')} <ArrowRight size={16}/></button></> : <span className="support-email-pending">{t('support_email_pending')}</span>}
           </article>
           <article className="support-contact-card support-request-card">
             <div className="support-card-icon"><MessageCircle size={21}/></div>
             <span className="support-card-kicker">{t('support_request_title').toUpperCase()}</span>
             <h3>{t('support_request_title')}</h3>
-            <p>Send a request from here. It will appear in the administration support inbox.</p>
+            <p>{t('support_request_desc')}</p>
             <a href="#support-form">{t('support_submit_request')} <ArrowRight size={16}/></a>
           </article>
         </div>
 
         <section className="support-form-card" id="support-form">
-          <div className="support-form-heading"><div><span className="support-card-kicker">WE’RE LISTENING</span><h2>{t('support_request_title')}</h2><p>Tell us what happened and how we can reach you.</p></div><div className="support-form-mark"><Send size={22}/></div></div>
+          <div className="support-form-heading"><div><span className="support-card-kicker">WE’RE LISTENING</span><h2>{t('support_request_title')}</h2><p>{t('support_request_desc')}</p></div><div className="support-form-mark"><Send size={22}/></div></div>
           {sent ? <div className="support-success"><CheckCircle2 size={25}/><div><b>{t('support_received')}</b><p>Thank you for contacting BETNOVA. {t('support_how_help')} has been added to the support inbox.</p></div><button type="button" onClick={() => setSent(false)}>{t('support_send_another')}</button></div> :
             <form onSubmit={event => void submitRequest(event)} className="support-form">
-              <div className="support-form-row"><label>{t('your_name')} <span>Optional</span><input value={name} onChange={event => setName(event.target.value)} maxLength={100} placeholder="How should we address you?"/></label><label>{t('email_address')}<input type="email" required value={email} onChange={event => setEmail(event.target.value)} maxLength={254} placeholder="you@example.com"/></label></div>
+              <div className="support-form-row"><label>{t('your_name')} <span>{t('support_optional')}</span><input value={name} onChange={event => setName(event.target.value)} maxLength={100} placeholder={t('your_name')}/></label><label>{t('email_address')}<input type="email" required value={email} onChange={event => setEmail(event.target.value)} maxLength={254} placeholder="you@example.com"/></label></div>
               <div className="support-form-row"><label>{t('support_request_title')}<select value={category} onChange={event => setCategory(event.target.value)}><option>Account & profile</option><option>Deposit</option><option>Withdrawal</option><option>Wallet & balance</option><option>Sports & markets</option><option>Games</option><option>Technical issue</option><option>Other</option></select></label><label>{t('support_request_title')}<input required value={subject} onChange={event => setSubject(event.target.value)} maxLength={140} placeholder="Briefly describe your issue"/></label></div>
               <label className="support-message-label">{t('support_how_help')}<textarea required value={message} onChange={event => setMessage(event.target.value)} minLength={12} maxLength={4000} rows={5} placeholder="Write the details of your request here…"/></label>
               {error && <p className="support-error" role="alert">{error}</p>}
-              <div className="support-submit-row"><small><ShieldCheck size={14}/> Your request is visible to the BETNOVA administration only.</small><button type="submit" disabled={busy}>{busy ? t('sending') : t('support_send')} <Send size={15}/></button></div>
+              <div className="support-submit-row"><small><ShieldCheck size={14}/> {t('support_private_note')}</small><button type="submit" disabled={busy}>{busy ? t('sending') : t('support_send')} <Send size={15}/></button></div>
             </form>}
         </section>
         <div className="support-footer-note"><ShieldCheck size={15}/> BETNOVA Support · Please never send passwords, card PINs, private keys or verification codes.</div>
