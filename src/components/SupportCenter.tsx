@@ -53,7 +53,7 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
   function composeEmail() {
     if (!supportEmail) return
     const params = new URLSearchParams({ subject: 'BETNOVA Support' })
-    window.location.href = `mailto:${supportEmail}?\u0024{params.toString()}`.replace('?\u0024', '?')
+    window.location.href = `mailto:${supportEmail}?${params.toString()}`
   }
 
   return <div className="support-backdrop">
