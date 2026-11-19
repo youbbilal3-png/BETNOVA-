@@ -58,17 +58,17 @@ select ok(to_regprocedure('public.betnova_play_arcade_round(text,numeric,text,uu
   'other arcade game RPC is present');
 
 select ok(
-  (select prosecdef and coalesce(array_to_string(proconfig,','),'') like '%search_path=%'
+  (select prosecdef and coalesce(array_to_string(proconfig,','),'') like '%search_path=""%'
    from pg_proc where oid='public.betnova_start_crash_round(numeric,uuid)'::regprocedure),
   'Crash start RPC runs as a protected security definer'
 );
 select ok(
-  (select prosecdef and coalesce(array_to_string(proconfig,','),'') like '%search_path=%'
+  (select prosecdef and coalesce(array_to_string(proconfig,','),'') like '%search_path=""%'
    from pg_proc where oid='public.betnova_pick_apple(uuid,integer,uuid)'::regprocedure),
   'Apple pick RPC runs as a protected security definer'
 );
 select ok(
-  (select prosecdef and coalesce(array_to_string(proconfig,','),'') like '%search_path=%'
+  (select prosecdef and coalesce(array_to_string(proconfig,','),'') like '%search_path=""%'
    from pg_proc where oid='public.betnova_cashout_apple_round(uuid,uuid)'::regprocedure),
   'Apple cash-out RPC runs as a protected security definer'
 );
