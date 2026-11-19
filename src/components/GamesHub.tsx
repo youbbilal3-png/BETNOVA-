@@ -94,14 +94,15 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     return()=>{active=false}
   },[selected?.id,arabic])
   useEffect(()=>{
-    if(selected?.id!=='crash'||!realCrashRound||!supabase||realBetBusy)return
+    const client=supabase
+    if(selected?.id!=='crash'||!realCrashRound||!client||realBetBusy)return
     let active=true
     let pending=false
     const poll=async()=>{
       if(pending)return
       pending=true
       try{
-        const {data,error}=await supabase.rpc('betnova_resume_crash_round')
+        const {data,error}=await client.rpc('betnova_resume_crash_round')
         if(error)throw error
         if(!active||!data)return
         const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
@@ -131,22 +132,27 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     return()=>window.clearInterval(timer)
   },[realCrashRound])
   useEffect(()=>{
-    if(selected?.id!=='crash'||!supabase)return
+    const client=supabase
+    if(selected?.id!=='crash'||!client)return
     let active=true
-    supabase.rpc('betnova_resume_crash_round').then(({data,error})=>{
-      if(error)throw error
-      if(!active||!data)return
-      const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
-      setRealBalance(Number(result.balance_after??0))
-      if(result.status==='active'&&result.round_id&&result.started_at&&result.server_now){
-        const elapsedBase=Math.max(0,(Date.parse(String(result.server_now))-Date.parse(String(result.started_at)))/1000)
-        setRealCrashRound({id:String(result.round_id),stake:Number(result.stake??0),startedAt:Date.parse(String(result.started_at)),clientAnchor:performance.now(),elapsedBase})
-        setCrashActive(true);setCrashExploding(false);setMultiplier(Number(result.multiplier??1))
-      }else if(result.status==='crashed'){
-        setRealCrashRound(null);setCrashActive(false);setCrashExploding(true);setMultiplier(Number(result.multiplier??1))
-        setRealBetResult({round_id:result.round_id,result:'CRASHED',stake:result.stake,payout:0,net_result:-Number(result.stake??0)})
-      }
-    }).catch(error=>{if(active)setRealBetMessage(error instanceof Error?error.message:'Could not restore the active Crash round.')})
+    const resume=async()=>{
+      try{
+        const {data,error}=await client.rpc('betnova_resume_crash_round')
+        if(error)throw error
+        if(!active||!data)return
+        const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
+        setRealBalance(Number(result.balance_after??0))
+        if(result.status==='active'&&result.round_id&&result.started_at&&result.server_now){
+          const elapsedBase=Math.max(0,(Date.parse(String(result.server_now))-Date.parse(String(result.started_at)))/1000)
+          setRealCrashRound({id:String(result.round_id),stake:Number(result.stake??0),startedAt:Date.parse(String(result.started_at)),clientAnchor:performance.now(),elapsedBase})
+          setCrashActive(true);setCrashExploding(false);setMultiplier(Number(result.multiplier??1))
+        }else if(result.status==='crashed'){
+          setRealCrashRound(null);setCrashActive(false);setCrashExploding(true);setMultiplier(Number(result.multiplier??1))
+          setRealBetResult({round_id:result.round_id,result:'CRASHED',stake:result.stake,payout:0,net_result:-Number(result.stake??0)})
+        }
+      }catch(error){if(active)setRealBetMessage(error instanceof Error?error.message:'Could not restore the active Crash round.')}
+    }
+    void resume()
     return()=>{active=false}
   },[selected?.id])
   const pickApple=(column:number)=>{
