@@ -4,6 +4,7 @@ import AuthPanel from './components/AuthPanel'
 import AccountPanel from './components/AccountPanel'
 import AdminOverview from './components/AdminOverview'
 import SupportCenter from './components/SupportCenter'
+import ResponsiblePlay from './components/ResponsiblePlay'
 import WalletPanel from './components/WalletPanel'
 import MatchMarkets from './components/MatchMarkets'
 import MatchStatistics from './components/MatchStatistics'
@@ -207,6 +208,7 @@ export default function App() {
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
   const [adminOpen, setAdminOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
+  const [responsibleOpen, setResponsibleOpen] = useState(false)
   const [walletOpen, setWalletOpen] = useState(false)
   function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') {
     setWalletInitialTab(tab)
@@ -214,6 +216,14 @@ export default function App() {
     const base = current.filter(id => id !== 'mobileMore' && id !== 'account' && id !== 'wallet')
     window.history.replaceState({ ...window.history.state, betnovaOverlays: base }, '', window.location.href)
     const next = [...base, 'wallet']
+    window.history.pushState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
+    applyOverlayStack(next)
+  }
+  function openResponsible() {
+    const current = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []
+    const base = current.filter(id => id !== 'mobileMore' && id !== 'account' && id !== 'responsible')
+    window.history.replaceState({ ...window.history.state, betnovaOverlays: base }, '', window.location.href)
+    const next = [...base, 'responsible']
     window.history.pushState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
     applyOverlayStack(next)
   }
@@ -251,6 +261,7 @@ export default function App() {
     setWalletOpen(stack.includes('wallet'))
     setAdminOpen(stack.includes('admin'))
     setSupportOpen(stack.includes('support'))
+    setResponsibleOpen(stack.includes('responsible'))
     setBetsOpen(stack.includes('bets'))
     setAuthOpen(stack.includes('auth'))
     setNotificationsOpen(stack.includes('notifications'))
@@ -272,7 +283,7 @@ export default function App() {
   function goHome() {
     window.history.replaceState({ betnovaPage: 'sports', betnovaOverlays: [] }, '', window.location.pathname + window.location.search)
     setActivePage('sports')
-    setAccountOpen(false); setWalletOpen(false); setAdminOpen(false); setSupportOpen(false); setBetsOpen(false)
+    setAccountOpen(false); setWalletOpen(false); setAdminOpen(false); setSupportOpen(false); setResponsibleOpen(false); setBetsOpen(false)
     setAuthOpen(false); setNotificationsOpen(false); setSettingsOpen(false)
     setMobileMoreOpen(false); setMobileSlip(false); setDetailMatch(null)
   }
@@ -771,7 +782,7 @@ export default function App() {
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
       <header className="topbar">
         <a className="brand nova-brand-lockup" href="#" onClick={event => { event.preventDefault(); goHome() }}><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">B</span><i/></span><span className="nova-brand-word">BETNOVA</span></a>
-        <nav className="desktop-nav"><button className={activePage === 'sports' ? 'active' : ''} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}>{t('sports')}</button><button className={activePage === 'football' ? 'active' : ''} onClick={openFootball}>⚽ {language === 'ar' ? 'كرة القدم' : 'Football'}</button><button className={activePage === 'games' ? 'active' : ''} onClick={() => openGames()}>{language === 'ar' ? 'الألعاب' : 'Games'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => { setActivePage('sports'); openEventView('results') }}>{t('results')}</button></nav>
+        <nav className="desktop-nav"><button className={activePage === 'sports' ? 'active' : ''} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}>{t('sports')}</button><button className={activePage === 'football' ? 'active' : ''} onClick={openFootball}>⚽ {language === 'ar' ? 'كرة القدم' : 'Football'}</button><button className={activePage === 'games' ? 'active' : ''} onClick={() => openGames()}>{language === 'ar' ? 'الألعاب' : 'Games'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}>{t('live')}</button><button type="button" onClick={openResponsible}>{t("responsible")}</button><button onClick={() => { setActivePage('sports'); openEventView('results') }}>{t('results')}</button></nav>
         <div className="top-actions">{activePage === 'games' && <button className="games-page-back games-page-back-top" type="button" onClick={closeGames}><ArrowRight size={16}/>{language === 'ar' ? 'العودة إلى الرياضة' : 'Back to sports'}</button>}<button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <><button className="wallet-open-btn deposit-open-btn" onClick={() => openWallet('deposit')}><Wallet size={15}/> {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(walletBalance)} DZD</button><button className="account-open-btn" onClick={() => openOverlay('account')}><UserRound size={15}/> My account</button></>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => openOverlay('notifications')}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => openOverlay('bets')}>{t("my_bets")}</button>{isAdminUser && <button className="admin-open-btn" onClick={() => openOverlay('admin')}>{t('admin')}</button>}</> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); openOverlay('auth') }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); openOverlay('auth') }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
       </header>
 
@@ -893,7 +904,7 @@ export default function App() {
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>Deposit</button>
             <button onClick={() => { openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
-            <button onClick={() => { closeOverlay('mobileMore'); document.getElementById("responsible")?.scrollIntoView({behavior:"smooth"}) }}><ShieldCheck size={17}/>Responsible play</button>
+            <button onClick={openResponsible}><ShieldCheck size={17}/>Responsible play</button>
               {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { closeOverlay('mobileMore'); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
@@ -932,6 +943,7 @@ export default function App() {
       })()}
       {adminOpen && <AdminOverview onClose={() => closeOverlay('admin')} />}
       {supportOpen && <SupportCenter onClose={() => closeOverlay('support')} userEmail={userEmail} />}
+      {responsibleOpen && <ResponsiblePlay onClose={() => closeOverlay('responsible')} userEmail={userEmail} language={language} />
       {accountOpen && <AccountPanel onClose={() => closeOverlay('account')} onSignOut={() => { closeOverlay('account'); void supabase?.auth.signOut() }} onOpenWallet={openWallet} />}
       {settingsOpen && <div className="settings-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('settings') }}><section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><button className="settings-close" onClick={() => closeOverlay('settings')} aria-label={t('close')}><X size={19}/></button><div className="settings-kicker"><Settings size={15}/> BETNOVA · PREFERENCES</div><h2 id="settings-title">{t('settings')}</h2><p>Personalise your BETNOVA experience.</p><label><span><Globe2 size={16}/> {t('language')}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><label><span><Wallet size={16}/> Preferred currency</span><select value={betCurrency} onChange={event => setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select></label><div className="settings-note"><ShieldCheck size={16}/> Preferences apply to this session. Wallet deposits and withdrawals use manual verification and payout.</div><button className="settings-done" onClick={() => closeOverlay('settings')}>Done <ArrowRight size={15}/></button></section></div>}
       {walletOpen && <WalletPanel onClose={() => closeOverlay('wallet')} initialTab={walletInitialTab} />}
