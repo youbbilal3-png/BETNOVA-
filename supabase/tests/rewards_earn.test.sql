@@ -25,10 +25,10 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('authenticated','public.earn_post_submissions','INSERT')
+  not has_table_privilege('authenticated','public.earn_post_submissions','INSERT')
   and not has_table_privilege('authenticated','public.earn_post_submissions','UPDATE')
   and not has_table_privilege('authenticated','public.earn_post_submissions','DELETE'),
-  'users may submit earn proofs but cannot alter or erase submissions'
+  'users cannot directly create, alter, or erase reward submissions'
 );
 select ok(
   not has_table_privilege('authenticated','public.referrals','INSERT')
