@@ -1,3 +1,5 @@
+create extension if not exists pg_cron;
+
 do $schedule$
 begin
   if exists(select 1 from cron.job where jobname='betnova-fivedollar-live-sync') then
