@@ -1,6 +1,6 @@
 begin;
 
-select plan(15);
+select plan(17);
 
 select has_table('public', 'profiles', 'profiles table is present');
 select has_table('public', 'wallet_accounts', 'cash wallet accounts table is present');
@@ -24,6 +24,11 @@ select ok((select relrowsecurity from pg_class where oid='public.wallet_accounts
   'wallet accounts enforce row level security');
 select ok((select relrowsecurity from pg_class where oid='public.wallet_ledger'::regclass),
   'wallet ledger enforces row level security');
+
+select ok((select relrowsecurity from pg_class where oid='public.notification_preferences'::regclass),
+  'notification preferences enforce row level security');
+select ok((select relrowsecurity from pg_class where oid='public.bet_legs'::regclass),
+  'bet legs enforce row level security');
 
 select * from finish();
 rollback;
