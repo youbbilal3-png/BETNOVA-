@@ -92,11 +92,11 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
         <div className="account-wallet-balance-grid">
           {['DZD','USD','EUR'].map(currency => {
             const balance = accountBalances.find(item => item.currency === currency)
-            return <div key={currency}><small>{currency}</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(balance?.available_balance ?? 0))}</strong>{Number(balance?.reserved_balance ?? 0) > 0 && <small>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(balance?.reserved_balance))} reserved</small>}</div>
+            return <div key={currency}><small>{currency}</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(balance?.available_balance ?? 0))}</strong>{Number(balance?.reserved_balance ?? 0) > 0 && <small>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(balance?.reserved_balance))} {t('reserved_for_withdrawals_label')}</small>}</div>
           })}
         </div>
       </div>
-      <div className="account-wallet-summary account-bonus-summary"><div className="account-wallet-summary-head"><span>WELCOME BONUS · SEPARATE WALLET</span></div><div className="account-wallet-balance-grid"><div><small>USD</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}).format(bonusBalance)}</strong></div><div><small>DZD equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'DZD',maximumFractionDigits:0}).format(bonusBalance*260)}</strong></div><div><small>EUR equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(bonusBalance*0.9)}</strong></div></div></div>
+      <div className="account-wallet-summary account-bonus-summary"><div className="account-wallet-summary-head"><span>{t('bonus_separate_balance')}</span></div><div className="account-wallet-balance-grid"><div><small>USD</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}).format(bonusBalance)}</strong></div><div><small>DZD equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'DZD',maximumFractionDigits:0}).format(bonusBalance*260)}</strong></div><div><small>EUR equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(bonusBalance*0.9)}</strong></div></div></div>
       <div className="account-wallet-actions"><button type="button" onClick={() => onOpenWallet('deposit')}><ArrowDownToLine size={17}/> {t('deposit')}</button><button type="button" onClick={() => onOpenWallet('withdraw')}><ArrowUpFromLine size={17}/> {t('withdraw')}</button></div>
       <div className="account-status-grid">
         <div><span>{t('email_status')}</span><b className={verified ? 'verified' : 'unverified'}>{verified ? <><CheckCircle2 size={15}/> {t('verified')}</>  : t('not_verified')}</b></div>
@@ -111,7 +111,7 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
       <section className="account-section">
         <h3><Mail size={17}/> {t('email_verification')}</h3>
         <p>{verified ? t('email_confirmed') : t('email_confirm_note')}</p>
-        {!verified && <button className="account-secondary" onClick={() => void resendVerification()} disabled={resending}>{resending ? t('sending') : 'Resend confirmation email'}</button>}
+        {!verified && <button className="account-secondary" onClick={() => void resendVerification()} disabled={resending}>{resending ? t('sending') : t('resend_confirmation')}</button>}
       </section>
       <form className="account-section" onSubmit={changePassword}>
         <h3><KeyRound size={17}/> {t('password_security')}</h3>
