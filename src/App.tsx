@@ -947,11 +947,11 @@ export default function App() {
           <button onClick={() => { closeMobileMenuToPage(); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           <button onClick={openSupport}><CircleHelp size={17}/>{t('help_support')}</button>
           <button onClick={openResponsible}><ShieldCheck size={17}/>{t('responsible_play')}</button>
+          <button onClick={() => { closeMobileMenuToPage(); openOverlay('rewards') }}><Gift size={17}/>{language === 'ar' ? 'المكافآت' : 'Rewards'}</button>
+          <button onClick={() => { closeMobileMenuToPage(); openOverlay('earn') }}><UploadCloud size={17}/>{language === 'ar' ? 'اكسب' : 'Earn'}</button>
           {userEmail ? <>
             <button className="mobile-account-entry" onClick={() => { openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
             <button onClick={() => { closeMobileMenuToPage(); openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
-            <button onClick={() => { closeMobileMenuToPage(); openOverlay('rewards') }}><Gift size={17}/>{language === 'ar' ? 'المكافآت' : 'Rewards'}</button>
-            <button onClick={() => { closeMobileMenuToPage(); openOverlay('earn') }}><UploadCloud size={17}/>{language === 'ar' ? 'اكسب' : 'Earn'}</button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>{t('deposit')}</button>
             <button onClick={() => { closeMobileMenuToPage(); openOverlay('mobileSlip') }}><Wallet size={17}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
