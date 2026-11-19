@@ -112,3 +112,13 @@
 .blackjack-controls{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;color:#d8e8f1;font-size:10px;font-weight:900;letter-spacing:.5px}
 .blackjack-controls span{padding:7px 10px;border:1px solid #ffffff24;border-radius:999px;background:#ffffff0b}
 .game-action-row button:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(1)}
+
+/* Refined table-game depth and compact score readability */
+.game-detail-modal{transform:perspective(1100px) rotateX(0deg);transform-origin:center}
+.game-detail-art{box-shadow:inset 0 1px #ffffff20,inset 0 -18px 35px #02081755,0 12px 24px #0004}
+.practice-playing-cards span{transform:perspective(380px) rotateY(-4deg) rotateX(2deg);transition:transform .2s,box-shadow .2s}
+.practice-playing-cards span:hover{transform:perspective(380px) rotateY(0) translateY(-3px);box-shadow:0 10px 18px #0009}
+.baccarat-preview strong{width:auto;min-width:43px;max-width:100%;min-height:43px;height:auto;padding:7px 9px;font-size:11px;line-height:1.35;text-align:center;overflow-wrap:anywhere}
+.game-action-row button{transition:transform .18s,border-color .18s,background .18s}
+.game-action-row button:not(:disabled):hover{transform:translateY(-2px);border-color:var(--game-glow);background:color-mix(in srgb,var(--game-glow) 22%,#111b30)}
+@media(prefers-reduced-motion:reduce){.practice-playing-cards span,.game-action-row button{transition:none!important}}
