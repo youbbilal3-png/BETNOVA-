@@ -1030,7 +1030,7 @@ export default function App() {
       {walletOpen && <WalletPanel onClose={() => closeOverlay('wallet')} initialTab={walletInitialTab} />}
       {betsOpen && <MyBetsPanel onClose={() => closeOverlay('bets')} />}
       {rewardsOpen && <RewardsPanel onClose={() => closeOverlay('rewards')} language={language} />}
-      {earnOpen && <EarnPanel onClose={() => closeOverlay('earn')} language={language} />
+      {earnOpen && <EarnPanel onClose={() => closeOverlay('earn')} language={language} />}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => closeOverlay('auth')} onModeChange={setAuthMode} />
       {(activePage !== 'sports' || (Array.isArray(window.history.state?.betnovaOverlays) && window.history.state.betnovaOverlays.length > 0)) && !(Array.isArray(window.history.state?.betnovaOverlays) && window.history.state.betnovaOverlays.includes('mobileSlip')) && !authOpen && !detailMatch && !betsOpen && !rewardsOpen && !earnOpen && <button type="button" className="global-home-button" onClick={goHome} aria-label={t('home_label')}><Home size={17}/> {t('home_label')}</button>}
       <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
