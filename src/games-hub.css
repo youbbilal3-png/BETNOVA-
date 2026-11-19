@@ -260,3 +260,5 @@
 .arcade-wager-receipt strong{color:#aaffd7;font-size:13px}
 .arcade-wager-receipt small{overflow-wrap:anywhere;color:#91b9ad;font-size:9px}
 @media(max-width:560px){.arcade-wager-panel{padding:13px}.arcade-wager-heading{font-size:11px}.arcade-wager-submit{min-height:44px}}
+
+.arcade-wager-paytable{margin:0 0 12px;padding:10px 11px;border:1px solid #91a9cb25;border-radius:9px;background:#07142799;color:#b8cbe2;font-size:10px;line-height:1.6}
