@@ -1,6 +1,6 @@
 create extension if not exists pgtap with schema extensions;
 begin;
-select plan(13);
+select plan(14);
 
 select has_table('public','weekly_cashback_claims','weekly cashback history table exists');
 select has_column('public','weekly_cashback_claims','total_staked','cashback stores the exact weekly stake total');
