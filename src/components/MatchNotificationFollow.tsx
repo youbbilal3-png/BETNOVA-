@@ -70,7 +70,12 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
         })
       }
       setLoading(false)
-    })()
+    })().catch(error => {
+      if (!mounted) return
+      console.error('Could not load BETNOVA match notification options', error)
+      setMessage(localize('تعذر تحميل خيارات التنبيه. أعد المحاولة لاحقًا.', 'Could not load alert options. Please try again.', 'Impossible de charger les alertes. Réessayez plus tard.'))
+      setLoading(false)
+    })
     return () => { mounted = false }
   }, [userId, fixtureId, homeName, awayName, isArabic, isFrench])
 
@@ -99,10 +104,12 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
   return <div className="bn-match-follow">
     <div className="bn-match-follow-title"><Bell size={17}/><div><b>{localize('متابعة وتنبيهات', 'Follow & get alerts', 'Suivre et recevoir des alertes')}</b><small>{localize('اختر المباراة أو الفرق التي تريد متابعتها.', 'Choose this match or teams to follow.', 'Choisissez ce match ou les équipes à suivre.')}</small></div></div>
     <div className="bn-match-follow-options">
-      {targets.map(target => <div className="bn-match-follow-option" key={target.key}>
-        <span>{target.label}</span>
-        <button type="button" role="switch" aria-checked={active[target.key]} disabled={loading || busy !== null} className={active[target.key] ? 'is-on' : ''} onClick={() => void toggle(target.key)}><span/></button>
-      </div>)}
+      {loading ? <p className="bn-match-follow-state">{localize('جارٍ تحميل خيارات التنبيه…', 'Loading alert options…', 'Chargement des alertes…')}</p> :
+        targets.length ? targets.map(target => <div className="bn-match-follow-option" key={target.key}>
+          <span>{target.label}</span>
+          <button type="button" role="switch" aria-checked={active[target.key]} disabled={busy !== null} className={active[target.key] ? 'is-on' : ''} onClick={() => void toggle(target.key)}><span/></button>
+        </div>) :
+        <p className="bn-match-follow-state">{message || localize('خيارات التنبيه غير متاحة لهذه المباراة حاليًا.', 'Alert options are not available for this match right now.', 'Les alertes ne sont pas disponibles pour ce match.')}</p>}
     </div>
     <div className="bn-match-follow-safe"><ShieldCheck size={14}/>{localize('يمكنك تغيير اختياراتك في أي وقت.', 'You can change these follows at any time.', 'Vous pouvez modifier vos suivis à tout moment.')}</div>
     {message && <p className="bn-match-follow-message" role="status">{message}</p>}
