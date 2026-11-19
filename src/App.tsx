@@ -670,8 +670,8 @@ export default function App() {
           <div className="rail-heading">{t("discover")} <span>•••</span></div>
           <button className={activePage === 'sports' ? 'rail-item selected' : 'rail-item'} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}><Trophy size={18}/> {t("sports")} <span className="rail-count">24</span></button>
           <button className={activePage === 'games' ? 'rail-item selected' : 'rail-item'} onClick={() => setActivePage('games')}><Sparkles size={18}/> Games <span className="rail-count">9</span></button>
-          <button className="rail-item" onClick={() => openEventView('live')}><Flame size={18}/> {t("live_events")} <span className="live-count">LIVE</span></button>
-          <button className={showFavorites ? 'rail-item selected' : 'rail-item'} onClick={() => { setShowFavorites(!showFavorites); setEventView('upcoming') }}><Star size={18}/> Favourites <span className="rail-count">{favoriteIds.length}</span></button>
+          <button className="rail-item" onClick={() => { setActivePage('sports'); openEventView('live') }}><Flame size={18}/> {t("live_events")} <span className="live-count">LIVE</span></button>
+          <button className={showFavorites ? 'rail-item selected' : 'rail-item'} onClick={() => { setActivePage('sports'); setShowFavorites(!showFavorites); setEventView('upcoming') }}><Star size={18}/> Favourites <span className="rail-count">{favoriteIds.length}</span></button>
           <div className="rail-separator"/>
           <div className="rail-heading">{t("sports_heading")}</div>
           {sports.map((s, i) => <button key={s} onClick={() => setSport(s)} className={sport === s ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
@@ -734,7 +734,7 @@ export default function App() {
         </aside>
       </main>
 
-      <nav className="mobile-nav"><button className="mobile-active" onClick={() => openEventView("upcoming")}><Trophy size={19}/>{t("sports")}</button><button onClick={() => openEventView('live')}><Activity size={19}/>{t("live")}</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => setMobileMoreOpen(true)}><Menu size={19}/>{t("menu")}</button></nav>
+      <nav className="mobile-nav"><button className={activePage === 'sports' ? 'mobile-active' : ''} onClick={() => { setActivePage('sports'); openEventView("upcoming") }}><Trophy size={19}/>{t("sports")}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => setMobileMoreOpen(true)}><Menu size={19}/>{t("menu")}</button></nav>
       {mobileMoreOpen && <div className="mobile-more-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setMobileMoreOpen(false) }}>
         <section className="mobile-more-panel" role="dialog" aria-modal="true" aria-label={t("menu")}>
           <div className="mobile-more-header"><div><b>NOVA ARENA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => setMobileMoreOpen(false)} aria-label={t("close")}><X size={18}/></button></div>
