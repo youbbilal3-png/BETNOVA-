@@ -1,7 +1,7 @@
 create extension if not exists pgtap with schema extensions;
 
 begin;
-select plan(30);
+select plan(28);
 
 select has_table('public','earn_post_submissions','social earn submissions table exists');
 select has_column('public','earn_post_submissions','proof_sha256','screenshot SHA-256 is stored');
