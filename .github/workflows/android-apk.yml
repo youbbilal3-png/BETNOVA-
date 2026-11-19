@@ -70,10 +70,10 @@ jobs:
 
       - name: Type-check live and notification Edge Functions
         run: |
-          deno check supabase/functions/live-event-ingest/index.ts
-          deno check supabase/functions/sportsapi-live-sync/index.ts
-          deno check supabase/functions/fivedollar-football-sync/index.ts
-          deno check supabase/functions/dispatch-push-notifications/index.ts
+          deno check --config=deno.json supabase/functions/live-event-ingest/index.ts
+          deno check --config=deno.json supabase/functions/sportsapi-live-sync/index.ts
+          deno check --config=deno.json supabase/functions/fivedollar-football-sync/index.ts
+          deno check --config=deno.json supabase/functions/dispatch-push-notifications/index.ts
 
       - name: Setup Java
         uses: actions/setup-java@v5
