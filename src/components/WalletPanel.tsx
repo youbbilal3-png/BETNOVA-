@@ -165,8 +165,12 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
   }
   const instructions = selectedMethod?.instructions ?? {}
   const instructionText = typeof instructions.instructions === 'string' ? instructions.instructions : ''
-  const accountName = typeof instructions.account_name === 'string' ? instructions.account_name : ''
-  const accountNumber = typeof instructions.account_number === 'string' ? instructions.account_number : ''
+  const receivingDetail = selectedMethod?.code === 'paysera'
+    ? (typeof instructions.iban === 'string' ? instructions.iban : '')
+    : selectedMethod?.code === 'baridimob'
+      ? (typeof instructions.account_number === 'string' ? instructions.account_number : '')
+      : (typeof instructions.account_id === 'string' ? instructions.account_id : typeof instructions.account_number === 'string' ? instructions.account_number : '')
+  const receivingLabel = selectedMethod?.code === 'paysera' ? 'IBAN' : selectedMethod?.code === 'baridimob' ? 'CCP / Account number' : 'Receiving ID'
 
   return <div className="wallet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
     <section className="wallet-panel" role="dialog" aria-modal="true" aria-labelledby="wallet-title">
@@ -191,10 +195,9 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
       {tab === 'deposit' && <form className="wallet-form" onSubmit={submitDeposit}>
         <div className="wallet-method-section"><label>{t('payment_method')}</label><div className="wallet-method-grid">{methods.map(item => { const supportsCurrency = item.supported_currencies.includes(currency); const available = item.is_enabled && supportsCurrency; return <button type="button" key={item.code} disabled={!available} className={['wallet-method-card', method === item.code ? 'active' : '', !available ? 'unavailable' : ''].filter(Boolean).join(' ')} onClick={() => setMethod(item.code)} aria-pressed={method === item.code}><PaymentMethodLogo code={item.code} size={42}/><span><b>{item.display_name}</b><small>{supportsCurrency ? (available ? currency : 'Not configured yet') : 'Available: ' + item.supported_currencies.join(' / ')}</small></span><i>{method === item.code ? '✓' : available ? '›' : '•'}</i></button> })}</div><small className="wallet-method-hint">Choose a currency supported by the payment method. Deposit methods appear as unavailable until the administrator adds real receiving details and enables them.</small></div>
         {selectedMethod && <div className="wallet-instructions">
-          {accountName && <p><b>{t('account_name')}</b> {accountName}</p>}
-          {accountNumber && <p><b>{t('transfer_details')}</b> {accountNumber}</p>}
+          {receivingDetail && <p className="wallet-receiving-detail"><b>{receivingLabel}</b> <span>{receivingDetail}</span><button type="button" onClick={() => { void navigator.clipboard?.writeText(receivingDetail) }}>Copy</button></p>}
           {instructionText && <p>{instructionText}</p>}
-          {!accountName && !accountNumber && !instructionText && <p>{t('payment_instructions_pending')}</p>}
+          {!receivingDetail && !instructionText && <p>{t('payment_instructions_pending')}</p>}
         </div>}
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min={currency === 'DZD' ? 500 : 1} max={currency === 'DZD' ? 100000 : 5000} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('payment_proof')}<input id="wallet-proof-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>

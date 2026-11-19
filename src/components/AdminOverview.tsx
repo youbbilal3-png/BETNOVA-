@@ -44,7 +44,7 @@ export default function AdminOverview({ onClose }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({})
+  const [instructionDrafts, setInstructionDrafts] = useState<Record<string, Record<string, string>>>({})
   const [currencyDrafts, setCurrencyDrafts] = useState<Record<string, string[]>>({})
   const [payoutReferences, setPayoutReferences] = useState<Record<string, string>>({})
   const [ownerCreditAmount, setOwnerCreditAmount] = useState('')
@@ -229,8 +229,13 @@ export default function AdminOverview({ onClose }: Props) {
     if (!supabase) return
     setBusyId(method.id); setError(''); setNotice('')
     try {
-      const instructions = JSON.parse(instructionDrafts[method.id] ?? JSON.stringify(method.instructions))
-      if (!instructions || typeof instructions !== 'object' || Array.isArray(instructions)) throw new Error('Instructions must be a JSON object.')
+      const current = method.instructions ?? {}
+      const draft = instructionDrafts[method.id] ?? {}
+      const fieldKey = method.code === 'paysera' ? 'iban' : method.code === 'baridimob' ? 'account_number' : 'account_id'
+      const fieldValue = (draft[fieldKey] ?? String(current[fieldKey] ?? '')).trim()
+      const note = (draft.instructions ?? String(current.instructions ?? '')).trim()
+      if (!fieldValue) throw new Error('Enter the receiving account ID / IBAN / number before saving.')
+      const instructions = { ...current, [fieldKey]: fieldValue, instructions: note }
       const { error: updateError } = await supabase.from('payment_methods').update({ instructions }).eq('id', method.id)
       if (updateError) throw updateError
       setNotice(`Instructions saved for ${method.display_name}.`)
@@ -367,10 +372,13 @@ export default function AdminOverview({ onClose }: Props) {
               <p>{method.code} · {(currencyDrafts[method.id] ?? method.supported_currencies).join(', ')}</p>
               <div className="admin-currency-options">{['DZD','USD','EUR'].map(currency => <label key={currency}><input type="checkbox" checked={(currencyDrafts[method.id] ?? method.supported_currencies).includes(currency)} onChange={event => setCurrencyDrafts(current => ({...current,[method.id]:event.target.checked?[...(current[method.id] ?? method.supported_currencies),currency]:(current[method.id] ?? method.supported_currencies).filter(value=>value!==currency)}))}/>{currency}</label>)}</div>
               <div className="admin-finance-actions"><button disabled={busyId === method.id} onClick={() => void saveCurrencies(method)}>Save currencies</button></div>
-              <label className="admin-method-instructions">Customer-facing receiving details (JSON)
-                <textarea className="admin-instructions-editor" value={instructionDrafts[method.id] ?? JSON.stringify(Object.keys(method.instructions ?? {}).length ? method.instructions : { account_name: '', account_number: '', instructions: '' }, null, 2)} onChange={event => setInstructionDrafts(current => ({ ...current, [method.id]: event.target.value }))} rows={5} aria-label={`Instructions for ${method.display_name}`} />
+              <label className="admin-method-instructions">{method.code === 'paysera' ? 'Paysera IBAN' : method.code === 'baridimob' ? 'BaridiMob account / CCP number' : method.code === 'redotpay' ? 'RedotPay ID' : 'Binance ID'}
+                <input className="admin-instructions-editor" value={instructionDrafts[method.id]?.[method.code === 'paysera' ? 'iban' : method.code === 'baridimob' ? 'account_number' : 'account_id'] ?? String(method.instructions?.[method.code === 'paysera' ? 'iban' : method.code === 'baridimob' ? 'account_number' : 'account_id'] ?? method.instructions?.account_number ?? '')} onChange={event => { const key = method.code === 'paysera' ? 'iban' : method.code === 'baridimob' ? 'account_number' : 'account_id'; setInstructionDrafts(current => ({ ...current, [method.id]: { ...(current[method.id] ?? {}), [key]: event.target.value } })) }} placeholder={method.code === 'paysera' ? 'Enter IBAN' : method.code === 'baridimob' ? 'Enter CCP / account number' : 'Enter receiving ID'} />
               </label>
-              <small>Use account_name, account_number and instructions. For Binance/RedotPay crypto transfers, include the exact asset and network in instructions. Never enter a password, private key, seed phrase or verification code. Save the details first, then enable this method.</small>
+              <label className="admin-method-instructions">Additional customer instructions (optional)
+                <textarea className="admin-instructions-editor" value={instructionDrafts[method.id]?.instructions ?? String(method.instructions?.instructions ?? '')} onChange={event => setInstructionDrafts(current => ({ ...current, [method.id]: { ...(current[method.id] ?? {}), instructions: event.target.value } }))} rows={3} placeholder={method.code === 'binance' || method.code === 'redotpay' ? 'Specify USDT and the exact network (e.g. TRC20) if applicable.' : 'Optional transfer notes'} />
+              </label>
+              <small>No real name is required. Never enter a password, private key, seed phrase or verification code. For crypto, specify the exact asset and network to prevent lost transfers. Save details before enabling deposits.</small>
               <div className="admin-finance-actions"><button disabled={busyId === method.id} onClick={() => void saveInstructions(method)}>Save instructions</button><button className="admin-method-toggle" disabled={busyId === method.id} onClick={() => void togglePaymentMethod(method)}>{method.is_enabled ? 'Disable deposits' : 'Enable deposits'}</button><button className="admin-method-toggle" disabled={busyId === method.id} onClick={() => void toggleWithdrawalMethod(method)}>{method.is_withdrawal_enabled ? 'Disable withdrawals' : 'Enable withdrawals'}</button></div>
             </article>)}
           </div>}
