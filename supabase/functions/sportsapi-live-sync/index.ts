@@ -130,6 +130,10 @@ Deno.serve(async (req: Request) => {
     const delta = Date.now() - startTime.getTime();
     return Number.isFinite(delta) && delta >= -5 * 60_000 && delta <= 15 * 60_000;
   }
+  let requestBody: any = {};
+  try { requestBody = await req.json(); } catch { requestBody = {}; }
+  const mode = requestBody?.mode === "scores" ? "scores" : "full";
+  const requestLimit = mode === "scores" ? 1 : MAX_REQUESTS_PER_RUN;
   let requestsMade = 0;
   let quotaLimited = false;
   let providerLimited = false;
@@ -142,7 +146,7 @@ Deno.serve(async (req: Request) => {
   let finalized = 0;
 
   async function providerGet(path: string): Promise<any | null> {
-    if (requestsMade >= MAX_REQUESTS_PER_RUN || quotaLimited || providerLimited) return null;
+    if (requestsMade >= requestLimit || quotaLimited || providerLimited) return null;
     const { data: allowed, error: reserveError } = await supabase.rpc(
       "betnova_reserve_sportsapi_request",
       { p_daily_limit: DAILY_REQUEST_LIMIT },
@@ -643,7 +647,7 @@ Deno.serve(async (req: Request) => {
       .limit(7);
 
     for (const link of missingLinks ?? []) {
-      if (requestsMade >= MAX_REQUESTS_PER_RUN || quotaLimited || providerLimited) break;
+      if (requestsMade >= requestLimit || quotaLimited || providerLimited) break;
       if (seenProviderIds.has(Number(link.provider_fixture_id))) continue;
       const detail = await providerGet("/fixtures/" + Number(link.provider_fixture_id));
       if (!detail || typeof detail !== "object") continue;
