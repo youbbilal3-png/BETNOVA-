@@ -822,7 +822,7 @@ export default function App() {
               </button>
               <button type="button" className="featured-game-card featured-plinko" onClick={() => openFeaturedGame('plinko')}>
                 <span className="featured-game-art plinko-art" aria-hidden="true"><span className="art-glow"/><svg viewBox="0 0 180 92" role="img"><defs><linearGradient id="plinkoBall" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fff5b4"/><stop offset=".55" stopColor="#ffc75b"/><stop offset="1" stopColor="#e87826"/></linearGradient></defs><path d="M42 15L90 78 138 15" fill="none" stroke="#8ef5d4" strokeWidth="1.5" opacity=".25"/><g fill="#b6ffe8"><circle cx="61" cy="20" r="3"/><circle cx="90" cy="20" r="3"/><circle cx="119" cy="20" r="3"/><circle cx="48" cy="39" r="3"/><circle cx="76" cy="39" r="3"/><circle cx="104" cy="39" r="3"/><circle cx="132" cy="39" r="3"/><circle cx="61" cy="58" r="3"/><circle cx="90" cy="58" r="3"/><circle cx="119" cy="58" r="3"/><circle cx="76" cy="76" r="3"/><circle cx="104" cy="76" r="3"/></g><path d="M90 4Q79 19 88 31T92 55" fill="none" stroke="#ffcf72" strokeWidth="2" strokeDasharray="3 4" opacity=".65"/><circle cx="90" cy="34" r="9" fill="url(#plinkoBall)" stroke="#fff0b5" strokeWidth="1.5"/><circle cx="87" cy="31" r="2.5" fill="#fff" opacity=".8"/><path d="M40 84h100" stroke="#68edba" strokeWidth="4" strokeLinecap="round"/></svg><span className="art-stamp">DROP</span></span>
-                <span className="featured-game-name">PLINKO</span><span className="featured-game-action">{language === 'ar' ? 'العب الآن' : 'PLAY NOW'} <ArrowRight size={11}/></span>
+                <span className="featured-game-name">PLINKO</span><span className="featured-game-action">{t('play_now')} <ArrowRight size={11}/></span>
               </button>
             </div>
           </section>}
@@ -885,7 +885,7 @@ export default function App() {
             {betMessage && <p className="bet-slip-message">{betMessage}</p>}
             <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>{betBusy ? 'Placing…' : selected.some(item => item.isDemo) ? 'Save practice bet' : 'Place bet'} <ArrowRight size={15}/></button>
           </div>
-          <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>{t('help_support')}</b><p>{t('profile_manage')}</p><button type="button" onClick={openSupport}>{t('help_support')} <ArrowRight size={13}/></button></div></div>
+          <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>{t('help_support')}</b><p>{t('help_center_hint')}</p><button type="button" onClick={openSupport}>{t('help_support')} <ArrowRight size={13}/></button></div></div>
           <div className="responsible-card" id="responsible"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
         </aside>}
       </main>
