@@ -54,9 +54,10 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Type-check notification Edge Functions
+      - name: Type-check live and notification Edge Functions
         run: |
           deno check supabase/functions/live-event-ingest/index.ts
+          deno check supabase/functions/sportsapi-live-sync/index.ts
           deno check supabase/functions/dispatch-push-notifications/index.ts
 
       - name: Setup Java
