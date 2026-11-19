@@ -98,10 +98,9 @@ create policy "Admins read deposit streak claims" on public.deposit_streak_claim
     select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'
   ));
 
+revoke all on public.earn_post_submissions, public.referrals, public.deposit_streak_claims, public.referral_codes from anon, authenticated;
 grant select, insert on public.earn_post_submissions to authenticated;
 grant select on public.referrals, public.deposit_streak_claims to authenticated;
-revoke update, delete on public.earn_post_submissions, public.referrals, public.deposit_streak_claims from anon, authenticated;
-revoke all on public.referral_codes from anon, authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('earn-proofs','earn-proofs',false,5242880,array['image/jpeg','image/png','image/webp'])
