@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Clock3, LoaderCircle, Radio, RefreshCw } from 'lucide-react'
+import { ChevronDown, Clock3, LoaderCircle, Radio } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
-import MarketCatalog from './MarketCatalog'
 
 type Props = {
   fixtureId: string | number
   onSelect: (selection: { selectionId: string; marketId: string; marketKey: string; marketLabel: string; selectionLabel: string; odds: string }) => void
   selectedIds: string[]
   live: boolean
+  deferLoad?: boolean
 }
 type Selection = { id: string; name: string; odds: number; status: string; result_status: string }
 type Market = { id: string; market_key: string | null; market_type: string; name: string; status: string; is_live: boolean; last_updated_at: string; settlement_rule: Record<string, unknown> | null; market_selections: Selection[] }
@@ -54,23 +54,16 @@ const categoryFor = (market: Market, t: (key: any) => string, language: string) 
   return t('match_markets')
 }
 
-export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }: Props) {
+export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, deferLoad = false }: Props) {
   const { t, language } = useLanguage()
   const [markets, setMarkets] = useState<Market[]>([])
   const [events, setEvents] = useState<LiveEvent[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!deferLoad)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState('')
-  const [activeCategory, setActiveCategory] = useState('all')
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [clock, setClock] = useState(Date.now())
-  const [categoryOrder, setCategoryOrder] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('betnova-market-category-order-v1') || '[]') as string[] } catch { return [] }
-  })
 
-  useEffect(() => {
-    try { localStorage.setItem('betnova-market-category-order-v1', JSON.stringify(categoryOrder)) } catch { /* storage may be unavailable */ }
-  }, [categoryOrder])
 
   const outcomeWords: Record<string, string[]> = {
     en:['Win 1','Draw','Win 2','Over','Under','Yes','No'],
@@ -146,7 +139,6 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
         if (!previous || Date.parse(market.last_updated_at) > Date.parse(previous.last_updated_at)) unique.set(key, market);
       }
       setMarkets(Array.from(unique.values()))
-      setLastUpdated(new Date())
     }
     setLoading(false)
   }
@@ -160,10 +152,15 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
   }
 
   useEffect(() => {
-    setLoading(true)
-    void loadMarkets()
-    void loadEvents()
-    if (!supabase) return
+    if (!deferLoad) {
+      setLoading(true)
+      void loadMarkets().then(() => setHasLoaded(true))
+      void loadEvents()
+    }
+  }, [fixtureId, deferLoad])
+
+  useEffect(() => {
+    if (!supabase || !hasLoaded) return
     const client = supabase
     const channel = client.channel('match-markets-' + fixtureId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'markets', filter: 'fixture_id=eq.' + fixtureId }, () => { void loadMarkets() })
@@ -171,7 +168,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fixture_events', filter: 'fixture_id=eq.' + fixtureId }, () => { void loadEvents() })
       .subscribe()
     return () => { void client.removeChannel(channel) }
-  }, [fixtureId])
+  }, [fixtureId, hasLoaded])
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Market[]>()
@@ -179,71 +176,57 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
       const category = categoryFor(market, t, language)
       groups.set(category, [...(groups.get(category) ?? []), market])
     }
-    const entries = Array.from(groups.entries()).map(([category, items]) => ({
-      category,
-      items,
-      id: [...new Set(items.map(m => m.market_key || m.market_type))].sort().join('|') || category.toLowerCase().replace(/\\s+/g, '-')
-    }))
-    return entries.sort((a, b) => {
-      const ai = categoryOrder.indexOf(a.id)
-      const bi = categoryOrder.indexOf(b.id)
-      if (ai !== -1 || bi !== -1) return (ai === -1 ? Number.MAX_SAFE_INTEGER : ai) - (bi === -1 ? Number.MAX_SAFE_INTEGER : bi)
-      const rank = (label: string) => /goal/i.test(label) ? 0 : /match|result/i.test(label) ? 1 : /corner/i.test(label) ? 2 : /card/i.test(label) ? 3 : 4
-      return rank(a.category) - rank(b.category)
-    })
-  }, [markets, t, categoryOrder])
+    return Array.from(groups.entries()).map(([category, items]) => ({ category, items }))
+      .sort((a, b) => {
+        const rank = (label: string) => /goal|both teams/i.test(label) ? 0 : /match|result/i.test(label) ? 1 : /corner/i.test(label) ? 2 : /card/i.test(label) ? 3 : /shot|player/i.test(label) ? 4 : 5
+        return rank(a.category) - rank(b.category)
+      })
+  }, [markets, t, language])
 
-  function moveCategory(categoryId: string, direction: -1 | 1) {
-    const ids = grouped.map(group => group.id)
-    const current = ids.indexOf(categoryId)
-    const target = current + direction
-    if (current < 0 || target < 0 || target >= ids.length) return
-    const next = [...ids]
-    ;[next[current], next[target]] = [next[target], next[current]]
-    setCategoryOrder(next)
+  const defaultCategories = [t('goals'), t('match_result'), t('corners'), t('cards_fouls'), t('player_markets'), t('match_markets')]
+  const categoryNames = grouped.length ? grouped.map(group => group.category) : defaultCategories
+  async function toggleCategory(category: string) {
+    const opening = expanded !== category
+    setExpanded(opening ? category : '')
+    if (opening && !hasLoaded) {
+      setLoading(true)
+      await loadMarkets()
+      setHasLoaded(true)
+    }
+    if (opening && live && events.length === 0) void loadEvents()
   }
 
-  if (loading) return <div className="markets-loading"><LoaderCircle size={18}/> {t('loading_markets')}</div>
-  if (error) return <div><div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets() }}>{t('try_again')}</button></div><MarketCatalog markets={markets} live={live} selectedIds={selectedIds} onSelect={onSelect} /></div>
+  if (error && !hasLoaded) return <div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets().then(() => setHasLoaded(true)) }}>{t('try_again')}</button></div>
 
-  const categories = grouped.map(group => group.category)
-  const visibleGroups = activeCategory === 'all' ? grouped : activeCategory ? grouped.filter(group => group.category === activeCategory) : []
-
-  return <div className="match-markets">
+  return <div className="match-markets match-markets-card">
     {live && events.length > 0 && <section className="match-event-feed"><div className="match-event-feed-head"><span><Radio size={12}/> {t('live_match_events')}</span><small>{events.length} {t('recent_updates')}</small></div>{events.map(event=><div className="match-event-row" key={event.id}><b>{event.minute !== null ? event.minute + (event.added_time ? '+' + event.added_time : '') + "'" : '•'}</b><span className={'event-dot '+event.event_type}>{event.event_type==='goal'?'⚽':event.event_type==='yellow_card'?'🟨':event.event_type==='red_card'?'🟥':event.event_type==='corner'?'◉':event.event_type==='substitution'?'↔':'•'}</span><span>{event.player_name || t(event.event_type === 'goal' ? 'goal_event' : event.event_type === 'yellow_card' ? 'yellow_card_event' : event.event_type === 'red_card' ? 'red_card_event' : event.event_type === 'corner' ? 'corner_event' : event.event_type === 'substitution' ? 'substitution_event' : 'other_event')}{event.team?.name ? ' · '+event.team.name : ''}</span></div>)}</section>}
-    <div className="markets-toolbar"><span>{markets.length} {t('available_markets')}</span><small>{lastUpdated ? t('updated') + ' ' + lastUpdated.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : ''}</small><button onClick={() => { setLoading(true); void loadMarkets() }} aria-label={t('refresh_markets')}><RefreshCw size={13}/></button></div>
-    <div className="market-category-filters" role="list" aria-label={t('market_categories')}>
-      {grouped.map((group, index) => <div className="market-category-control" role="listitem" key={group.id}>
-        <div className="market-category-reorder">
-          <button type="button" className="market-category-move" aria-label={t('move_up') + ': ' + group.category} title={t('move_up')} disabled={index === 0} onClick={() => moveCategory(group.id, -1)}><ArrowUp size={12}/></button>
-          <button type="button" className="market-category-move" aria-label={t('move_down') + ': ' + group.category} title={t('move_down')} disabled={index === grouped.length - 1} onClick={() => moveCategory(group.id, 1)}><ArrowDown size={12}/></button>
-        </div>
-        <button className={'market-category-button' + (activeCategory === group.category ? ' active' : '')} aria-expanded={activeCategory === group.category || activeCategory === 'all'} onClick={() => { setActiveCategory(activeCategory === group.category ? '' : group.category); setExpanded(group.category) }}>
-          <span>{group.category}</span><small>{group.items.length} {t('markets_count')}</small><ChevronDown size={15}/>
+    <div className="match-card-market-heading"><span>{language === 'ar' ? 'أسواق المباراة' : 'Match markets'}</span><small>{hasLoaded ? markets.length + ' ' + t('available_markets') : (language === 'ar' ? 'اضغط لعرض الأسعار' : 'Tap a market to load odds')}</small></div>
+    {categoryNames.map(category => {
+      const isOpen = expanded === category
+      const items = grouped.find(group => group.category === category)?.items ?? []
+      return <section className={'match-card-market-accordion' + (isOpen ? ' open' : '')} key={category}>
+        <button type="button" className="match-card-market-trigger" aria-expanded={isOpen} onClick={() => void toggleCategory(category)}>
+          <span>{category}</span><small>{hasLoaded ? items.length + ' ' + t('markets_count') : ''}</small><ChevronDown size={16}/>
         </button>
-      </div>)}
-      <button className={'market-category-all' + (activeCategory === 'all' ? ' active' : '')} aria-pressed={activeCategory === 'all'} onClick={() => { setActiveCategory(activeCategory === 'all' ? '' : 'all'); setExpanded('') }}>{t('all_markets')}</button>
-    </div>
-    {visibleGroups.map(({category, items, id: categoryId}) => <section className="market-group" key={categoryId}>
-      <div className="market-group-head market-group-head-open"><span>{category}</span><small>{items.length} {t('markets_count')}</small></div>
-      <div className="market-group-body">
-        {items.map(market => {
-          const updatedMs = new Date(market.last_updated_at).getTime()
-          const maxAgeMs = market.is_live ? 7 * 60 * 1000 : 24 * 60 * 60 * 1000
-          const priceFresh = Number.isFinite(updatedMs) && clock - updatedMs <= maxAgeMs && updatedMs <= clock + 30000
-          const canBet = market.status === "open" && priceFresh && (live ? market.is_live : !market.is_live)
-          return <article className="market-item" data-market-key={(market.market_key || market.market_type || "").toLowerCase()} key={market.id}>
-          <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> {t('live')}</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">{t('price_expired')}</span>}</div>
-          <div className="market-outcomes">{market.market_selections.map(selection => {
-            const picked = selectedIds.includes(selection.id)
-            return <button key={selection.id} disabled={!canBet && !picked} aria-pressed={picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketKey:market.market_key || market.market_type,marketLabel:cleanMarketName(market.name),selectionLabel:selection.name,odds:String(selection.odds)})}>
-              <span>{displaySelection(selection.name)}</span><b>{Number(selection.odds).toFixed(2)}</b>
-            </button>
-          })}</div>
-        </article>})}
-      </div>
-    </section>)}
-    <MarketCatalog markets={markets} live={live} selectedIds={selectedIds} onSelect={onSelect} />
+        {isOpen && <div className="match-card-market-panel">
+          {loading ? <div className="match-card-market-empty"><LoaderCircle size={14}/> {t('loading_markets')}</div> : items.length === 0 ? <div className="match-card-market-empty">{language === 'ar' ? 'لا توجد أسعار متاحة لهذا السوق حاليًا' : 'No odds currently supplied for this market'}</div> : items.map(market => {
+            const updatedMs = new Date(market.last_updated_at).getTime()
+            const maxAgeMs = market.is_live ? 7 * 60 * 1000 : 24 * 60 * 60 * 1000
+            const priceFresh = Number.isFinite(updatedMs) && Date.now() - updatedMs <= maxAgeMs && updatedMs <= Date.now() + 30000
+            const canBet = market.status === 'open' && priceFresh && (live ? market.is_live : !market.is_live)
+            return <article className="market-item" data-market-key={(market.market_key || market.market_type || '').toLowerCase()} key={market.id}>
+              <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> {t('live')}</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">{t('price_expired')}</span>}</div>
+              <div className="market-outcomes">{market.market_selections.map(selection => {
+                const picked = selectedIds.includes(selection.id)
+                return <button key={selection.id} type="button" disabled={!canBet && !picked} aria-pressed={picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketKey:market.market_key || market.market_type,marketLabel:cleanMarketName(market.name),selectionLabel:displaySelection(selection.name),odds:String(selection.odds)})}>
+                  <span>{displaySelection(selection.name)}</span><b>{Number(selection.odds).toFixed(2)}</b>
+                </button>
+              })}</div>
+            </article>
+          })}
+        </div>}
+      </section>
+    })}
     {live && <div className="markets-live-note"><Clock3 size={13}/> {t('live_prices_warning')}</div>}
   </div>
 }

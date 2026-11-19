@@ -1050,3 +1050,31 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .primary-market-empty{padding:12px 8px;border:1px dashed #36745e;border-radius:9px;color:#a9cdbb;font-size:11px;text-align:center}
 .primary-market-status{display:block;margin-top:6px;color:#e3bd77;font-size:9px}
 @media(max-width:420px){.primary-market-trigger{min-height:45px;padding:10px 11px;font-size:12px}.primary-market-panel{padding:8px}.primary-market-panel .market-outcomes{gap:5px}.primary-market-panel .market-outcome{min-height:41px;padding:7px 6px;font-size:9px}.primary-market-panel .market-outcome b{font-size:11px}}
+
+
+/* Match-card embedded odds: compact expandable market groups */
+.match-card-markets{margin:11px 0 2px!important;padding:10px!important;border:1px solid #286d58!important;border-radius:13px!important;background:linear-gradient(155deg,#0d302a,#102b34)!important;box-shadow:inset 0 1px 0 #ffffff0d!important}
+.match-card-markets .match-markets{display:grid!important;gap:7px!important}
+.match-card-market-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:1px 2px 5px;color:#dff9ec;font-size:11px;font-weight:850}
+.match-card-market-heading small{color:#8dbda5;font-size:9px;font-weight:600}
+.match-card-market-accordion{overflow:hidden;border:1px solid #286d58;border-radius:10px;background:linear-gradient(120deg,#123d33,#102e35)}
+.match-card-market-trigger{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:9px 11px;border:0;background:linear-gradient(110deg,#174b3b,#123b3d);color:#eafff4;text-align:start;font-size:11px;font-weight:800;cursor:pointer}
+.match-card-market-trigger span{flex:1;min-width:0}
+.match-card-market-trigger small{color:#8eddbb;font-size:9px;font-weight:650}
+.match-card-market-trigger svg{flex:none;color:#76e2b2;transition:transform .18s ease}
+.match-card-market-accordion.open .match-card-market-trigger{background:linear-gradient(110deg,#1b654a,#12544a)}
+.match-card-market-accordion.open .match-card-market-trigger svg{transform:rotate(180deg)}
+.match-card-market-panel{display:grid;gap:7px;padding:9px;background:#071f1d55;border-top:1px solid #286c55}
+.match-card-market-panel .market-item{padding:8px 0;border:0;border-bottom:1px solid #245443;background:transparent}
+.match-card-market-panel .market-item:last-child{border-bottom:0}
+.match-card-market-panel .market-item-title{margin:0 0 7px;color:#b9ebd0;font-size:10px}
+.match-card-market-panel .market-outcomes{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:6px}
+.match-card-market-panel .market-outcome{min-width:0;min-height:39px;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:7px 8px;border:1px solid #286c58;border-radius:8px;background:linear-gradient(145deg,#173f36,#102f34);color:#c5ead8;font-size:10px}
+.match-card-market-panel .market-outcome span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.match-card-market-panel .market-outcome b{flex:none;color:#70e5b0;font-size:11px}
+.match-card-market-panel .market-outcome.picked{background:linear-gradient(135deg,#26c98d,#087c62);border-color:#73f0bd;color:#fff}
+.match-card-market-panel .market-outcome.picked b{color:#fff}
+.match-card-market-panel .market-outcome:disabled{opacity:.5}
+.match-card-market-empty{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;color:#a9cdbb;font-size:10px;text-align:center}
+.match-card-markets .markets-live-note{margin-top:3px;color:#91bda8;font-size:9px}
+@media(max-width:480px){.match-card-markets{margin:9px 0 1px!important;padding:8px!important}.match-card-market-trigger{min-height:38px;padding:8px 9px;font-size:10px}.match-card-market-panel{padding:7px}.match-card-market-panel .market-outcomes{grid-template-columns:repeat(2,minmax(0,1fr))}.match-card-market-panel .market-outcome{min-height:38px;padding:6px 7px;font-size:9px}}
