@@ -39,3 +39,5 @@
 @media(max-width:600px){.rewards-panel{padding:25px 16px 32px}.rewards-panel h2{font-size:25px}.reward-card{padding:12px;grid-template-columns:36px minmax(0,1fr);gap:9px}.reward-card-icon{width:36px;height:36px}.rewards-backdrop{justify-content:center}}
 
 .rewards-disclaimer{margin:14px 0 0;color:#78877e;font-size:10px;line-height:1.65}
+
+.reward-balance-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.reward-balance{display:inline-flex;align-items:center;gap:6px}.reward-balance span{font-size:10px;font-weight:600;color:#6b7d72}
