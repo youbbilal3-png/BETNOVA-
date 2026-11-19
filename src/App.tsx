@@ -891,7 +891,7 @@ export default function App() {
         </aside>}
       </main>
 
-      <nav className="mobile-nav"><button className={activePage === 'football' ? 'mobile-active' : ''} onClick={openFootball}><Trophy size={19}/>{t('football')}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>openOverlay('mobileSlip')}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => openOverlay('mobileMore')}><Menu size={19}/>{t("menu")}</button></nav>
+      <nav className="mobile-nav"><button className={activePage === 'football' ? 'mobile-active' : ''} onClick={openFootball}><Trophy size={19}/>{t('football')}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>openOverlay('bets')}><Activity size={19}/>{t("my_bets")}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => openOverlay('mobileMore')}><Menu size={19}/>{t("menu")}</button></nav>
       {mobileMoreOpen && <div className="mobile-more-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('mobileMore') }}>
         <section className="mobile-more-panel" role="dialog" aria-modal="true" aria-label={t("menu")}>
           <div className="mobile-more-header"><div><b>BETNOVA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => closeOverlay('mobileMore')} aria-label={t("close")}><X size={18}/></button></div>
@@ -904,7 +904,7 @@ export default function App() {
           {userEmail ? <>
             <button className="mobile-account-entry" onClick={() => { openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>{t('deposit')}</button>
-            <button onClick={() => { closeMobileMenuToPage(); openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
+            <button onClick={() => { closeMobileMenuToPage(); openOverlay('mobileSlip') }}><Wallet size={17}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
               {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { closeOverlay('mobileMore'); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
