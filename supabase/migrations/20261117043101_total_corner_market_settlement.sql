@@ -30,9 +30,12 @@ declare
      when 'total_goals','team_total_goals' then$replacement$;
 begin
   select pg_get_functiondef('public.betnova_process_live_event(uuid)'::regprocedure) into v_definition;
-  if position(v_old in v_definition)=0 then
-    raise exception 'Expected event processor insertion point not found';
+  -- The preceding migration already installed the total_corners case. Do not add a duplicate.
+  if position('when ''total_corners'' then' in v_definition)=0 then
+    if position(v_old in v_definition)=0 then
+      raise exception 'Expected event processor insertion point not found';
+    end if;
+    execute replace(v_definition,v_old,v_new);
   end if;
-  execute replace(v_definition,v_old,v_new);
 end
 $migration$;
