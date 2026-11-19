@@ -19,7 +19,6 @@ const games:Game[] = [
 ]
 
 const categoryIcons:Record<Category,typeof Grid3X3>={all:Grid3X3,games:Zap,slots:Gem,casino:Crown}
-const arabicDescriptions:Record<string,string>={crash:'ابدأ جولة تدريبية مجانية، راقب المضاعف واختر وقت التوقف.',apple:'خمسة صفوف مليئة بالتفاحات. اختر تفاحة آمنة في كل صف وتجنب التفاحة المخفية.',plinko:'أسقط كرة تدريبية عبر المسامير وشاهد خانة الهبوط.', 'lucky-fruits':'تصميم فواكه كلاسيكي بألوان زاهية وبكرات عصرية.',pharaoh:'أجواء مصرية قديمة أنيقة مع الذهب والرموز الملكية.','space-spin':'تصميم فضائي مستقبلي بالكواكب والنجوم والألوان المتوهجة.',roulette:'تصميم أنيق لعجلة روليت أوروبية ذات صفر واحد.',blackjack:'تصميم لطاولة بلاك جاك بأوراق واضحة وأجواء راقية.',baccarat:'تصميم أنيق لطاولة باكارات بين اللاعب والمصرف.'}
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
 const APPLE_ROWS=5, APPLE_COLUMNS=5
 const newAppleTraps=()=>Array.from({length:APPLE_ROWS},()=>Math.floor(Math.random()*APPLE_COLUMNS))
@@ -32,7 +31,9 @@ const baccaratTotal=(hand:number[])=>hand.reduce((sum,value)=>sum+baccaratValue(
 export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:string;token:number}|null}){
   const {language,t}=useLanguage()
   const arabic=language==='ar'
-  const labels={all:t('all_games'),games:t('games'),slots:t('slots'),casino:t('casino'),heading:arabic?'ادخل إلى':'ENTER THE',zone:t('game_zone'),subtitle:arabic?'اكتشف بُعداً جديداً من الترفيه.':'Discover a new dimension of play.',explore:t('explore_game'),safety:arabic?'تجارب تدريبية مجانية فقط. لا توجد إيداعات أو رهانات أو سحوبات أو جوائز أو أموال حقيقية.':'Free practice demonstrations only. No deposits, wagers, cash-out value, prizes or real-money play are enabled.',practice:t('free_practice'),demo:t('demo_mode'),start:t('start_practice'),next:t('next_step'),stop:t('stop_now'),pick:t('pick_apple'),drop:t('drop_ball'),tryDemo:t('try_demo'),reset:t('reset_practice'),close:t('close')}
+  const translatedGameTag=(id:string)=>{switch(id){case 'crash':case 'plinko':return t('game_tag_instant');case 'apple':return t('game_tag_skill');case 'lucky-fruits':return t('game_tag_classic');case 'pharaoh':return t('game_tag_adventure');case 'space-spin':return t('game_tag_cosmic');case 'roulette':return t('game_tag_table');case 'blackjack':case 'baccarat':return t('game_tag_cards');default:return id}}
+  const translatedGameDescription=(id:string)=>{switch(id){case 'crash':return t('game_desc_crash');case 'apple':return t('game_desc_apple');case 'plinko':return t('game_desc_plinko');case 'lucky-fruits':return t('game_desc_fruits');case 'pharaoh':return t('game_desc_pharaoh');case 'space-spin':return t('game_desc_space');case 'roulette':return t('game_desc_roulette');case 'blackjack':return t('game_desc_blackjack');case 'baccarat':return t('game_desc_baccarat');default:return ''}}
+  const labels={all:t('all_games'),games:t('games'),slots:t('slots'),casino:t('casino'),heading:t('arcade_heading'),zone:t('game_zone'),subtitle:t('arcade_subtitle'),explore:t('explore_game'),safety:t('arcade_safety'),practice:t('free_practice'),demo:t('demo_mode'),start:t('start_practice'),next:t('next_step'),stop:t('stop_now'),pick:t('pick_apple'),drop:t('drop_ball'),tryDemo:t('try_demo'),reset:t('reset_practice'),close:t('close')}
   const [category,setCategory]=useState<Category>('all')
   const [selected,setSelected]=useState<Game|null>(null)
   const [practiceResult,setPracticeResult]=useState('')
@@ -126,7 +127,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
           <span className="game-art-orbit orbit-one"/><span className="game-art-orbit orbit-two"/>
           <span className="game-art-shine">✦</span><span className="game-art-code">BETNOVA / PLAY</span>
         </div>
-        <div className="game-tile-copy"><div className="game-tile-meta"><span>{game.tag}</span><span className="game-live-dot"/></div><h3>{game.name}</h3><p>{arabic?(arabicDescriptions[game.id]??game.description):game.description}</p><button type="button" onClick={()=>{setSelected(game);resetDemo()}}>{labels.explore} <ArrowRight size={14}/></button></div>
+        <div className="game-tile-copy"><div className="game-tile-meta"><span>{translatedGameTag(game.id)}</span><span className="game-live-dot"/></div><h3>{game.name}</h3><p>{translatedGameDescription(game.id)}</p><button type="button" onClick={()=>{setSelected(game);resetDemo()}}>{labels.explore} <ArrowRight size={14}/></button></div>
       </article>)}
     </div>
     <div className="games-safety-note"><Sparkles size={15}/><span>{labels.safety}</span></div>
@@ -134,7 +135,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       <section ref={modalRef} tabIndex={-1} className={`game-detail-modal game-${selected.accent}`} role="dialog" aria-modal="true" aria-labelledby="game-detail-title">
         <div className="game-detail-close-row"><button className="game-detail-close" type="button" onClick={closeGame} aria-label={labels.close}><X size={20}/></button></div>
         {selected.id!=='crash'&&<div className={`game-detail-art art-${selected.art}`}><span>{selected.mark}</span><i/><b>BETNOVA</b></div>}
-        <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
+        <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {translatedGameTag(selected.id)}</div><h3 id="game-detail-title">{selected.name}</h3><p>{translatedGameDescription(selected.id)}</p>
         <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
         {selected.id==='crash'&&<div className="game-practice-controls crash-controls">
           <div className={`crash-flight-stage ${crashActive?'is-flying':crashExploding?'is-exploding':multiplier>1?'flight-ended':'flight-ready'}`} style={{'--crash-flight-duration':`${Math.max(1,(crashAt-1)*4.4)}s`,'--crash-heli-left':`${5+Math.max(0,Math.min(1,(crashAt-1)/5.75))*67}%`,'--crash-heli-top':`${66-Math.max(0,Math.min(1,(crashAt-1)/5.75))*45}%`} as CSSProperties} role="img" aria-label={arabic?'طائرة كراش تطير داخل مسار ثلاثي الأبعاد':'Crash airplane flying through a 3D flight arena'}>
