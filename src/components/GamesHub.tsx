@@ -130,7 +130,7 @@ export default function GamesHub(){
           <button className="game-detail-done" type="button" disabled={appleDone} onClick={pickApple}>{labels.pick} · LEVEL {Math.min(appleLevel+1,3)}</button>
         </div>}
         {selected.id==='plinko'&&<div className="game-practice-controls">
-          <div className="plinko-slots">{Array.from({length:9},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div>
+          <div className="plinko-board"><div className="plinko-pegs">{Array.from({length:6},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:9},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div></div>
           <button className="game-detail-done" type="button" onClick={dropPlinko}><Play size={15}/> {labels.drop}</button>
         </div>}
         {['lucky-fruits','pharaoh','space-spin'].includes(selected.id)&&<div className="game-practice-controls"><div className="slot-reels" aria-label="Practice slot reels">{slotSymbols.map((symbol,i)=><span key={i}>{symbol}</span>)}</div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
