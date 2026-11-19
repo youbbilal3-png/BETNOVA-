@@ -170,7 +170,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     : selectedMethod?.code === 'baridimob'
       ? (typeof instructions.account_number === 'string' ? instructions.account_number : '')
       : (typeof instructions.account_id === 'string' ? instructions.account_id : typeof instructions.account_number === 'string' ? instructions.account_number : '')
-  const receivingLabel = selectedMethod?.code === 'paysera' ? 'IBAN' : selectedMethod?.code === 'baridimob' ? 'CCP / Account number' : 'Receiving ID'
+  const receivingLabel = selectedMethod?.code === 'paysera' ? t('receiving_iban') : selectedMethod?.code === 'baridimob' ? t('receiving_account_number') : t('receiving_id')
 
   return <div className="wallet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
     <section className="wallet-panel" role="dialog" aria-modal="true" aria-labelledby="wallet-title">
