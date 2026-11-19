@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Home, Menu, Search, Settings, ShieldCheck, Sparkles, Star, Trophy, UserRound, Wallet, X } from 'lucide-react'
+import { Activity, ArrowDownUp, ArrowRight, Bell, CalendarDays, CircleHelp, Clock3, Flame, Globe2, Home, Menu, Search, Settings, ShieldCheck, Sparkles, Star, Trophy, UserRound, Wallet, X } from 'lucide-react'
 import AuthPanel from './components/AuthPanel'
 import AccountPanel from './components/AccountPanel'
 import AdminOverview from './components/AdminOverview'
@@ -212,6 +212,7 @@ export default function App() {
   const [selectedMatchDate, setSelectedMatchDate] = useState('')
   const [selectedMatchTime, setSelectedMatchTime] = useState('')
   const [selectedMatchTimeTo, setSelectedMatchTimeTo] = useState('')
+  const [footballDateFiltersOpen, setFootballDateFiltersOpen] = useState(false)
   const [featuredGameRequest, setFeaturedGameRequest] = useState<{id:string;token:number}|null>(null)
   function openFeaturedGame(id:string) { setFeaturedGameRequest(current => ({id,token:(current?.token ?? 0)+1})); openGames() }
 
@@ -806,10 +807,10 @@ export default function App() {
               <button className={eventView === 'results' ? 'event-view active' : 'event-view'} onClick={() => setEventView('results')}>{t("results")}</button>
             </div>}
             {activePage === 'sports' && <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>{ if(s === 'Football') openFootball(); else setSport(s) }}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>}
-            <div className="filter-row"><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={activePage === "football" ? (language === "ar" ? "ابحث عن بطولة..." : "Search competitions...") : t("search")}/></label></div>
+            {activePage === 'football' ? <div className="football-search-toolbar"><label className="search-field"><Search size={16}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={language === 'ar' ? 'ابحث عن دوري أو بطولة...' : 'Search leagues or tournaments...'}/></label><button type="button" className={footballDateFiltersOpen ? 'football-date-toggle active' : 'football-date-toggle'} aria-expanded={footballDateFiltersOpen} onClick={() => setFootballDateFiltersOpen(open => !open)}><CalendarDays size={17}/><span>{language === 'ar' ? 'التاريخ والوقت' : 'Date & time'}</span><span className="football-date-toggle-chevron">{footballDateFiltersOpen ? '−' : '+'}</span></button></div> : <div className="filter-row"><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("search")}/></label></div>}
             {activePage === 'football' && !showFavorites && <div className="competition-browser" aria-label="Browse upcoming competitions">
               <div className="competition-browser-top"><span>{language === 'ar' ? 'البطولات والدوريات' : 'Leagues & tournaments'}</span><small>{competitionOptions.length} {language === 'ar' ? 'بطولة' : 'competitions'} · {matches.length} {language === 'ar' ? 'مباراة' : 'matches'}</small></div>
-              <div className="football-date-panel">
+              {footballDateFiltersOpen && <div className="football-date-panel">
                 <div className="football-filter-heading"><span>{language === 'ar' ? 'البحث حسب الموعد' : 'Find by kick-off'}</span><small>{language === 'ar' ? 'حدّد اليوم والوقت' : 'Choose a day and time window'}</small></div>
                 <div className="football-date-fields">
                   <label className="football-date-field"><span>{language === 'ar' ? 'تاريخ المباراة' : 'Match date'}</span><input aria-label="Match date" type="date" value={selectedMatchDate} onChange={event => setSelectedMatchDate(event.target.value)}/></label>
@@ -821,8 +822,8 @@ export default function App() {
                   <button type="button" onClick={() => { const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); setSelectedMatchDate(localDateKey(tomorrow)) }}>{language === 'ar' ? 'غدًا' : 'Tomorrow'}</button>
                   <button type="button" className="football-clear-filters" onClick={() => { setSelectedMatchDate(''); setSelectedMatchTime(''); setSelectedMatchTimeTo('') }}>{language === 'ar' ? 'إعادة ضبط' : 'Reset filters'}</button>
                 </div>
-              </div>
-                            <div className="competition-chip-list competition-all-row">
+              </div>}
+              <div className="competition-chip-list competition-all-row">
                 <button type="button" className={league === 'All matches' ? 'competition-chip selected' : 'competition-chip'} onClick={() => setLeague('All matches')}>{language === 'ar' ? 'كل البطولات' : 'All competitions'} <b>{matches.length}</b></button>
               </div>
               {internationalCompetitions.length > 0 && <section className="competition-group">
