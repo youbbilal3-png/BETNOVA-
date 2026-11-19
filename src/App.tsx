@@ -415,6 +415,13 @@ export default function App() {
             markets(id, market_type, market_key, name, status, is_active, is_live, last_updated_at, market_selections(id, name, odds, status, result_status, updated_at))
           `)
           .eq('competitions.sport_id', sportRow.id)
+          // Keep fixture cards even when they have no odds, but embed only
+          // currently open prices and unsettled selections to keep payloads small.
+          .eq('markets.is_active', true)
+          .eq('markets.status', 'open')
+          .gte('markets.last_updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+          .eq('markets.market_selections.status', 'active')
+          .eq('markets.market_selections.result_status', 'pending')
         if (eventView === 'live') {
           // Never label an old fixture as live when the upstream feed has gone stale.
           fixtureQuery = fixtureQuery
@@ -435,16 +442,21 @@ export default function App() {
             .gte('starts_at', selectedDayStart.toISOString())
             .lt('starts_at', selectedDayEnd.toISOString())
         }
-        // Keep the first screen responsive: load a bounded two-week fixture window
-        // and at most 1,000 rows instead of paging through the entire feed.
-        const orderedFixtureQuery = fixtureQuery.order('starts_at', { ascending: eventView !== 'results' })
-        const firstPage = await orderedFixtureQuery.range(0, 499)
-        if (firstPage.error) throw firstPage.error
-        const allFixtureRows: any[] = [...(firstPage.data ?? [])]
-        if (firstPage.data?.length === 500) {
-          const secondPage = await orderedFixtureQuery.range(500, 999)
-          if (secondPage.error) throw secondPage.error
-          allFixtureRows.push(...(secondPage.data ?? []))
+        // Load the complete bounded two-week window across all competitions.
+        // Pages avoid the PostgREST row cap; stale/closed markets were filtered
+        // from the embedded relation above so the larger fixture set stays lean.
+        const orderedFixtureQuery = fixtureQuery
+          .order('starts_at', { ascending: eventView !== 'results' })
+          .order('id', { ascending: true })
+        const pageSize = 500
+        const maxRows = 5000
+        const allFixtureRows: any[] = []
+        for (let offset = 0; offset < maxRows; offset += pageSize) {
+          const page = await orderedFixtureQuery.range(offset, offset + pageSize - 1)
+          if (page.error) throw page.error
+          const rows = page.data ?? []
+          allFixtureRows.push(...rows)
+          if (rows.length < pageSize) break
         }
         const data = allFixtureRows
         if (!active || requestId !== latestRequest) return
