@@ -99,7 +99,7 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
       <div className="account-wallet-summary account-bonus-summary"><div className="account-wallet-summary-head"><span>WELCOME BONUS · SEPARATE WALLET</span></div><div className="account-wallet-balance-grid"><div><small>USD</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}).format(bonusBalance)}</strong></div><div><small>DZD equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'DZD',maximumFractionDigits:0}).format(bonusBalance*260)}</strong></div><div><small>EUR equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(bonusBalance*0.9)}</strong></div></div></div>
       <div className="account-wallet-actions"><button type="button" onClick={() => onOpenWallet('deposit')}><ArrowDownToLine size={17}/> {t('deposit')}</button><button type="button" onClick={() => onOpenWallet('withdraw')}><ArrowUpFromLine size={17}/> {t('withdraw')}</button></div>
       <div className="account-status-grid">
-        <div><span>{t('email_status')}</span><b className={verified ? 'verified' : 'unverified'}>{verified ? <><CheckCircle2 size={15}/> Verified</>  : t('not_verified')}</b></div>
+        <div><span>{t('email_status')}</span><b className={verified ? 'verified' : 'unverified'}>{verified ? <><CheckCircle2 size={15}/> {t('verified')}</>  : t('not_verified')}</b></div>
         <div><span>{t('member_since')}</span><b><Clock3 size={14}/>{createdAt ? new Date(createdAt).toLocaleDateString() : '—'}</b></div>
       </div>
       <form className="account-section" onSubmit={saveProfile}>
