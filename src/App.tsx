@@ -1,4 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { Activity, ArrowDownUp, ArrowRight, Bell, CalendarDays, ChevronDown, CircleHelp, Clock3, Flame, Globe2, Home, Menu, Search, Settings, ShieldCheck, Sparkles, Star, Trophy, UserRound, Wallet, X } from 'lucide-react'
 import AuthPanel from './components/AuthPanel'
 import AccountPanel from './components/AccountPanel'
@@ -321,6 +323,30 @@ export default function App() {
     setActivePage('football')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    let listener: { remove: () => Promise<void> } | undefined
+    void CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      const overlays = Array.isArray(window.history.state?.betnovaOverlays)
+        ? window.history.state.betnovaOverlays as string[]
+        : []
+      if (overlays.length > 0 || activePage !== 'sports') {
+        if (canGoBack) window.history.back()
+        else if (overlays.length > 0) {
+          const next = overlays.slice(0, -1)
+          window.history.replaceState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
+          applyOverlayStack(next)
+        } else {
+          setActivePage('sports')
+        }
+        return
+      }
+      if (canGoBack) window.history.back()
+      else void CapacitorApp.exitApp()
+    }).then(handle => { listener = handle })
+    return () => { void listener?.remove() }
+  }, [activePage])
+
   useEffect(() => {
     const handleBack = (event: PopStateEvent) => {
       const overlays = Array.isArray(event.state?.betnovaOverlays) ? event.state.betnovaOverlays as string[] : []
