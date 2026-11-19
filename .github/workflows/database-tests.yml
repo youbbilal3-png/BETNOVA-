@@ -19,6 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # This isolated CI job validates the full migration chain without production credentials.
   test-database:
     runs-on: ubuntu-latest
     timeout-minutes: 30
