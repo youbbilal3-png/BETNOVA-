@@ -58,6 +58,7 @@ jobs:
         run: |
           deno check supabase/functions/live-event-ingest/index.ts
           deno check supabase/functions/sportsapi-live-sync/index.ts
+          deno check supabase/functions/fivedollar-football-sync/index.ts
           deno check supabase/functions/dispatch-push-notifications/index.ts
 
       - name: Setup Java
