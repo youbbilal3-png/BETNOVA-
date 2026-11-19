@@ -56,7 +56,7 @@ declare
   v_processed integer := 0;
 begin
   -- Only the scheduled database job (postgres) may execute this function.
-  if current_user <> 'postgres' then
+  if session_user <> 'postgres' then
     raise exception 'Scheduled database execution required';
   end if;
 
@@ -69,6 +69,9 @@ begin
     raise exception 'Week start must be a past Monday';
   end if;
   v_week_end := v_week_start + 7;
+  if v_week_end > (now() at time zone 'Africa/Algiers')::date then
+    raise exception 'Only a fully completed Algeria-local week can be processed';
+  end if;
   v_start := v_week_start::timestamp at time zone 'Africa/Algiers';
   v_end := v_week_end::timestamp at time zone 'Africa/Algiers';
 
