@@ -180,11 +180,11 @@ jobs:
           const path = 'public/app-version.json'
           const policy = JSON.parse(fs.readFileSync(path, 'utf8'))
           const version = process.argv[2]
-          if (!/^\\d+\\.\\d+(?:\\.\\d+)?$/.test(version)) throw new Error('Invalid release version')
+          if (!/^\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('Invalid release version')
           policy.latestVersion = version
           policy.minimumSupportedVersion = version
           policy.downloadUrl = 'https://betnova-8daa3.web.app/downloads/betnova-latest.apk'
-          fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\\n')
+          fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\n')
           NODE
 
       - name: Rebuild web assets with the published APK
@@ -205,8 +205,6 @@ jobs:
 
       - name: Verify stable APK download and mandatory-update policy
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
-        env:
-          RELEASE_VERSION: ${{ fromJSON(hashFiles('public/app-version.json') != '' && '1' || '1') }}
         run: |
           curl -fsSI https://betnova-8daa3.web.app/downloads/betnova-latest.apk | grep -E '^HTTP/.* 200'
           curl -fsSL https://betnova-8daa3.web.app/app-version.json | node -e "let body='';process.stdin.on('data',chunk=>body+=chunk);process.stdin.on('end',()=>{const policy=JSON.parse(body);if(policy.minimumSupportedVersion!==policy.latestVersion||policy.downloadUrl!=='https://betnova-8daa3.web.app/downloads/betnova-latest.apk')process.exit(1)})"
