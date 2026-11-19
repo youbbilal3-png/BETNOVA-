@@ -151,13 +151,7 @@ begin
     v_result := case when v_roll=0 then 'ZERO' when v_is_win then 'WIN' else 'LOSE' end;
     v_details := jsonb_build_object('number',v_roll,'color',case when v_roll=0 then 'green' when v_roll in (1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36) then 'red' else 'black' end,'selection',v_choice,'published_rtp',round((18::numeric/37)*1.95*100,2));
   elsif v_game in ('blackjack','baccarat') then
-    if v_choice not in ('player','banker') then raise exception 'Choose player or banker'; end if;
-    -- Single-draw arcade table round. Card presentation is generated from this server result in the client.
-    v_is_win := (v_roll < 500000);
-    v_multiplier := case when v_is_win then 1.9 else 0 end;
-    v_result := case when v_is_win then 'PLAYER_WIN' else 'BANKER_WIN' end;
-    if v_choice='banker' then v_is_win:=not v_is_win; v_multiplier:=case when v_is_win then 1.9 else 0 end; v_result:=case when v_is_win then 'BANKER_WIN' else 'PLAYER_WIN' end; end if;
-    v_details := jsonb_build_object('selection',v_choice,'published_rtp',95,'round_type','single_draw');
+    raise exception 'Real-money table play is not enabled for this game yet';
   end if;
 
   if v_is_win then v_payout:=round(v_stake*v_multiplier,2); else v_payout:=0; end if;
