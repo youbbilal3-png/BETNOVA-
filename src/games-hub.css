@@ -74,3 +74,7 @@
 .plinko-slots{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
 .plinko-slots span{display:grid;place-items:center;min-width:0;height:32px;border:1px solid #ffffff20;border-radius:7px;background:#ffffff08;color:#b9c8e1;font-size:9px;font-weight:900}
 .plinko-slots span.landed{border-color:var(--game-glow);background:color-mix(in srgb,var(--game-glow) 25%,#111b30);color:#fff;box-shadow:0 0 16px color-mix(in srgb,var(--game-glow) 35%,transparent)}
+
+.game-detail-modal{max-height:min(90vh,760px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#7186aa55 transparent}
+.game-detail-modal:focus{outline:none}
+@media(max-width:600px){.game-detail-backdrop{padding:10px}.game-detail-modal{padding:17px;border-radius:19px}.game-detail-art{height:118px}.crash-multiplier{min-height:70px;font-size:32px}}
