@@ -132,12 +132,12 @@ select is(
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
 values('88888888-8888-4888-8888-888888888888','authenticated','authenticated','betnova-admin-test@example.invalid','',now(),now(),now());
 update public.profiles set role='admin' where id='88888888-8888-4888-8888-888888888888';
-do $
+do $auth_claims$
 begin
   perform set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',true);
   perform set_config('request.jwt.claims','{"sub":"88888888-8888-4888-8888-888888888888","role":"authenticated"}',true);
 end;
-$;
+$auth_claims$;
 
 select lives_ok(
   $$select public.betnova_review_referral('77777777-7777-4777-8777-777777777777','approve','verified test referral')$$,
