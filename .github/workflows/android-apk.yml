@@ -31,7 +31,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -49,7 +48,7 @@ jobs:
         run: npm run build
         env:
           VITE_SUPABASE_URL: https://lvhuipkfsdughearjsvy.supabase.co
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_31QoDyH3c357Da-yCpI1Cw_DwUb5DBy
 
       - name: Generate Android project
         run: npx cap add android
