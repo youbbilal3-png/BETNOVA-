@@ -1,0 +1,14 @@
+.bn-match-follow{margin:16px 0;padding:14px 15px;border:1px solid #ffffff20;border-radius:15px;background:#ffffff08;color:#edf4fa}
+.bn-match-follow-title{display:flex;align-items:center;gap:9px;color:#c8e5d7}
+.bn-match-follow-title>div{display:flex;flex-direction:column;gap:3px}
+.bn-match-follow-title b{font-size:12px;font-weight:850}
+.bn-match-follow-title small,.bn-match-follow p,.bn-match-follow-safe,.bn-match-follow-message{font-size:10px;line-height:1.5;color:#aebed0}
+.bn-match-follow-options{display:grid;gap:0;margin-top:10px}
+.bn-match-follow-option{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #ffffff12;font-size:11px;font-weight:700}
+.bn-match-follow-option button{width:38px;height:22px;padding:2px;border:0;border-radius:20px;background:#3b4943;display:flex;align-items:center;justify-content:flex-start;flex-shrink:0;cursor:pointer}
+.bn-match-follow-option button>span{display:block;width:18px;height:18px;border-radius:50%;background:#dce6e0;transition:transform .18s ease}
+.bn-match-follow-option button.is-on{background:#13a66a}
+.bn-match-follow-option button.is-on>span{transform:translateX(16px)}
+.bn-match-follow-option button:disabled{opacity:.5;cursor:wait}
+.bn-match-follow-safe{display:flex;align-items:center;gap:6px;margin-top:8px}
+.bn-match-follow-message{margin:8px 0 0;color:#f3c2a9}
