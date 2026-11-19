@@ -170,7 +170,7 @@ begin
       end if;
       v_winner:=case when v_player_total>v_banker_total then 'player' when v_banker_total>v_player_total then 'banker' else 'tie' end;
       v_is_win:=v_choice=v_winner;
-      v_multiplier:=case when not v_is_win then 0 when v_choice='player' then 2.1289 when v_choice='banker' then 2.0715 else 9.9836 end;
+      v_multiplier:=case when not v_is_win then 0 when v_choice='player' then 2.1293 when v_choice='banker' then 2.0723 else 9.9554 end;
       v_result:=upper(v_winner)||'_WIN';
       v_details:=jsonb_build_object('player_cards',to_jsonb(v_player_cards),'banker_cards',to_jsonb(v_banker_cards),'player_total',v_player_total,'banker_total',v_banker_total,'selection',v_choice,'winner',v_winner,'published_rtp',95,'round_type','standard_baccarat');
     end;
