@@ -148,6 +148,14 @@ jobs:
           trap 'rm -f app/release.keystore' EXIT
           ./gradlew assembleRelease
 
+      - name: Verify signed APK and Android package identity
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        run: |
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          apksigner verify --verbose "$APK"
+          aapt dump badging "$APK" | grep -F "package: name='com.betnova.app'"
+
       - name: Upload signed release APK
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
         uses: actions/upload-artifact@v4
