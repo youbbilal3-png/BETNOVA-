@@ -14,6 +14,7 @@ export default function PushNotificationRegistrar() {
     let preferenceChannel: ReturnType<SupabaseClient['channel']> | null = null
     let registrationHandle: { remove: () => Promise<void> } | undefined
     let errorHandle: { remove: () => Promise<void> } | undefined
+    let registrationListenerReady: Promise<void> = Promise.resolve()
 
     const registerIfEnabled = async (currentUserId: string) => {
       try {
@@ -34,6 +35,7 @@ export default function PushNotificationRegistrar() {
           sound: 'default',
           vibration: true,
         })
+        await registrationListenerReady
         if (active) await PushNotifications.register()
       } catch (error) {
         console.error('Could not refresh BETNOVA push registration', error)
@@ -75,7 +77,7 @@ export default function PushNotificationRegistrar() {
       void registerIfEnabled(nextUserId)
     }
 
-    void PushNotifications.addListener('registration', async token => {
+    registrationListenerReady = PushNotifications.addListener('registration', async token => {
       const currentUserId = userId
       if (!active || !currentUserId || !supabase) return
       const { error } = await supabase.from('device_push_tokens').upsert({
