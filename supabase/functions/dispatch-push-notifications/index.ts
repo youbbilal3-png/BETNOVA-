@@ -158,24 +158,45 @@ Deno.serve(async (req: Request) => {
   let failedUsers = 0;
   for (const userId of userIds) {
     const tokens = devicesByUser.get(userId) ?? [];
+    // Do not permanently log a missing device: the user may register a phone later.
     if (tokens.length === 0) {
-      await supabase.from("notification_delivery_log").upsert({
-        event_id: event.id, user_id: userId, category, status: "skipped",
-        last_error: "No registered device token",
-      }, { onConflict: "event_id,user_id,category", ignoreDuplicates: true });
       skippedUsers++;
       continue;
     }
 
-    const { data: claim, error: claimError } = await supabase.from("notification_delivery_log")
+    let claimId: string | null = null;
+    const { data: newClaim, error: claimError } = await supabase.from("notification_delivery_log")
       .insert({ event_id: event.id, user_id: userId, category, status: "pending" })
       .select("id").maybeSingle();
-    if (claimError) {
-      if (claimError.code !== "23505") console.error("Notification delivery claim failed", claimError.message);
-      skippedUsers++;
-      continue;
+
+    if (!claimError && newClaim) {
+      claimId = newClaim.id;
+    } else if (claimError?.code === "23505") {
+      // Permit safe retries after a failed send or a worker that died while pending.
+      // A fresh pending claim and every sent claim remain protected from duplicates.
+      const staleBefore = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data: existing, error: existingError } = await supabase.from("notification_delivery_log")
+        .select("id,status,created_at")
+        .eq("event_id", event.id).eq("user_id", userId).eq("category", category)
+        .maybeSingle();
+      if (existingError) {
+        console.error("Could not inspect previous notification delivery", existingError.message);
+        skippedUsers++;
+        continue;
+      }
+      if (existing?.status === "failed" || (existing?.status === "pending" && existing.created_at < staleBefore)) {
+        const { data: retryClaim, error: retryError } = await supabase.from("notification_delivery_log")
+          .update({ status: "pending", sent_at: null, last_error: null, created_at: new Date().toISOString() })
+          .eq("id", existing.id).eq("status", existing.status)
+          .select("id").maybeSingle();
+        if (retryError) console.error("Could not reclaim notification delivery", retryError.message);
+        claimId = retryClaim?.id ?? null;
+      }
+    } else if (claimError) {
+      console.error("Notification delivery claim failed", claimError.message);
     }
-    if (!claim) { skippedUsers++; continue; }
+
+    if (!claimId) { skippedUsers++; continue; }
 
     let delivered = 0;
     let lastError = "";
@@ -207,10 +228,10 @@ Deno.serve(async (req: Request) => {
     }
 
     if (delivered > 0) {
-      await supabase.from("notification_delivery_log").update({ status: "sent", sent_at: new Date().toISOString(), last_error: null }).eq("id", claim.id);
+      await supabase.from("notification_delivery_log").update({ status: "sent", sent_at: new Date().toISOString(), last_error: null }).eq("id", claimId);
       sentUsers++;
     } else {
-      await supabase.from("notification_delivery_log").update({ status: "failed", last_error: lastError.slice(0, 500) || "FCM delivery failed" }).eq("id", claim.id);
+      await supabase.from("notification_delivery_log").update({ status: "failed", last_error: lastError.slice(0, 500) || "FCM delivery failed" }).eq("id", claimId);
       failedUsers++;
     }
   }
