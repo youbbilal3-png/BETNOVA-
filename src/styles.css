@@ -743,7 +743,7 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .support-form-row{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 .support-form label{display:grid;gap:7px;color:#315443;font-size:10px;font-weight:850}
 .support-form label>span{display:inline;color:#9aa99f;font-size:9px;font-weight:600}
-.support-form input,.support-form select,.support-form textarea{width:100%;min-width:0;border:1px solid #dce9df;border-radius:10px;background:#fbfdfb;color:#1b3f2e;padding:12px;font:500 12px inherit;outline:none}
+.support-form input,.support-form select,.support-form textarea{width:100%;min-width:0;border:1px solid #dce9df;border-radius:10px;background:#fbfdfb;color:#1b3f2e;padding:12px;font:inherit;font-size:12px;font-weight:500;outline:none}
 .support-form input,.support-form select{height:44px}
 .support-form textarea{min-height:118px;resize:vertical;line-height:1.7}
 .support-form input:focus,.support-form select:focus,.support-form textarea:focus{border-color:#43b883;box-shadow:0 0 0 3px #43b8831c}
