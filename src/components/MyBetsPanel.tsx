@@ -32,8 +32,8 @@ export default function MyBetsPanel({onClose}:Props) {
  const visible=bets.filter(b=>filter==='all'||b.status===filter)
  return <div className="bets-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
   <section className="bets-panel" role="dialog" aria-modal="true" aria-labelledby="my-bets-title">
-   <button className="wallet-close" onClick={onClose} aria-label="Close bets"><X size={19}/></button>
-   <div className="wallet-kicker"><Ticket size={15}/> BETNOVA · MY ACTIVITY</div>
+   <button className="wallet-close" onClick={onClose} aria-label={t('close')}><X size={19}/></button>
+   <div className="wallet-kicker"><Ticket size={15}/> BETNOVA · {t('my_bets').toUpperCase()}</div>
    <h2 id="my-bets-title">{t('my_bets')}</h2>
    <div className="bets-filters">{['all','pending','won','lost','void'].map(v=><button key={v} className={filter===v?'active':''} onClick={()=>setFilter(v)}>{v==='all'?t('all'):t(v as 'pending'|'won'|'lost'|'void')}</button>)}</div>
    {loading?<div className="markets-loading">{t('loading_markets')}</div>:error?<div className="markets-empty">{error}</div>:visible.length===0?<div className="markets-empty"><Ticket size={22}/><b>{t('no_bets')}</b><span>{t('no_bets_desc')}</span></div>:<div className="bets-list">{visible.map(b=><article className="bet-history-card" key={b.id}>
