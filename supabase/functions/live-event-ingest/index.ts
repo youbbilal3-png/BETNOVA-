@@ -23,7 +23,7 @@ function safeEqual(a: string, b: string) {
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const allowedEvents = new Set(["goal", "full_time", "corner", "yellow_card", "red_card", "penalty_awarded", "goal_cancelled", "half_time"]);
+const allowedEvents = new Set(["match_start", "goal", "full_time", "corner", "yellow_card", "red_card", "penalty_awarded", "goal_cancelled", "half_time"]);
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -137,6 +137,26 @@ Deno.serve(async (req: Request) => {
     });
     if (overturned) return json({ ok: true, event_id: event.id, goal_overturned: true, settled_markets: 0 });
   }
+
+  // Push alerts are independent of wallet and bet settlement. A failure here must never block event ingestion.
+  if (["match_start", "goal", "red_card", "half_time", "full_time"].includes(eventType)) {
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/dispatch-push-notifications`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${serviceKey}`,
+          "apikey": serviceKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ event_id: event.id, verified: eventType === "goal" }),
+        signal: AbortSignal.timeout(7000),
+      });
+      if (!response.ok) console.error("Push dispatch returned", response.status);
+    } catch (error) {
+      console.error("Push dispatch failed without affecting event processing", error);
+    }
+  }
+
   if (["goal", "full_time", "corner", "yellow_card", "red_card", "penalty_awarded"].includes(eventType)) {
     const { data, error: settleError } = await supabase.rpc("betnova_process_live_event", { p_event_id: event.id });
     if (settleError) return json({ error: "Event stored but automatic settlement failed", details: settleError.message }, 500);

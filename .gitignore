@@ -5,3 +5,7 @@ dist/
 !.env.example
 .vercel/
 .DS_Store
+/android/
+*.keystore
+*.jks
+keystore.properties
