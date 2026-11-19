@@ -42,8 +42,8 @@ function safeDate(value: unknown): string | null {
   return Number.isFinite(d.getTime()) ? d.toISOString() : null;
 }
 function eventType(value: unknown): string | null {
-  const v = String(value ?? "").toLowerCase();
-  return ["goal", "corner", "yellow_card", "red_card", "penalty_awarded"].includes(v) ? v : null;
+  const v = String(value ?? "").trim().toLowerCase();
+  return ["goal", "corner", "yellow_card", "red_card", "penalty_awarded", "half_time", "match_start"].includes(v) ? v : null;
 }
 function period(value: unknown): string | null {
   const v = String(value ?? "").toLowerCase();
@@ -316,7 +316,7 @@ Deno.serve(async (req: Request) => {
       if (saved.error) errors.push("event " + providerEventId + ": " + saved.error.message.slice(0, 100));
       else {
         eventsSynced++;
-        if (!prior.data && saved.data?.id && ["goal", "red_card"].includes(type)) {
+        if (!prior.data && saved.data?.id && ["goal", "red_card", "half_time", "match_start"].includes(type)) {
           newlyObservedPushEvents.push({ id: saved.data.id, eventType: type });
         }
       }
