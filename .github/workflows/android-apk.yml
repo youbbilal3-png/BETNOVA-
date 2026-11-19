@@ -95,9 +95,6 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
-      - name: Set Android version from update policy
-        run: node scripts/set-android-version.mjs
-
       - name: Add Firebase Android configuration
         run: |
           test -f google-services.json
@@ -106,6 +103,9 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Set Android version from update policy
+        run: node scripts/set-android-version.mjs
 
       - name: Require main branch for signed release
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release }}
