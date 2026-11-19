@@ -1273,3 +1273,42 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
 /* Welcome bonus is promoted inside the existing Feel every moment hero without enlarging it. */
 #root .app-shell .hero .hero-bonus-tag{display:inline-flex;align-items:center;margin-inline-start:7px;padding:4px 8px;border:1px solid #70e5ae70;border-radius:999px;background:linear-gradient(110deg,#123d31,#173b32);color:#a7ffd2;font-size:8px;font-weight:950;letter-spacing:.25px;white-space:nowrap;vertical-align:middle}
 @media(max-width:760px){#root .app-shell .hero .hero-bonus-tag{font-size:6px;padding:3px 5px;margin-inline-start:4px}}
+
+
+/* Permanent brand lockup: BETNOVA only. */
+#root .app-shell .nova-brand-symbol{
+  background:linear-gradient(145deg,#c8ff87 0%,#42df91 48%,#087b55 100%)!important;
+  border:1px solid #d9ffad!important;color:#082b1b!important;
+  box-shadow:0 0 0 5px #48dc8d1c,0 12px 28px #22c87944,inset 0 2px 3px #fff!important;
+  transform:none!important;
+}
+#root .app-shell .nova-brand-glyph{font-size:29px!important;letter-spacing:-2px!important;color:#082b1b!important}
+#root .app-shell .nova-brand-word{display:block!important;color:#f4fff5!important;font-size:23px!important;font-weight:1000!important;letter-spacing:-1.2px!important;line-height:1!important}
+#root .app-shell .nova-brand-word .brand-accent,#root .app-shell .nova-brand-word small{display:none!important}
+#root .app-shell .hero-bonus-tag{
+  display:inline-flex!important;align-items:center!important;gap:9px!important;
+  margin-inline-start:10px!important;padding:7px 13px!important;
+  border:1px solid #a5f4c4!important;border-radius:13px!important;
+  background:linear-gradient(115deg,#164d32,#0d3828)!important;color:#eaffef!important;
+  box-shadow:0 7px 22px #16c87835,inset 0 1px #ffffff22!important;vertical-align:middle!important;
+}
+#root .app-shell .hero-bonus-amount{font-size:21px!important;line-height:1!important;font-weight:1000!important;letter-spacing:-.7px!important;color:#d9ff83!important;text-shadow:0 0 15px #b8ff6c55!important}
+#root .app-shell .hero-bonus-copy{font-size:9px!important;font-weight:900!important;letter-spacing:.35px!important;color:#d8f8e2!important;white-space:nowrap!important}
+.games-page-back{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:43px;margin:0 0 17px;padding:0 16px;border:1px solid #63d99466;
+  border-radius:12px;background:linear-gradient(120deg,#173c2a,#10271c);
+  color:#dfffe8;font-size:12px;font-weight:850;box-shadow:0 7px 20px #0003;
+  cursor:pointer;position:relative;z-index:3
+}
+.games-page-back svg{transform:scaleX(-1)}
+[dir="rtl"] .games-page-back svg{transform:none}
+.games-page-back:focus-visible{outline:3px solid #c9ff83;outline-offset:3px}
+@media(max-width:760px){
+  #root .app-shell .nova-brand-symbol{width:42px!important;height:42px!important;border-radius:13px!important}
+  #root .app-shell .nova-brand-word{font-size:20px!important}
+  #root .app-shell .hero-bonus-tag{gap:7px!important;margin-inline-start:0!important;margin-top:8px!important;padding:7px 10px!important;border-radius:12px!important}
+  #root .app-shell .hero-bonus-amount{font-size:19px!important}
+  #root .app-shell .hero-bonus-copy{font-size:8px!important}
+  .games-page-back{min-height:42px;margin-bottom:14px}
+}
