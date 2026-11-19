@@ -183,7 +183,7 @@ export default function NotificationSettings({ language = 'en' }: { language?: s
         return <div className="bn-notification-row" key={row.key}>
           <Icon size={17}/>
           <div><b>{localize(row.ar, row.en, row.fr)}</b><small>{localize(row.hintAr, row.hintEn, row.hintFr)}</small></div>
-          <button type="button" role="switch" aria-checked={prefs[row.key]} disabled={loading || saving !== null || !prefs.enabled || !row.available} className={prefs[row.key] && row.available ? 'is-on' : ''} onClick={() => void toggle(row.key, !prefs[row.key])}><span/></button>
+          <button type="button" role="switch" aria-checked={row.available && prefs[row.key]} disabled={loading || saving !== null || !prefs.enabled || !row.available} className={prefs[row.key] && row.available ? 'is-on' : ''} onClick={() => void toggle(row.key, !prefs[row.key])}><span/></button>
         </div>
       })}
     </div>
