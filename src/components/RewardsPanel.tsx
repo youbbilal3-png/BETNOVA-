@@ -53,7 +53,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
   }
 
   return <div className="rewards-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
-    <section className="rewards-panel" role="dialog" aria-modal="true" aria-labelledby="rewards-title">
+    <section className="rewards-panel" dir={ar ? "rtl" : "ltr"} role="dialog" aria-modal="true" aria-labelledby="rewards-title">
       <button className="rewards-close" onClick={onClose} aria-label={ar ? 'إغلاق' : 'Close'}><X size={19}/></button>
       <div className="rewards-kicker"><Sparkles size={15}/> BETNOVA · REWARDS</div>
       <h2 id="rewards-title">{ar ? 'مركز المكافآت' : 'Rewards Center'}</h2>
