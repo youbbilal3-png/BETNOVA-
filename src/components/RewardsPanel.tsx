@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import './rewards-center.css'
 
 type Props = { onClose: () => void; language?: string }
-type Claim = { id: string; currency: string; total_staked?: number; cashback_amount?: number; total_deposited?: number; reward_amount?: number; created_at: string }
+type Claim = { id: string; currency: string; total_staked?: number; cashback_amount?: number; week_start?: string; week_end?: string; total_deposited?: number; deposit_count?: number; reward_amount?: number; created_at: string }
 type Referral = { referred_user_id: string; status: string; created_at: string }
 
 const isArabic = (language?: string) => language === 'ar'
@@ -28,8 +28,8 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
     if (userError || !user) { setError(ar ? 'سجّل الدخول لعرض مكافآتك.' : 'Sign in to view your rewards.'); setLoading(false); return }
     const [bonus, weekly, deposits, referralRows, code] = await Promise.all([
       supabase.from('bonus_wallet_accounts').select('available_balance').eq('user_id', user.id).maybeSingle(),
-      supabase.from('weekly_cashback_claims').select('id,currency,total_staked,cashback_amount,created_at').eq('user_id', user.id).order('week_start', { ascending: false }).limit(12),
-      supabase.from('deposit_streak_claims').select('id,currency,total_deposited,reward_amount,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(12),
+      supabase.from('weekly_cashback_claims').select('id,currency,total_staked,cashback_amount,week_start,week_end,created_at').eq('user_id', user.id).order('week_start', { ascending: false }).limit(12),
+      supabase.from('deposit_streak_claims').select('id,currency,total_deposited,deposit_count,reward_amount,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(12),
       supabase.from('referrals').select('referred_user_id,status,created_at').eq('referrer_user_id', user.id).order('created_at', { ascending: false }).limit(50),
       supabase.rpc('betnova_get_referral_code'),
     ])
@@ -98,9 +98,9 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
         </article>
         <div className="rewards-history">
           <h3><History size={17}/> {ar ? 'سجل الاسترداد الأسبوعي' : 'Weekly cashback history'}</h3>
-          {cashback.length ? cashback.map(item => <div className="reward-history-row" key={item.id}><span>{new Date(item.created_at).toLocaleDateString()}</span><b>{money(Number(item.cashback_amount ?? 0), item.currency)}</b><small>{ar ? 'رهانات' : 'Staked'}: {money(Number(item.total_staked ?? 0), item.currency)}</small></div>) : <p>{ar ? 'لا توجد عمليات استرداد مسجلة بعد.' : 'No cashback claims recorded yet.'}</p>}
+          {cashback.length ? cashback.map(item => <div className="reward-history-row" key={item.id}><span>{item.week_start && item.week_end ? `${new Date(item.week_start).toLocaleDateString()} – ${new Date(item.week_end).toLocaleDateString()}` : new Date(item.created_at).toLocaleDateString()}</span><b>{money(Number(item.cashback_amount ?? 0), item.currency)}</b><small>{ar ? 'إجمالي الرهانات' : 'Total stakes'}: {money(Number(item.total_staked ?? 0), item.currency)}</small></div>) : <p>{ar ? 'لا توجد عمليات استرداد مسجلة بعد.' : 'No cashback claims recorded yet.'}</p>}
           <h3><History size={17}/> {ar ? 'مكافآت الإيداع' : 'Deposit streak rewards'}</h3>
-          {depositClaims.length ? depositClaims.map(item => <div className="reward-history-row" key={item.id}><span>{new Date(item.created_at).toLocaleDateString()}</span><b>{money(Number(item.reward_amount ?? 0), item.currency)}</b><small>{ar ? 'مجموع الإيداعات' : 'Deposited'}: {money(Number(item.total_deposited ?? 0), item.currency)}</small></div>) : <p>{ar ? 'لا توجد مكافآت إيداع مسجلة بعد.' : 'No deposit streak rewards recorded yet.'}</p>}
+          {depositClaims.length ? depositClaims.map(item => <div className="reward-history-row" key={item.id}><span>{new Date(item.created_at).toLocaleDateString()} · {item.deposit_count ?? 5} {ar ? 'إيداعات' : 'deposits'}</span><b>{money(Number(item.reward_amount ?? 0), item.currency)}</b><small>{ar ? 'مجموع الإيداعات' : 'Deposited'}: {money(Number(item.total_deposited ?? 0), item.currency)}</small></div>) : <p>{ar ? 'لا توجد مكافآت إيداع مسجلة بعد.' : 'No deposit streak rewards recorded yet.'}</p>}
         </div>
       </>}
       <p className="rewards-disclaimer">{ar ? 'المكافآت لا تضمن الربح ولا ينبغي أن تدفعك إلى زيادة الرهانات أو مطاردة الخسائر. تطبق شروط الأهلية والتحقق والقوانين المحلية.' : 'Rewards do not guarantee profit and should never be a reason to increase stakes or chase losses. Eligibility, verification, and local laws apply.'}</p>
