@@ -129,7 +129,7 @@ export default function GamesHub(){
     <div className="games-safety-note"><Sparkles size={15}/><span>{labels.safety}</span></div>
     {selected&&<div className="game-detail-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)closeGame()}}>
       <section ref={modalRef} tabIndex={-1} className={`game-detail-modal game-${selected.accent}`} role="dialog" aria-modal="true" aria-labelledby="game-detail-title">
-        <button className="game-detail-close" type="button" onClick={closeGame} aria-label={labels.close}><X size={18}/></button>
+        <div className="game-detail-close-row"><button className="game-detail-close" type="button" onClick={closeGame} aria-label={labels.close}><X size={20}/></button></div>
         {selected.id!=='crash'&&<div className={`game-detail-art art-${selected.art}`}><span>{selected.mark}</span><i/><b>BETNOVA</b></div>}
         <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
         <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
