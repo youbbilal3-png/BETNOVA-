@@ -521,3 +521,23 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
   outline:2px solid #48c991!important;
   outline-offset:2px;
 }
+
+/* Branded payment method cards for deposits and withdrawals */
+.wallet-method-section{display:grid;gap:7px}
+.wallet-method-section>label{display:block;color:#597568;font-size:9px;font-weight:800}
+.wallet-method-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.wallet-method-card{min-width:0;min-height:68px;display:flex;align-items:center;gap:9px;padding:9px;border:1px solid #dfe9df;border-radius:12px;background:#fff;color:#234b3a;text-align:left;transition:border-color .15s,background .15s,box-shadow .15s}
+.wallet-method-card.active{border-color:#24a879;background:#eaf8ef;box-shadow:0 0 0 2px #24a87920}
+.wallet-method-card>span{display:grid;gap:3px;min-width:0;flex:1}
+.wallet-method-card b{font-size:10px;font-weight:900;overflow-wrap:anywhere}
+.wallet-method-card small{font-size:8px;color:#82978a;font-weight:700}
+.wallet-method-card i{width:17px;height:17px;flex:none;border-radius:50%;display:grid;place-items:center;background:#e9f0eb;color:#16845f;font-style:normal;font-size:10px;font-weight:900}
+.wallet-method-card.active i{background:#16845f;color:#fff}
+.wallet-method-empty{margin:0;padding:10px 12px;border:1px dashed #d5e3d9;border-radius:10px;color:#758b7d;font-size:9px;line-height:1.5}
+.payment-method-logo{display:block;flex:none;border-radius:13px;overflow:hidden;box-shadow:0 2px 6px #163d2a14}
+.admin-payment-method-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.admin-payment-method-top b{flex:1}
+.admin-payment-method-top span{font-size:8px}
+@media(max-width:360px){.wallet-method-grid{grid-template-columns:1fr}.wallet-method-card{min-height:62px}}
+
+.wallet-method-hint{color:#82978a;font-size:8px;line-height:1.45}

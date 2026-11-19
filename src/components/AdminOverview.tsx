@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Activity, CalendarDays, CheckCircle2, Clock3, CreditCard, RefreshCw, ShieldCheck, Trophy, Users, Wallet, X, XCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import PaymentMethodLogo from './PaymentMethodLogo'
 
 type Props = { onClose: () => void }
 type ProviderHealth = {
@@ -362,7 +363,7 @@ export default function AdminOverview({ onClose }: Props) {
           </div>}
           {tab === 'payments' && <div className="admin-finance-list">
             {methods.length === 0 ? <p className="admin-message">Add payment methods to the payment_methods table to configure them here.</p> : methods.map(method => <article className="admin-finance-item" key={method.id}>
-              <div className="admin-finance-top"><b>{method.display_name}</b><span>{method.is_enabled ? 'Enabled' : 'Disabled'}</span></div>
+              <div className="admin-finance-top admin-payment-method-top"><PaymentMethodLogo code={method.code} size={38}/><b>{method.display_name}</b><span>{method.is_enabled ? 'Deposits on' : 'Deposits off'} · {method.is_withdrawal_enabled ? 'Withdrawals on' : 'Withdrawals off'}</span></div>
               <p>{method.code} · {(currencyDrafts[method.id] ?? method.supported_currencies).join(', ')}</p>
               <div className="admin-currency-options">{['DZD','USD','EUR'].map(currency => <label key={currency}><input type="checkbox" checked={(currencyDrafts[method.id] ?? method.supported_currencies).includes(currency)} onChange={event => setCurrencyDrafts(current => ({...current,[method.id]:event.target.checked?[...(current[method.id] ?? method.supported_currencies),currency]:(current[method.id] ?? method.supported_currencies).filter(value=>value!==currency)}))}/>{currency}</label>)}</div>
               <div className="admin-finance-actions"><button disabled={busyId === method.id} onClick={() => void saveCurrencies(method)}>Save currencies</button></div>

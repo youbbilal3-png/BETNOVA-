@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ArrowDownToLine, ArrowUpFromLine, Clock3, RefreshCw, ShieldCheck, Wallet, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
+import PaymentMethodLogo from './PaymentMethodLogo'
 
 type Props = { onClose: () => void; initialTab?: 'deposit' | 'withdraw' | 'history' }
 type Method = { code: string; display_name: string; is_enabled: boolean; is_withdrawal_enabled: boolean; supported_currencies: string[]; instructions: Record<string, unknown> }
@@ -62,6 +63,16 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
       setCurrency(selectedMethod.supported_currencies[0] ?? 'DZD')
     }
   }, [selectedMethod, currency])
+
+  useEffect(() => {
+    if (!method) return
+    const validForCurrentTab = methods.some(item =>
+      item.code === method &&
+      item.supported_currencies.includes(currency) &&
+      (tab === 'deposit' ? item.is_enabled : tab === 'withdraw' ? item.is_withdrawal_enabled : true)
+    )
+    if (!validForCurrentTab) setMethod('')
+  }, [methods, method, currency, tab])
 
   async function submitDeposit(event: FormEvent) {
     event.preventDefault()
@@ -178,7 +189,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
       {Number(account?.recovery_balance ?? 0) > 0 && <div className="wallet-recovery-notice"><b>{t('recovery_notice')}</b><span>{t('recovery_blocks_withdrawal')}</span></div>}{error && <p className="wallet-message error">{error}</p>}
       {notice && <p className="wallet-message success">{notice}</p>}
       {tab === 'deposit' && <form className="wallet-form" onSubmit={submitDeposit}>
-        <label>{t('payment_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.is_enabled && item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
+        <div className="wallet-method-section"><label>{t('payment_method')}</label><div className="wallet-method-grid">{methods.filter(item => item.is_enabled && item.supported_currencies.includes(currency)).map(item => <button type="button" key={item.code} className={method === item.code ? 'wallet-method-card active' : 'wallet-method-card'} onClick={() => setMethod(item.code)} aria-pressed={method === item.code}><PaymentMethodLogo code={item.code} size={42}/><span><b>{item.display_name}</b><small>{currency}</small></span><i>{method === item.code ? '✓' : ''}</i></button>)}</div>{methods.filter(item => item.is_enabled && item.supported_currencies.includes(currency)).length === 0 && <p className="wallet-method-empty">No deposit method is enabled for {currency} yet. Please contact support.</p>}<small className="wallet-method-hint">RedotPay and Paysera are available with USD/EUR. BaridiMob is DZD only.</small></div>
         {selectedMethod && <div className="wallet-instructions">
           {accountName && <p><b>{t('account_name')}</b> {accountName}</p>}
           {accountNumber && <p><b>{t('transfer_details')}</b> {accountNumber}</p>}
@@ -192,7 +203,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('balance_after_verification')}</p>
       </form>}
       {tab === 'withdraw' && <><div className="wallet-tabs"><button type="button" className={!bonusWithdrawMode ? 'active' : ''} onClick={() => {setBonusWithdrawMode(false);setAmount('');setError('')}}>Real balance</button><button type="button" className={bonusWithdrawMode ? 'active' : ''} onClick={() => {setBonusWithdrawMode(true);setAmount('');setError('')}}>Bonus balance</button></div>{bonusWithdrawMode && <div className="wallet-recovery-notice"><b>Bonus withdrawal condition</b><span>Complete verified deposits totaling 10 USD (2,600 DZD or 9 EUR). The deposit remains in your real-money wallet. This condition never applies to real balance withdrawals.</span></div>}<form className="wallet-form" onSubmit={bonusWithdrawMode ? submitBonusWithdrawal : submitWithdrawal}>
-        <label>{t('withdrawal_method')}<select value={method} onChange={event => setMethod(event.target.value)} required><option value="">{t('choose_method')}</option>{methods.filter(item => item.is_withdrawal_enabled && item.supported_currencies.includes(currency)).map(item => <option key={item.code} value={item.code}>{item.display_name}</option>)}</select></label>
+        <div className="wallet-method-section"><label>{t('withdrawal_method')}</label><div className="wallet-method-grid">{methods.filter(item => item.is_withdrawal_enabled && item.supported_currencies.includes(currency)).map(item => <button type="button" key={item.code} className={method === item.code ? 'wallet-method-card active' : 'wallet-method-card'} onClick={() => setMethod(item.code)} aria-pressed={method === item.code}><PaymentMethodLogo code={item.code} size={42}/><span><b>{item.display_name}</b><small>{currency}</small></span><i>{method === item.code ? '✓' : ''}</i></button>)}</div>{methods.filter(item => item.is_withdrawal_enabled && item.supported_currencies.includes(currency)).length === 0 && <p className="wallet-method-empty">No withdrawal method is enabled for {currency} yet. Please contact support.</p>}<small className="wallet-method-hint">RedotPay and Paysera are available with USD/EUR. BaridiMob is DZD only.</small></div>
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min={currency === 'DZD' ? 1000 : 1.5} max={bonusWithdrawMode ? bonus.available_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1) : Math.min(currency === 'DZD' ? 1500000 : 50000, account?.available_balance ?? 0)} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
         <button className="wallet-submit" disabled={busy || !selectedMethod || (bonusWithdrawMode ? bonus.available_balance <= 0 : !account || Number(account.available_balance) <= 0)}>{busy ? 'Submitting…' : bonusWithdrawMode ? 'Request bonus withdrawal' : 'Request withdrawal'}</button>
