@@ -16,3 +16,5 @@
 .bn-notification-master button:disabled,.bn-notification-row button:disabled{opacity:.48;cursor:not-allowed}
 .bn-notification-footnote{margin:12px 0 0}
 .bn-notification-message{margin:10px 0 0;color:#b7f7d2}
+
+.settings-panel{max-height:min(90dvh,820px);overflow-y:auto;overscroll-behavior:contain}
