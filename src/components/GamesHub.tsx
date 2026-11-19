@@ -58,18 +58,11 @@ export default function GamesHub(){
   }
   const closeGame=()=>{setSelected(null);resetDemo()}
   useEffect(()=>{if(!selected)return;const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape')closeGame()};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown)},[selected])
+  useEffect(()=>{if(!crashActive)return;const timer=window.setInterval(()=>{setMultiplier(current=>{const next=Number((current+0.05).toFixed(2));if(next>=crashAt){setCrashActive(false);setPracticeResult(arabic?`انتهت الجولة عند ${next.toFixed(2)}×. لا توجد أرباح أو تغييرات في الرصيد.`:`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)}return next})},220);return()=>window.clearInterval(timer)},[crashActive,crashAt,arabic])
   const startCrash=()=>{
     setCrashAt(1.25+Math.random()*4.75);setMultiplier(1);setCrashActive(true)
     setPracticeResult(arabic?'بدأ المضاعف. تقدّم بحذر أو أوقف الجولة التدريبية.':'Multiplier is live. Advance carefully or stop this practice round.')
     setPracticeCount(value=>value+1)
-  }
-  const advanceCrash=()=>{
-    if(!crashActive)return
-    const next=Number((multiplier+0.25).toFixed(2))
-    if(next>=crashAt){
-      setMultiplier(next);setCrashActive(false)
-      setPracticeResult(arabic?`انتهت الجولة عند ${next.toFixed(2)}×. لا توجد أرباح أو تغييرات في الرصيد.`:`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)
-    }else setMultiplier(next)
   }
   const cashOutCrash=()=>{
     if(!crashActive)return
@@ -135,7 +128,7 @@ export default function GamesHub(){
         <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
         {selected.id==='crash'&&<div className="game-practice-controls">
           <div className="crash-multiplier" aria-live="polite">{multiplier.toFixed(2)}<small>×</small></div>
-          {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:<div className="game-action-row"><button type="button" onClick={advanceCrash}>{labels.next}</button><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>}
+          {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:<div className="game-action-row"><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>}
         </div>}
         {selected.id==='apple'&&<div className="game-practice-controls">
           <div className="apple-levels">{[0,1,2].map(i=><span key={i} className={i<appleLevel?'safe':''}>{i<appleLevel?'✓':'🍏'}</span>)}</div>
