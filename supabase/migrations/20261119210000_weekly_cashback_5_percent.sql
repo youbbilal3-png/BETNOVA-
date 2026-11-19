@@ -17,10 +17,8 @@ create table public.weekly_cashback_claims (
 create index weekly_cashback_claims_user_week_idx on public.weekly_cashback_claims(user_id,week_start desc);
 alter table public.weekly_cashback_claims enable row level security;
 
-create policy "Users read own weekly cashback" on public.weekly_cashback_claims
-  for select to authenticated using(user_id=(select auth.uid()));
-create policy "Admins read weekly cashback" on public.weekly_cashback_claims
-  for select to authenticated using(public.betnova_is_admin());
+create policy "Users and admins read weekly cashback" on public.weekly_cashback_claims
+  for select to authenticated using(user_id=(select auth.uid()) or (select public.betnova_is_admin()));
 
 revoke all on public.weekly_cashback_claims from anon,authenticated;
 grant select on public.weekly_cashback_claims to authenticated;
