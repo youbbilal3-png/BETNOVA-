@@ -41,7 +41,7 @@ export default function ResponsiblePlay({ onClose, userEmail, language = 'en' }:
       if (insertError) throw insertError
       setSent(true)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : (ar ? 'تعذر إرسال الطلب.' : 'Could not submit your request.'))
+      setError(caught instanceof Error ? caught.message : t('something_wrong'))
     } finally { setBusy(false) }
   }
 
@@ -50,7 +50,7 @@ export default function ResponsiblePlay({ onClose, userEmail, language = 'en' }:
       <header className="responsible-topbar">
         <button type="button" onClick={onClose}><ArrowLeft size={17}/>{t('back_to_betnova')}</button>
         <b>BETNOVA <span>{t('responsible_play').toUpperCase()}</span></b>
-        <button type="button" className="responsible-close" onClick={onClose} aria-label="Close"><X size={19}/></button>
+        <button type="button" className="responsible-close" onClick={onClose} aria-label={t('close')}><X size={19}/></button>
       </header>
       <div className="responsible-hero">
         <div className="responsible-hero-copy">
@@ -71,9 +71,9 @@ export default function ResponsiblePlay({ onClose, userEmail, language = 'en' }:
           <div><span className="responsible-kicker">{t('rp_need_break').toUpperCase()}</span><h2>{t('rp_need_break')}</h2><p>{t('rp_request_desc')}</p></div>
           {sent ? <div className="responsible-success"><CheckCircle2 size={25}/><div><b>{t('support_received')}</b><p>{t('rp_received')}</p></div></div> :
             <form onSubmit={event => void submitRequest(event)}>
-              <label>{t('rp_request_type')}<select value={requestType} onChange={event => setRequestType(event.target.value)}><option>Temporary break</option><option>Self-exclusion</option></select></label>
+              <label>{t('rp_request_type')}<select value={requestType} onChange={event => setRequestType(event.target.value)}><option value="Temporary break">{t('temporary_break')}</option><option value="Self-exclusion">{t('self_exclusion')}</option></select></label>
               {requestType === 'Temporary break' && <label>{t('rp_duration')}<select value={duration} onChange={event => setDuration(event.target.value)}><option>24 hours</option><option>7 days</option><option>30 days</option><option>90 days</option></select></label>}
-              <label>{ar ? 'ملاحظات إضافية (اختياري)' : 'Additional details (optional)'}<textarea value={details} onChange={event => setDetails(event.target.value)} rows={3} maxLength={1000} placeholder={ar ? 'اكتب أي تفاصيل تريد مشاركتها...' : 'Share any details you would like us to know...'}/></label>
+              <label>{t('additional_details')}<textarea value={details} onChange={event => setDetails(event.target.value)} rows={3} maxLength={1000} placeholder={t('details_placeholder')}/></label>
               {!userEmail && <p className="responsible-login-note">{t('rp_login_required')}</p>}
               {error && <p className="responsible-error" role="alert">{error}</p>}
               <button type="submit" disabled={busy || !userEmail}>{busy ? (ar ? 'جارٍ الإرسال...' : 'Submitting…') : (ar ? 'إرسال الطلب إلى الإدارة' : 'Send request to administration')} <ArrowLeft size={15}/></button>
