@@ -265,3 +265,51 @@
 
 .arcade-crash-cashout{border-color:#ffd77a;background:linear-gradient(105deg,#c77a16,#e6a72e 55%,#b85c20);color:#fffdf5;box-shadow:0 8px 24px #d18a293d}
 .arcade-crash-cashout:disabled{opacity:.72}
+
+
+/* BETNOVA simple game controls: one stake field and one clear start action. */
+.arcade-wager-simple{margin:10px 0 4px;padding:12px;border-radius:13px;gap:0}
+.arcade-wager-simple .arcade-wallet-line{margin:0 0 8px;font-size:10px}
+.arcade-wager-simple .arcade-wallet-line strong{font-size:12px}
+.arcade-wager-simple .arcade-wager-field{gap:5px;margin:6px 0;color:#d9e9f7;font-size:10px}
+.arcade-wager-simple .arcade-wager-field input{min-height:43px;font-size:15px}
+.arcade-wager-simple .arcade-wager-submit{min-height:45px;margin-top:5px;font-size:12px;letter-spacing:.3px}
+.arcade-choice-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:7px 0}
+.arcade-choice-row button{min-height:36px;border:1px solid #ffffff26;border-radius:9px;background:#ffffff0b;color:#eaf4ff;font-size:11px;font-weight:900}
+.arcade-choice-row button.active{border-color:#70e7c2;background:#1a8b6844;color:#aaffd7}
+.arcade-choice-row button:disabled{opacity:.5}
+.arcade-coming-note{padding:13px;border:1px solid #ffffff20;border-radius:10px;color:#c9d9e9;font-size:11px;line-height:1.5;text-align:center}
+.apple-odds-board .apple-board{gap:7px;padding:9px}
+.apple-odds-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:9px;min-height:42px;padding:5px 7px;border:1px solid #ffffff13;border-radius:10px;background:#ffffff06}
+.apple-odds-row.selected{border-color:#b3f77d;background:#b3f77d18;box-shadow:0 0 14px #b3f77d22}
+.apple-odds-fruits{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;justify-items:center;gap:3px}
+.apple-odds-fruits span{font-size:19px;line-height:1.2;filter:drop-shadow(0 2px 3px #0008)}
+.apple-odds-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:108px;min-height:34px;padding:6px 8px;border:1px solid #ffffff20;border-radius:8px;background:#ffffff0c;color:#dcebdc;font-size:9px;font-weight:850}
+.apple-odds-pick strong{color:#b9f77d;font-size:12px;font-variant-numeric:tabular-nums}
+.apple-odds-row.selected .apple-odds-pick{border-color:#b3f77d;background:#315b3c;color:#fff}
+.apple-odds-row.selected .apple-odds-pick strong{color:#fff}
+.apple-odds-hint{margin:4px 2px 0!important;color:#a8bed2!important;font-size:9px!important;line-height:1.45!important}
+.slot-theme-pharaoh .slot-reels{background:radial-gradient(ellipse at 50% 0%,#d6a74655,#17172b 78%);border-color:#d8ae5d88}
+.slot-theme-pharaoh .slot-reels span{background:linear-gradient(160deg,#fff2c7,#d4a44d 55%,#795323);color:#39270e;border-color:#f2d58a}
+.slot-theme-space-spin .slot-reels{background:radial-gradient(ellipse at 50% 0%,#9c7aff55,#080f2d 78%);border-color:#a88cff88}
+.slot-theme-space-spin .slot-reels span{background:linear-gradient(160deg,#f1eaff,#a69bdc 55%,#514b86);color:#201b48;border-color:#d8c8ff}
+.slot-theme-lucky-fruits .slot-reels{background:radial-gradient(ellipse at 50% 0%,#ff83c655,#30142d 78%);border-color:#ff83c688}
+.plinko-ball.dropping{animation:plinko-fall 3.8s cubic-bezier(.22,.35,.34,1) forwards}
+@keyframes plinko-fall{0%{transform:translate(0,0) scale(1)}12%{transform:translate(-16px,23px) scale(.96)}24%{transform:translate(17px,45px) scale(1.02)}36%{transform:translate(-20px,68px) scale(.96)}48%{transform:translate(19px,90px) scale(1.02)}60%{transform:translate(-16px,112px) scale(.96)}72%{transform:translate(13px,135px) scale(1.01)}86%{transform:translate(-8px,158px) scale(.97)}100%{transform:translate(0,180px) scale(.92);opacity:.35}}
+.game-detail-modal.game-coral{width:min(100%,410px);max-height:86dvh;padding:14px}
+.game-detail-modal.game-coral .crash-flight-stage{height:184px;min-height:174px}
+.game-detail-modal.game-coral .crash-controls{gap:8px;margin:8px 0}
+.game-detail-modal.game-coral .crash-multiplier{min-height:52px;font-size:29px}
+.game-detail-modal.game-coral .arcade-wager-simple{margin-top:7px;padding:10px}
+.game-detail-modal.game-coral .game-detail-close-row{margin:-9px -9px 5px}
+@media(max-width:600px){
+ .game-detail-modal.game-coral{max-height:88dvh;padding:12px}
+ .game-detail-modal.game-coral .crash-flight-stage{height:166px;min-height:158px}
+ .game-detail-modal.game-coral .crash-multiplier{min-height:46px;font-size:26px}
+ .apple-odds-row{gap:6px;padding:4px}
+ .apple-odds-fruits span{font-size:17px}
+ .apple-odds-pick{min-width:98px;padding:5px 6px}
+}
+
+.crash-inline-cashout{margin-top:7px;min-height:43px}
+.game-detail-modal.game-coral .crash-inline-cashout{margin:5px 0 0;min-height:41px}
