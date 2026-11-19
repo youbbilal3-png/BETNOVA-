@@ -23,7 +23,7 @@ export default function PublicLanding({ isArabic, language, onLanguageChange, on
     <main className="public-main">
       <section className="public-hero">
         <div className="public-hero-copy">
-          <div className="public-kicker"><span/> {isArabic ? 'منصة رياضية من الجيل الجديد' : 'THE NEXT-GENERATION SPORTS PLATFORM'} <strong className="public-bonus-tag">{isArabic ? 'مكافأة ترحيبية 100 : '$100 WELCOME BONUS'}</strong></div>
+          <div className="public-kicker"><span/> {isArabic ? 'منصة رياضية من الجيل الجديد' : 'THE NEXT-GENERATION SPORTS PLATFORM'} <strong className="public-bonus-tag">{isArabic ? 'مكافأة ترحيبية 100$' : '$100 WELCOME BONUS'}</strong></div>
           <h1>{isArabic ? <>كل مباراة.<br/><em>تجربة مختلفة.</em></> : <>Every match.<br/><em>A new dimension.</em></>}</h1>
           <p>{isArabic ? 'تابع الأحداث الرياضية، اكتشف الأسواق، وادِر اختياراتك من تجربة مصممة لتناسب هاتفك.' : 'Follow the action, explore match markets and manage your picks in a sports experience built for your phone.'}</p>
           <div className="public-hero-buttons"><button className="public-primary" onClick={onSignup}>{isArabic ? 'ابدأ الآن' : 'Get started'} <ArrowRight size={18}/></button><button className="public-secondary" onClick={()=>document.getElementById('platform')?.scrollIntoView({behavior:'smooth'})}>{isArabic ? 'اكتشف المنصة' : 'Explore the platform'}</button></div>
