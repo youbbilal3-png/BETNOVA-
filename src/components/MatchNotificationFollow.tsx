@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Bell, CalendarDays, CheckCircle2, Flag, ShieldCheck, Trophy } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
+import { PushNotifications } from '@capacitor/push-notifications'
 import { supabase } from '../lib/supabase'
 import './match-notification-follow.css'
 
@@ -31,6 +33,7 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
   const [targets, setTargets] = useState<Target[]>([])
   const [active, setActive] = useState<Record<FollowTarget, boolean>>({ fixture: false, home: false, away: false })
   const [prefs, setPrefs] = useState<EventPrefs>(defaults)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [message, setMessage] = useState('')
@@ -69,10 +72,14 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
         { key: 'away', type: 'team', id: fixture.away_team_id, label: awayName },
       ]
       setTargets(nextTargets)
-      const { data: subscriptions, error } = await supabase!
-        .from('notification_subscriptions').select('target_type,target_id,match_start,goals,red_cards,half_time,full_time')
-        .eq('user_id', userId).in('target_id', nextTargets.map(target => target.id))
+      const [{ data: subscriptions, error }, { data: globalPrefs, error: prefsError }] = await Promise.all([
+        supabase!.from('notification_subscriptions').select('target_type,target_id,match_start,goals,red_cards,half_time,full_time')
+          .eq('user_id', userId).in('target_id', nextTargets.map(target => target.id)),
+        supabase!.from('notification_preferences').select('enabled').eq('user_id', userId).maybeSingle(),
+      ])
       if (!mounted) return
+      if (prefsError) setMessage(localize('تعذر تحميل حالة الإشعارات.', 'Could not load notification status.', 'Impossible de charger le statut des notifications.'))
+      else setNotificationsEnabled(Boolean(globalPrefs?.enabled))
       if (error) setMessage(localize('تعذر تحميل اشتراكاتك.', 'Could not load your follows.', 'Impossible de charger vos suivis.'))
       else {
         const rows = (subscriptions ?? []) as SubscriptionRow[]
@@ -93,6 +100,37 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
     })
     return () => { mounted = false }
   }, [userId, fixtureId, homeName, awayName, isArabic, isFrench])
+
+  const toggleMaster = async (value: boolean) => {
+    if (!supabase || !userId) return
+    setBusy('master'); setMessage('')
+    if (value && Capacitor.isNativePlatform()) {
+      try {
+        let permission = await PushNotifications.checkPermissions()
+        if (permission.receive !== 'granted') permission = await PushNotifications.requestPermissions()
+        if (permission.receive !== 'granted') {
+          setMessage(localize('لم تسمح بإرسال الإشعارات. يمكنك تفعيلها من إعدادات الهاتف.', 'Notification permission was not granted. Enable it in Android settings.', 'Vous n’avez pas autorisé les notifications. Activez-les dans les paramètres Android.'))
+          setBusy(null)
+          return
+        }
+        await PushNotifications.createChannel({
+          id: 'betnova_alerts', name: 'BETNOVA Alerts', description: 'Match event notifications',
+          importance: 4, visibility: 1, sound: 'default', vibration: true,
+        })
+        await PushNotifications.register()
+      } catch {
+        setMessage(localize('تعذر تفعيل الإشعارات على هذا الجهاز.', 'Could not enable notifications on this device.', 'Impossible d’activer les notifications sur cet appareil.'))
+        setBusy(null)
+        return
+      }
+    }
+    const { error } = await supabase.from('notification_preferences').upsert({
+      user_id: userId, enabled: value, updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+    if (error) setMessage(localize('لم يتم حفظ حالة الإشعارات.', 'Could not save notification status.', 'Impossible d’enregistrer le statut des notifications.'))
+    else setNotificationsEnabled(value)
+    setBusy(null)
+  }
 
   const toggleTarget = async (key: FollowTarget) => {
     if (!supabase || !userId) {
@@ -133,11 +171,15 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
 
   return <div className="bn-match-follow">
     <div className="bn-match-follow-title"><Bell size={17}/><div><b>{localize('تنبيهات المباراة', 'Match notifications', 'Notifications du match')}</b><small>{localize('تابع المباراة أو أحد الفريقين، ثم اختر الأحداث التي تريد استقبالها.', 'Follow this match or either team, then choose the events you want to receive.', 'Suivez ce match ou une équipe, puis choisissez les événements à recevoir.')}</small></div></div>
+    <div className="bn-match-follow-master">
+      <div><b>{localize('تفعيل تنبيهات المباريات', 'Enable match alerts', 'Activer les alertes de match')}</b><small>{localize('يمكنك إيقاف جميع التنبيهات من هنا.', 'Turn all match alerts on or off here.', 'Activez ou désactivez toutes les alertes ici.')}</small></div>
+      <button type="button" role="switch" aria-checked={notificationsEnabled} disabled={loading || busy !== null} className={notificationsEnabled ? 'is-on' : ''} onClick={() => void toggleMaster(!notificationsEnabled)}><span/></button>
+    </div>
     <div className="bn-match-follow-options">
       {loading ? <p className="bn-match-follow-state">{localize('جارٍ تحميل خيارات التنبيه…', 'Loading alert options…', 'Chargement des alertes…')}</p> :
         targets.map(target => <div className="bn-match-follow-option" key={target.key}>
           <span>{target.label}</span>
-          <button type="button" role="switch" aria-checked={active[target.key]} disabled={busy !== null} className={active[target.key] ? 'is-on' : ''} onClick={() => void toggleTarget(target.key)}><span/></button>
+          <button type="button" role="switch" aria-checked={active[target.key]} disabled={busy !== null || !notificationsEnabled} className={active[target.key] ? 'is-on' : ''} onClick={() => void toggleTarget(target.key)}><span/></button>
         </div>)}
     </div>
     {!loading && anyActive && <div className="bn-match-follow-events">
@@ -147,10 +189,11 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
         return <div className="bn-match-follow-event" key={row.key}>
           <Icon size={16}/>
           <div><b>{localize(row.ar, row.en, row.fr)}</b><small>{localize(row.hintAr, row.hintEn, row.hintFr)}</small></div>
-          <button type="button" role="switch" aria-checked={prefs[row.key]} disabled={busy !== null} className={prefs[row.key] ? 'is-on' : ''} onClick={() => void toggleEvent(row.key, !prefs[row.key])}><span/></button>
+          <button type="button" role="switch" aria-checked={prefs[row.key]} disabled={busy !== null || !notificationsEnabled} className={prefs[row.key] ? 'is-on' : ''} onClick={() => void toggleEvent(row.key, !prefs[row.key])}><span/></button>
         </div>
       })}
     </div>}
+    {!Capacitor.isNativePlatform() && <p className="bn-match-follow-safe">{localize('يمكنك حفظ اختياراتك هنا، لكن استقبال الإشعارات الفورية يتطلب تطبيق BETNOVA على Android.', 'You can save your choices here, but push delivery requires the BETNOVA Android app.', 'Vous pouvez enregistrer vos choix ici, mais les notifications push nécessitent l’application BETNOVA sur Android.')}</p>}
     <div className="bn-match-follow-safe"><ShieldCheck size={14}/>{localize('يمكنك تغيير اختياراتك في أي وقت. لا يتم إرسال تنبيه الهدف قبل تأكيده.', 'Change your choices at any time. Goal alerts are sent only after confirmation.', 'Modifiez vos choix à tout moment. Les buts sont signalés uniquement après confirmation.')}</div>
     {message && <p className="bn-match-follow-message" role="status">{message}</p>}
   </div>
