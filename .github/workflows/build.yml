@@ -12,6 +12,16 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check live and notification Edge Functions
+        run: |
+          deno check --config=deno.json supabase/functions/live-event-ingest/index.ts
+          deno check --config=deno.json supabase/functions/sportsapi-live-sync/index.ts
+          deno check --config=deno.json supabase/functions/fivedollar-football-sync/index.ts
+          deno check --config=deno.json supabase/functions/dispatch-push-notifications/index.ts
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
