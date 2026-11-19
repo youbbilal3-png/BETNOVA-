@@ -501,3 +501,23 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 .account-wallet-balance-grid small{font-size:10px;color:#9cb7aa}
 .account-wallet-balance-grid strong{font-size:clamp(12px,2.5vw,16px);color:#f3fff8;overflow-wrap:anywhere}
 @media(max-width:480px){.account-wallet-balance-grid{gap:6px}.account-wallet-balance-grid>div{padding:9px 6px}.account-wallet-balance-grid strong{font-size:11px}}
+/* Native payment dropdowns: readable options on mobile, desktop and dark themed panels. */
+.wallet-form select,.admin-payout-reference select,.language-picker select{
+  color-scheme:dark;
+}
+.wallet-form select,.admin-payout-reference select{
+  min-height:44px;
+  color:#e9fff4!important;
+  background-color:#10372f!important;
+  border:1px solid #31896a!important;
+  -webkit-appearance:auto;
+  appearance:auto;
+}
+.wallet-form select option,.admin-payout-reference select option{
+  color:#effff6!important;
+  background:#10372f!important;
+}
+.wallet-form select:focus,.admin-payout-reference select:focus{
+  outline:2px solid #48c991!important;
+  outline-offset:2px;
+}
