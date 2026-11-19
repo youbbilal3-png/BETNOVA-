@@ -125,22 +125,20 @@ Deno.serve(async (req: Request) => {
     : event.team_id ? [event.team_id] : [];
   const targetIds = [event.fixture_id, ...followedTeamIds].filter(Boolean);
   const { data: follows, error: followsError } = await supabase
-    .from("notification_subscriptions").select("user_id,target_type,target_id")
+    .from("notification_subscriptions").select("user_id,target_type,target_id,match_start,goals,red_cards,half_time,full_time")
     .in("target_id", targetIds);
   if (followsError) return json({ error: "Could not load match follows" }, 500);
 
+  // Event preferences now belong to each match/team follow, not global Settings.
+  // A user is eligible only when at least one matching target explicitly enables this event.
   const interestedUsers = new Set((follows ?? []).filter(row =>
-    (row.target_type === "fixture" && row.target_id === event.fixture_id) ||
-    (row.target_type === "team" && followedTeamIds.includes(row.target_id))
+    row[category] === true && (
+      (row.target_type === "fixture" && row.target_id === event.fixture_id) ||
+      (row.target_type === "team" && followedTeamIds.includes(row.target_id))
+    )
   ).map(row => row.user_id));
-  if (interestedUsers.size === 0) return json({ ok: true, sent: 0, skipped: "no_followers" });
-
-  const { data: preferences, error: preferencesError } = await supabase
-    .from("notification_preferences").select("user_id")
-    .eq("enabled", true).eq(category, true).in("user_id", [...interestedUsers]);
-  if (preferencesError) return json({ error: "Could not load notification preferences" }, 500);
-  const userIds = (preferences ?? []).map(row => row.user_id);
-  if (userIds.length === 0) return json({ ok: true, sent: 0, skipped: "notifications_disabled" });
+  if (interestedUsers.size === 0) return json({ ok: true, sent: 0, skipped: "no_matching_event_subscriptions" });
+  const userIds = [...interestedUsers];
 
   const { data: devices, error: devicesError } = await supabase
     .from("device_push_tokens").select("token,user_id").in("user_id", userIds);
