@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Menu, Search, Settings, ShieldCheck, Sparkles, Star, Trophy, UserRound, Wallet, X } from 'lucide-react'
+import { Activity, ArrowDownUp, ArrowRight, Bell, CircleHelp, Clock3, Flame, Globe2, Home, Menu, Search, Settings, ShieldCheck, Sparkles, Star, Trophy, UserRound, Wallet, X } from 'lucide-react'
 import AuthPanel from './components/AuthPanel'
 import AccountPanel from './components/AccountPanel'
 import AdminOverview from './components/AdminOverview'
@@ -200,41 +200,64 @@ export default function App() {
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
   const [adminOpen, setAdminOpen] = useState(false)
   const [walletOpen, setWalletOpen] = useState(false)
-  function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') { setWalletInitialTab(tab); setWalletOpen(true); setAccountOpen(false); setMobileMoreOpen(false) }
+  function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') { setWalletInitialTab(tab); openOverlay('wallet'); setMobileMoreOpen(false) }
   const [betsOpen, setBetsOpen] = useState(false)
   const [activePage, setActivePage] = useState<'sports' | 'games'>('sports')
   const [featuredGameRequest, setFeaturedGameRequest] = useState<{id:string;token:number}|null>(null)
   function openFeaturedGame(id:string) { setFeaturedGameRequest(current => ({id,token:(current?.token ?? 0)+1})); openGames() }
 
+  function openOverlay(id: string, extra: Record<string, unknown> = {}) {
+    const current = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []
+    window.history.pushState({ ...window.history.state, betnovaOverlays: [...current, id], ...extra }, '', window.location.href)
+    applyOverlayStack([...current, id], extra)
+  }
+  function applyOverlayStack(stack: string[], extra: Record<string, unknown> = {}) {
+    setAccountOpen(stack.includes('account'))
+    setWalletOpen(stack.includes('wallet'))
+    setAdminOpen(stack.includes('admin'))
+    setBetsOpen(stack.includes('bets'))
+    setAuthOpen(stack.includes('auth'))
+    setNotificationsOpen(stack.includes('notifications'))
+    setSettingsOpen(stack.includes('settings'))
+    setMobileMoreOpen(stack.includes('mobileMore'))
+    setMobileSlip(stack.includes('mobileSlip'))
+    setDetailMatch(stack.includes('matchDetails') ? ((extra.betnovaDetailMatch as Match | null) ?? window.history.state?.betnovaDetailMatch ?? null) : null)
+  }
+  function closeOverlay(id: string) {
+    const current = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []
+    if (current[current.length - 1] === id) {
+      window.history.back()
+      return
+    }
+    const next = current.filter((item, index) => item !== id || index !== current.lastIndexOf(id))
+    window.history.replaceState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
+    applyOverlayStack(next)
+  }
+  function goHome() {
+    window.history.replaceState({ betnovaPage: 'sports', betnovaOverlays: [] }, '', window.location.pathname + window.location.search)
+    setActivePage('sports')
+    setAccountOpen(false); setWalletOpen(false); setAdminOpen(false); setBetsOpen(false)
+    setAuthOpen(false); setNotificationsOpen(false); setSettingsOpen(false)
+    setMobileMoreOpen(false); setMobileSlip(false); setDetailMatch(null)
+    setDetailMatch(null)
+  }
   function openGames() {
-    if (activePage !== 'games') window.history.pushState({ betnovaPage: 'games' }, '', '#games')
+    if (activePage !== 'games') window.history.pushState({ ...window.history.state, betnovaPage: 'games' }, '', '#games')
     setActivePage('games')
   }
   function closeGames() {
-    setActivePage('sports')
-    if (window.history.state?.betnovaPage === 'games' && !window.history.state?.betnovaGameModal) window.history.back()
+    if (window.history.state?.betnovaPage === 'games') window.history.back()
+    else setActivePage('sports')
   }
   useEffect(() => {
     const handleBack = (event: PopStateEvent) => {
-      if (walletOpen) setWalletOpen(false)
-      else if (adminOpen) setAdminOpen(false)
-      else if (accountOpen) setAccountOpen(false)
+      const overlays = Array.isArray(event.state?.betnovaOverlays) ? event.state.betnovaOverlays as string[] : []
+      applyOverlayStack(overlays, { betnovaDetailMatch: event.state?.betnovaDetailMatch })
       setActivePage(event.state?.betnovaPage === 'games' ? 'games' : 'sports')
     }
     window.addEventListener('popstate', handleBack)
     return () => window.removeEventListener('popstate', handleBack)
-  }, [walletOpen, adminOpen, accountOpen])
-
-  // Treat account, wallet and admin panels as in-app navigation entries so
-  // Android's hardware Back closes the top panel instead of leaving BETNOVA.
-  useEffect(() => {
-    const panelOpen = walletOpen || adminOpen || accountOpen
-    if (panelOpen && !window.history.state?.betnovaOverlay) {
-      window.history.pushState({ ...window.history.state, betnovaOverlay: true }, '', window.location.href)
-    } else if (!panelOpen && window.history.state?.betnovaOverlay) {
-      window.history.back()
-    }
-  }, [walletOpen, adminOpen, accountOpen])
+  }, [])
 
   useEffect(() => {
     const client = supabase
@@ -690,9 +713,9 @@ export default function App() {
     <div className="app-shell">
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
       <header className="topbar">
-        <a className="brand nova-brand-lockup" href="#"><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">B</span><i/></span><span className="nova-brand-word">BETNOVA</span></a>
+        <a className="brand nova-brand-lockup" href="#" onClick={event => { event.preventDefault(); goHome() }}><span className="brand-symbol nova-brand-symbol"><span className="nova-brand-glyph">B</span><i/></span><span className="nova-brand-word">BETNOVA</span></a>
         <nav className="desktop-nav"><button className={activePage === 'sports' ? 'active' : ''} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}>{t('sports')}</button><button className={activePage === 'games' ? 'active' : ''} onClick={() => openGames()}>{language === 'ar' ? 'الألعاب' : 'Games'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}>{t('live')}</button><a href="#responsible">{t("responsible")}</a><button onClick={() => { setActivePage('sports'); openEventView('results') }}>{t('results')}</button></nav>
-        <div className="top-actions">{activePage === 'games' && <button className="games-page-back games-page-back-top" type="button" onClick={closeGames}><ArrowRight size={16}/>{language === 'ar' ? 'العودة إلى الرياضة' : 'Back to sports'}</button>}<button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <><button className="wallet-open-btn deposit-open-btn" onClick={() => openWallet('deposit')}><Wallet size={15}/> {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(walletBalance)} DZD</button><button className="account-open-btn" onClick={() => setAccountOpen(true)}><UserRound size={15}/> My account</button></>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => setNotificationsOpen(true)}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => setBetsOpen(true)}>{t("my_bets")}</button>{isAdminUser && <button className="admin-open-btn" onClick={() => setAdminOpen(true)}>{t('admin')}</button>}</> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); setAuthOpen(true) }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); setAuthOpen(true) }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
+        <div className="top-actions">{activePage === 'games' && <button className="games-page-back games-page-back-top" type="button" onClick={closeGames}><ArrowRight size={16}/>{language === 'ar' ? 'العودة إلى الرياضة' : 'Back to sports'}</button>}<button className="icon-btn top-search-btn" aria-label="Focus event search" onClick={() => { document.getElementById('match-search')?.focus(); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Search size={18}/></button>{userEmail && <><button className="wallet-open-btn deposit-open-btn" onClick={() => openWallet('deposit')}><Wallet size={15}/> {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(walletBalance)} DZD</button><button className="account-open-btn" onClick={() => openOverlay('account')}><UserRound size={15}/> My account</button></>}<button className="icon-btn" aria-label={t("notifications")} onClick={() => openOverlay('notifications')}><Bell size={18}/></button>{userEmail ? <><span className="signed-in-label">Signed in</span><button className="my-bets-open-btn" onClick={() => openOverlay('bets')}>{t("my_bets")}</button>{isAdminUser && <button className="admin-open-btn" onClick={() => openOverlay('admin')}>{t('admin')}</button>}</> : <><span className="guest-preview-label">PUBLIC MATCH PREVIEW</span><button className="login-btn" onClick={() => { setAuthMode('login'); openOverlay('auth') }}>{t('login')}</button><button className="join-btn" onClick={() => { setAuthMode('signup'); openOverlay('auth') }}>{t('join')} <ArrowRight size={16}/></button></>}</div>
       </header>
 
       <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
@@ -762,10 +785,10 @@ export default function App() {
               </section>}
             </div>}
             <div className="match-list">
-              {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => setDetailMatch(match)} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setDetailMatch(match) } }}>
+              {loadingMatches ? <div className="empty-state">Loading {sport.toLowerCase()} events…</div> : matchLoadError ? <div className="empty-state">Sports data could not be loaded. Please try again later.</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => openOverlay('matchDetails', { betnovaDetailMatch: match })} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openOverlay('matchDetails', { betnovaDetailMatch: match }) } }}>
                 <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
                 <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} initials`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus-group"><span className="versus">VS</span>{eventView !== 'results' && <span className="odds-caption">{match.oddsCaption} <CircleHelp size={12}/></span>}</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} initials`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : <div className="odds-area"><div className="odds-grid">{match.odds.map((odd,i)=>{const pick=match.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} onClick={event=>{event.stopPropagation();if(pick)toggleMarketSelection(match,pick)}} className={picked?'odd picked':'odd'}><small>{match.oddsLabels[i] ?? ['Win 1','Draw','Win 2'][i]}</small><b>{odd}</b></button>})}</div></div>}</div>
-                <div className="match-footer"><button className="favorite-toggle" onClick={event => { event.stopPropagation(); toggleFavorite(match.id) }}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={event => { event.stopPropagation(); setDetailMatch(match) }}>{t("view_all_markets")} <span className="match-market-count">{match.marketsCount}</span><ArrowRight size={13}/></button></div>
+                <div className="match-footer"><button className="favorite-toggle" onClick={event => { event.stopPropagation(); toggleFavorite(match.id) }}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={event => { event.stopPropagation(); openOverlay('matchDetails', { betnovaDetailMatch: match }) }}>{t("view_all_markets")} <span className="match-market-count">{match.marketsCount}</span><ArrowRight size={13}/></button></div>
               </article>) : <div className="empty-state">{query ? t('empty_search') : sport === 'Football' ? eventView === 'live' ? t('empty_live') : eventView === 'results' ? t('empty_results') : t('empty_football') : t('empty_sport')}</div>}
             </div>
             {!loadingMatches && !matchLoadError && filteredMatches.length > visibleMatches.length && <button className="load-more-matches" type="button" onClick={() => setVisibleMatchLimit(current => Math.min(current + 40, filteredMatches.length))}>Load more matches · {filteredMatches.length - visibleMatches.length} remaining</button>}
@@ -786,9 +809,9 @@ export default function App() {
       </main>
 
       <nav className="mobile-nav"><button className={activePage === 'sports' ? 'mobile-active' : ''} onClick={() => { setActivePage('sports'); openEventView("upcoming") }}><Trophy size={19}/>{t("sports")}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => setMobileMoreOpen(true)}><Menu size={19}/>{t("menu")}</button></nav>
-      {mobileMoreOpen && <div className="mobile-more-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setMobileMoreOpen(false) }}>
+      {mobileMoreOpen && <div className="mobile-more-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('mobileMore') }}>
         <section className="mobile-more-panel" role="dialog" aria-modal="true" aria-label={t("menu")}>
-          <div className="mobile-more-header"><div><b>BETNOVA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => setMobileMoreOpen(false)} aria-label={t("close")}><X size={18}/></button></div>
+          <div className="mobile-more-header"><div><b>BETNOVA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => closeOverlay('mobileMore')} aria-label={t("close")}><X size={18}/></button></div>
           <button onClick={() => { setMobileMoreOpen(false); openGames() }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
           <button onClick={() => { setMobileMoreOpen(false); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           {userEmail ? <>
@@ -802,21 +825,21 @@ export default function App() {
             <button onClick={() => { setMobileMoreOpen(false); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
             <button onClick={() => { setMobileMoreOpen(false); setAuthMode("login"); setAuthOpen(true) }}><ArrowRight size={17}/>{t("login")}</button>
-            <button onClick={() => { setMobileMoreOpen(false); setAuthMode("signup"); setAuthOpen(true) }}><ShieldCheck size={17}/>{t("join")}</button>
+            <button onClick={() => { closeOverlay('mobileMore'); setAuthMode("signup"); openOverlay('auth') }}><ShieldCheck size={17}/>{t("join")}</button>
           </>}
-          <button onClick={() => { setMobileMoreOpen(false); setSettingsOpen(true) }}><Settings size={17}/>{t("settings")}</button>
+          <button onClick={() => { closeOverlay('mobileMore'); openOverlay('settings') }}><Settings size={17}/>{t("settings")}</button>
           <div className="mobile-more-language"><Globe2 size={16}/><span>{t("language")}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></div>
         </section>
       </div>}
-      {notificationsOpen && <div className="notification-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setNotificationsOpen(false) }}>
+      {notificationsOpen && <div className="notification-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('notifications') }}>
         <section className="notification-panel" role="dialog" aria-modal="true" aria-label={t("notifications")}>
-          <div className="mobile-more-header"><b>{t("notifications")}</b><button className="icon-btn" onClick={() => setNotificationsOpen(false)} aria-label={t("close")}><X size={18}/></button></div>
+          <div className="mobile-more-header"><b>{t("notifications")}</b><button className="icon-btn" onClick={() => closeOverlay('notifications')} aria-label={t("close")}><X size={18}/></button></div>
           <div className="notification-empty"><Bell size={24}/><b>{t("no_notifications")}</b><span>{t("notifications_hint")}</span></div>
-          <button className="slip-cta" onClick={() => setNotificationsOpen(false)}>{t("close")}</button>
+          <button className="slip-cta" onClick={() => closeOverlay('notifications')}>{t("close")}</button>
         </section>
       </div>}
       {mobileSlip && <div className="mobile-sheet-backdrop" onClick={()=>setMobileSlip(false)}><div className="mobile-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-handle"/><div className="slip-head"><div><span className="eyebrow dark">YOUR PICKS</span><h3>Bet slip <span>{selected.length}</span></h3></div><div className="sheet-head-actions"><button className="slip-clear" onClick={()=>setSelected([])}>{t("clear")}</button><button className="icon-btn" onClick={()=>setMobileSlip(false)} aria-label={t("close")}><X/></button></div></div>{selected.length?selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button className="slip-remove" onClick={()=>setSelected(current=>current.filter(x=>x.selectionId!==s.selectionId))} aria-label="Remove selection"><X size={16}/></button></div>):<div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>{t("slip_waiting")}</b><p>{t("select_price")}</p></div>}{selected.some(item => item.isDemo) ? <div className="bet-slip-stake"><label>Practice stake<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder="Practice amount"/></label><div><span>Practice return</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} {betCurrency}</b></div></div> : userEmail ? <div className="bet-slip-stake"><label>Stake<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t("potential_return")}</span><b>{(hasSameMatchBuilder ? 'Combined price pending' : (Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2))} {betCurrency}</b></div></div> : <p className="guest-slip-note">Sign in to view your wallet balance and place real bets.</p>}{betMessage&&<p className="bet-slip-message">{betMessage}</p>}<button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>{betBusy ? 'Placing…' : selected.some(item => item.isDemo) ? 'Save practice bet' : 'Place bet'} <ArrowRight size={15}/></button></div></div>}
-      {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setDetailMatch(null) }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => setDetailMatch(null)} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">{t('match_details')}</h2><div className="detail-teams"><div><span className="detail-mark team-crest">{detailMatch.homeLogo && <img src={detailMatch.homeLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.homeMark}</span></span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark team-crest">{detailMatch.awayLogo && <img src={detailMatch.awayLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.awayMark}</span></span><b>{detailMatch.away}</b></div></div><div className="detail-winner-odds" aria-label="Match winner odds">{[0,1,2].map(i=>{const pick=detailMatch.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} className={picked?'detail-winner-pick picked':'detail-winner-pick'} onClick={()=>pick&&toggleMarketSelection(detailMatch,pick)}><span>{['Win 1','Draw','Win 2'][i]}</span><b>{pick?.odds ?? '—'}</b></button>})}</div><div className="detail-info-grid"><div><small>{detailMatch.status === 'finished' ? 'MATCH STATUS' : detailMatch.status === 'live' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? 'Live now' : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div>{detailMatch.status === 'live' && typeof detailMatch.id === 'string' && <MatchStatistics fixtureId={detailMatch.id} />}<div className="detail-market-heading"><div><span className="eyebrow dark">EXPLORE THE ODDS</span><h3>{t('markets')}</h3></div><span>{detailMatch.status === 'live' ? 'LIVE EVENT' : 'PRE-MATCH'}</span></div>{detailMatch.winnerPicks.some(pick => pick?.isDemo) ? <div className="markets-empty">BETNOVA ESTIMATE · Practice mode. Cash betting is unavailable for this event.</div> : usingDemoData || typeof detailMatch.id !== 'string' ? <div className="markets-empty">Sample fixture preview only. Verified markets are unavailable for this event.</div> : <MatchMarkets fixtureId={detailMatch.id} live={detailMatch.status === 'live'} selectedIds={selected.map(item => item.selectionId)} onSelect={selection => { if (detailMatch) toggleMarketSelection(detailMatch, selection) }} />}</section></div>}
+      {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('matchDetails') }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => closeOverlay('matchDetails')} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">{t('match_details')}</h2><div className="detail-teams"><div><span className="detail-mark team-crest">{detailMatch.homeLogo && <img src={detailMatch.homeLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.homeMark}</span></span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark team-crest">{detailMatch.awayLogo && <img src={detailMatch.awayLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.awayMark}</span></span><b>{detailMatch.away}</b></div></div><div className="detail-winner-odds" aria-label="Match winner odds">{[0,1,2].map(i=>{const pick=detailMatch.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} className={picked?'detail-winner-pick picked':'detail-winner-pick'} onClick={()=>pick&&toggleMarketSelection(detailMatch,pick)}><span>{['Win 1','Draw','Win 2'][i]}</span><b>{pick?.odds ?? '—'}</b></button>})}</div><div className="detail-info-grid"><div><small>{detailMatch.status === 'finished' ? 'MATCH STATUS' : detailMatch.status === 'live' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? 'Live now' : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div>{detailMatch.status === 'live' && typeof detailMatch.id === 'string' && <MatchStatistics fixtureId={detailMatch.id} />}<div className="detail-market-heading"><div><span className="eyebrow dark">EXPLORE THE ODDS</span><h3>{t('markets')}</h3></div><span>{detailMatch.status === 'live' ? 'LIVE EVENT' : 'PRE-MATCH'}</span></div>{detailMatch.winnerPicks.some(pick => pick?.isDemo) ? <div className="markets-empty">BETNOVA ESTIMATE · Practice mode. Cash betting is unavailable for this event.</div> : usingDemoData || typeof detailMatch.id !== 'string' ? <div className="markets-empty">Sample fixture preview only. Verified markets are unavailable for this event.</div> : <MatchMarkets fixtureId={detailMatch.id} live={detailMatch.status === 'live'} selectedIds={selected.map(item => item.selectionId)} onSelect={selection => { if (detailMatch) toggleMarketSelection(detailMatch, selection) }} />}</section></div>}
       {selected.length > 0 && (() => {
         const combinedOdds = hasSameMatchBuilder ? null : selected.reduce((total, item) => total * Number(item.odd), 1)
         const potentialReturn = combinedOdds === null ? null : Math.max(0, Number(betStake) || 0) * combinedOdds
@@ -832,15 +855,16 @@ export default function App() {
             <label>Stake ({betCurrency})<input type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event => setBetStake(event.target.value)} placeholder="Enter amount"/></label>
             <div>{combinedOdds === null ? <><small>Bet Builder</small><b>Combined price pending</b><small>Potential return unavailable</small></> : <><small>Total odds</small><b>{combinedOdds.toFixed(2)}</b><small>Potential return</small><strong>{potentialReturn!.toFixed(2)} {betCurrency}</strong></>}</div>
           </div>
-          <div className="quick-slip-actions"><button type="button" className="quick-slip-clear" onClick={() => { if (window.confirm("Clear all selections from your bet slip?")) { setSelected([]); setBetMessage(""); } }}>Clear All</button><button type="button" className="quick-slip-open" onClick={() => setMobileSlip(true)}>View bet slip <ArrowRight size={15}/></button></div>
+          <div className="quick-slip-actions"><button type="button" className="quick-slip-clear" onClick={() => { if (window.confirm("Clear all selections from your bet slip?")) { setSelected([]); setBetMessage(""); } }}>Clear All</button><button type="button" className="quick-slip-open" onClick={() => openOverlay('mobileSlip')}>View bet slip <ArrowRight size={15}/></button></div>
         </div>
       })()}
-      {adminOpen && <AdminOverview onClose={() => setAdminOpen(false)} />}
-      {accountOpen && <AccountPanel onClose={() => setAccountOpen(false)} onSignOut={() => { setAccountOpen(false); void supabase?.auth.signOut() }} onOpenWallet={openWallet} />}
-      {settingsOpen && <div className="settings-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setSettingsOpen(false) }}><section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><button className="settings-close" onClick={() => setSettingsOpen(false)} aria-label={t('close')}><X size={19}/></button><div className="settings-kicker"><Settings size={15}/> BETNOVA · PREFERENCES</div><h2 id="settings-title">{t('settings')}</h2><p>Personalise your BETNOVA experience.</p><label><span><Globe2 size={16}/> {t('language')}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><label><span><Wallet size={16}/> Preferred currency</span><select value={betCurrency} onChange={event => setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select></label><div className="settings-note"><ShieldCheck size={16}/> Preferences apply to this session. Wallet deposits and withdrawals use manual verification and payout.</div><button className="settings-done" onClick={() => setSettingsOpen(false)}>Done <ArrowRight size={15}/></button></section></div>}
-      {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} initialTab={walletInitialTab} />}
-      {betsOpen && <MyBetsPanel onClose={() => setBetsOpen(false)} />}
-      <AuthPanel open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} onModeChange={setAuthMode} />
+      {adminOpen && <AdminOverview onClose={() => closeOverlay('admin')} />}
+      {accountOpen && <AccountPanel onClose={() => closeOverlay('account')} onSignOut={() => { closeOverlay('account'); void supabase?.auth.signOut() }} onOpenWallet={openWallet} />}
+      {settingsOpen && <div className="settings-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('settings') }}><section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><button className="settings-close" onClick={() => closeOverlay('settings')} aria-label={t('close')}><X size={19}/></button><div className="settings-kicker"><Settings size={15}/> BETNOVA · PREFERENCES</div><h2 id="settings-title">{t('settings')}</h2><p>Personalise your BETNOVA experience.</p><label><span><Globe2 size={16}/> {t('language')}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><label><span><Wallet size={16}/> Preferred currency</span><select value={betCurrency} onChange={event => setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select></label><div className="settings-note"><ShieldCheck size={16}/> Preferences apply to this session. Wallet deposits and withdrawals use manual verification and payout.</div><button className="settings-done" onClick={() => closeOverlay('settings')}>Done <ArrowRight size={15}/></button></section></div>}
+      {walletOpen && <WalletPanel onClose={() => closeOverlay('wallet')} initialTab={walletInitialTab} />}
+      {betsOpen && <MyBetsPanel onClose={() => closeOverlay('bets')} />}
+      <AuthPanel open={authOpen} mode={authMode} onClose={() => closeOverlay('auth')} onModeChange={setAuthMode} />
+      {(activePage !== 'sports' || (Array.isArray(window.history.state?.betnovaOverlays) && window.history.state.betnovaOverlays.length > 0)) && <button type="button" className="global-home-button" onClick={goHome} aria-label="Go to home"><Home size={17}/> Home</button>}
       <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
     </div>
   )
