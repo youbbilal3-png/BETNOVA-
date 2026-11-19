@@ -241,3 +241,22 @@
 .plinko-ball.dropping{animation:plinko-fall .95s cubic-bezier(.38,.02,.65,.98) forwards}
 @keyframes plinko-fall{0%{transform:translate(0,0) scale(1)}15%{transform:translate(-22px,28px) scale(.96)}30%{transform:translate(19px,58px) scale(1.02)}45%{transform:translate(-17px,88px) scale(.96)}60%{transform:translate(15px,118px) scale(1.02)}75%{transform:translate(-10px,148px) scale(.98)}100%{transform:translate(0,180px) scale(.92);opacity:.3}}
 @media(max-width:420px){.plinko-board{padding:15px 7px 9px}.plinko-peg-row{gap:clamp(10px,3.6vw,15px)}.plinko-peg-row i{width:7px;height:7px}.plinko-pegs{gap:10px;min-height:175px}.plinko-slots span{height:31px;font-size:8px}}
+
+/* Real-money arcade wager panel */
+.arcade-wager-panel{margin:18px 0 12px;padding:16px;border:1px solid #70e7d44a;border-radius:16px;background:linear-gradient(145deg,#102d35,#101c31 58%,#201a37);box-shadow:inset 0 1px #ffffff12,0 12px 30px #0004}
+.arcade-wager-heading,.arcade-wallet-line{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.arcade-wager-heading{margin-bottom:14px;color:#e9fffb;font-size:12px;font-weight:950;letter-spacing:1px}
+.arcade-wager-heading b{padding:5px 8px;border:1px solid #72e9bb66;border-radius:7px;background:#72e9bb15;color:#a8ffd4;font-size:10px}
+.arcade-wallet-line{margin-bottom:12px;color:#a9bad3;font-size:11px}
+.arcade-wallet-line strong{color:#aaffd7;font-size:13px;font-variant-numeric:tabular-nums}
+.arcade-wager-field{display:grid;gap:6px;margin:10px 0;color:#d8e8f7;font-size:11px;font-weight:800}
+.arcade-wager-field input,.arcade-wager-field select{width:100%;min-height:42px;padding:0 12px;border:1px solid #ffffff24;border-radius:10px;outline:none;background:#081427;color:#f7fbff;font:inherit;font-size:13px}
+.arcade-wager-field input:focus,.arcade-wager-field select:focus{border-color:#73e9d4;box-shadow:0 0 0 3px #73e9d41a}
+.arcade-wager-note{margin:12px 0;color:#a9bad3;font-size:10px;line-height:1.55}
+.arcade-wager-submit{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;margin-top:12px;padding:10px 14px;border:1px solid #7cf4d7;border-radius:11px;background:linear-gradient(105deg,#0f9d83,#1676a3 60%,#6450a5);color:#fff;font-size:12px;font-weight:1000;letter-spacing:.7px;cursor:pointer;box-shadow:0 8px 22px #0b9d8733}
+.arcade-wager-submit:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.arcade-wager-error{margin:10px 0 0;padding:9px 10px;border:1px solid #ff7e8b55;border-radius:9px;background:#a52e401a;color:#ffb5bc;font-size:11px;line-height:1.45}
+.arcade-wager-receipt{display:grid;gap:6px;margin-top:12px;padding:12px;border:1px solid #72e9bb55;border-radius:11px;background:#0b392b55;color:#d6f7e8;font-size:11px;font-variant-numeric:tabular-nums}
+.arcade-wager-receipt strong{color:#aaffd7;font-size:13px}
+.arcade-wager-receipt small{overflow-wrap:anywhere;color:#91b9ad;font-size:9px}
+@media(max-width:560px){.arcade-wager-panel{padding:13px}.arcade-wager-heading{font-size:11px}.arcade-wager-submit{min-height:44px}}
