@@ -197,8 +197,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
         <button className="wallet-submit" disabled={busy || !selectedMethod || (bonusWithdrawMode ? bonus.available_balance <= 0 : !account || Number(account.available_balance) <= 0)}>{busy ? 'Submitting…' : bonusWithdrawMode ? 'Request bonus withdrawal' : 'Request withdrawal'}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('withdrawal_reserved')}</p>
-      </form>}
-      </>}
+       </form></>}
       {tab === 'history' && <div className="wallet-history">
         {[...deposits.map(item => ({...item, kind:t('deposit_kind')})), ...withdrawals.map(item => ({...item, kind:t('withdrawal_kind')}))].sort((a,b) => +new Date(b.created_at)-+new Date(a.created_at)).map(item => <article key={item.id}><div><b>{item.kind} · {item.payment_method.toUpperCase()}</b><small>{new Date(item.created_at).toLocaleString()}</small></div><strong>{formatMoney(Number(item.amount),item.currency)}</strong><span className={item.status}>{item.status}</span></article>)}
         {deposits.length + withdrawals.length === 0 && <p className="wallet-empty">{t('no_wallet_history')}</p>}
