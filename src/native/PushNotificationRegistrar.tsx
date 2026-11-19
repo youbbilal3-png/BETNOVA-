@@ -73,7 +73,13 @@ export default function PushNotificationRegistrar() {
         platform: 'android',
         last_seen_at: new Date().toISOString(),
       }, { onConflict: 'token' })
-      if (error) console.error('Could not save BETNOVA push token', error.message)
+      if (error) {
+        console.error('Could not save BETNOVA push token', error.message)
+      } else if (userId !== currentUserId) {
+        // A sign-out/account switch may race with token registration; clean up the old owner only.
+        await supabase.from('device_push_tokens').delete()
+          .eq('token', token.value).eq('user_id', currentUserId)
+      }
     }).then(handle => {
       registrationHandle = handle
       if (!active) void handle.remove()
