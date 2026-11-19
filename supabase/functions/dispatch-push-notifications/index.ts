@@ -138,7 +138,14 @@ Deno.serve(async (req: Request) => {
     )
   ).map(row => row.user_id));
   if (interestedUsers.size === 0) return json({ ok: true, sent: 0, skipped: "no_matching_event_subscriptions" });
-  const userIds = [...interestedUsers];
+
+  // Preserve the explicit account-level opt-in; only event categories moved to follows.
+  const { data: enabledUsers, error: enabledError } = await supabase
+    .from("notification_preferences").select("user_id")
+    .eq("enabled", true).in("user_id", [...interestedUsers]);
+  if (enabledError) return json({ error: "Could not load notification opt-in status" }, 500);
+  const userIds = (enabledUsers ?? []).map(row => row.user_id);
+  if (userIds.length === 0) return json({ ok: true, sent: 0, skipped: "notifications_disabled" });
 
   const { data: devices, error: devicesError } = await supabase
     .from("device_push_tokens").select("token,user_id").in("user_id", userIds);
