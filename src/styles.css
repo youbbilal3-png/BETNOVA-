@@ -1096,3 +1096,7 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
  .match-card-market-panel .market-outcomes{grid-template-columns:repeat(2,minmax(0,1fr))}
  .match-card-market-panel .market-outcome{min-height:40px}
 }
+
+
+.admin-review-rewards-btn{display:inline-flex;align-items:center;gap:7px;margin:0 0 14px;padding:9px 12px;border:1px solid #c8e4d1;border-radius:9px;background:#effaf3;color:#176d48;font-size:11px;font-weight:800;cursor:pointer}
+.admin-review-rewards-btn:hover{background:#e1f5e8}
