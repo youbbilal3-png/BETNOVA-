@@ -240,7 +240,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
         <div className="game-detail-close-row"><button className="game-detail-close" type="button" onClick={closeGame} aria-label={labels.close}><X size={20}/></button></div>
         {selected.id!=='crash'&&<div className={`game-detail-art art-${selected.art}`}><span>{selected.mark}</span><i/><b>BETNOVA</b></div>}
         <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {translatedGameTag(selected.id)}</div><h3 id="game-detail-title">{selected.name}</h3><p>{translatedGameDescription(selected.id)}</p>
-        <div className="game-coming-soon"><Play size={15}/> {labels.demo}</div>
+        <div className="game-coming-soon"><Play size={15}/> {selected.id==='crash'?(arabic?'لعبة كراش بأموال حقيقية':'REAL MONEY CRASH'):labels.demo}</div>
         {selected.id==='crash'&&<div className="game-practice-controls crash-controls">
           <div className={`crash-flight-stage ${crashActive?'is-flying':crashExploding?'is-exploding':multiplier>1?'flight-ended':'flight-ready'}`} style={{'--crash-flight-duration':'999s','--crash-heli-left':`${5+Math.max(0,Math.min(1,Math.log(Math.max(1,multiplier))/Math.log(8)))*67}%`,'--crash-heli-top':`${66-Math.max(0,Math.min(1,Math.log(Math.max(1,multiplier))/Math.log(8)))*45}%`} as CSSProperties} role="img" aria-label={arabic?'طائرة كراش تطير داخل مسار ثلاثي الأبعاد':'Crash airplane flying through a 3D flight arena'}>
             <div className="crash-sky-grid"/><div className="crash-sun-glow"/><div className="crash-cloud cloud-a"/><div className="crash-cloud cloud-b"/>
