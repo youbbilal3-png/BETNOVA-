@@ -203,6 +203,8 @@ export default function App() {
   function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') { setWalletInitialTab(tab); setWalletOpen(true); setAccountOpen(false); setMobileMoreOpen(false) }
   const [betsOpen, setBetsOpen] = useState(false)
   const [activePage, setActivePage] = useState<'sports' | 'games'>('sports')
+  const [featuredGameRequest, setFeaturedGameRequest] = useState<{id:string;token:number}|null>(null)
+  function openFeaturedGame(id:string) { setFeaturedGameRequest(current => ({id,token:(current?.token ?? 0)+1})); openGames() }
 
   function openGames() {
     if (activePage !== 'games') window.history.pushState({ betnovaPage: 'games' }, '', '#games')
@@ -701,9 +703,19 @@ export default function App() {
             <div className="hero-index">01 <span>/</span> 04</div>
           </section>
 
+
+          {activePage === 'sports' && <section className="featured-games-panel" aria-label={language === 'ar' ? 'ألعاب مميزة' : 'Featured games'}>
+            <div className="featured-games-heading"><span className="featured-games-live-dot"/><span>{language === 'ar' ? 'ألعاب سريعة' : 'QUICK PLAY'}</span><small>{language === 'ar' ? 'اختر لعبتك' : 'CHOOSE YOUR GAME'}</small></div>
+            <div className="featured-games-grid">
+              <button type="button" className="featured-game-card featured-crash" onClick={() => openFeaturedGame('crash')}><span className="featured-game-art" aria-hidden="true">🚁</span><span className="featured-game-name">CRASH</span><span className="featured-game-action">{language === 'ar' ? 'العب الآن' : 'PLAY NOW'} <ArrowRight size={11}/></span></button>
+              <button type="button" className="featured-game-card featured-apple" onClick={() => openFeaturedGame('apple')}><span className="featured-game-art" aria-hidden="true">🍏</span><span className="featured-game-name">APPLE</span><span className="featured-game-action">{language === 'ar' ? 'العب الآن' : 'PLAY NOW'} <ArrowRight size={11}/></span></button>
+              <button type="button" className="featured-game-card featured-plinko" onClick={() => openFeaturedGame('plinko')}><span className="featured-game-art" aria-hidden="true">🔮</span><span className="featured-game-name">PLINKO</span><span className="featured-game-action">{language === 'ar' ? 'العب الآن' : 'PLAY NOW'} <ArrowRight size={11}/></span></button>
+            </div>
+          </section>}
+
           <div className="quick-stats"><div><span className="stat-icon"><Activity size={17}/></span><span><b>{t("live_energy")}</b><small>{t("follow_action")}</small></span></div><div><span className="stat-icon teal"><Globe2 size={17}/></span><span><b>{t("global_sports")}</b><small>{t("every_corner")}</small></span></div><div><span className="stat-icon lime"><ShieldCheck size={17}/></span><span><b>{t("player_first")}</b><small>{t("safety_design")}</small></span></div></div>
 
-          {activePage === 'games' ? <><button className="games-page-back" type="button" onClick={closeGames}><ArrowRight size={17}/>{language === 'ar' ? 'العودة إلى الرياضة' : 'Back to sports'}</button><Suspense fallback={<div className="games-loading" role="status">BETNOVA</div>}><GamesHub /></Suspense></> : <><section className="events-section" id="events">
+          {activePage === 'games' ? <><button className="games-page-back" type="button" onClick={closeGames}><ArrowRight size={17}/>{language === 'ar' ? 'العودة إلى الرياضة' : 'Back to sports'}</button><Suspense fallback={<div className="games-loading" role="status">BETNOVA</div>}><GamesHub initialGameRequest={featuredGameRequest} /></Suspense></> : <><section className="events-section" id="events">
             <div className="section-heading"><div><div className="eyebrow dark"><span/> {t("today_lineup")}</div><h2>{showFavorites ? t('your_favourites') : eventView === 'live' ? t('live_events') : eventView === 'results' ? t('latest_results') : t('featured_events_title')} <span className="heading-star">✳</span></h2><p>{t("find_moments")}</p></div><button className="view-all" onClick={() => openEventView('upcoming')}>{t("upcoming_schedule")} <ArrowRight size={15}/></button></div>
             <div className="event-view-tabs" role="tablist" aria-label="Event type">
               <button className={eventView === 'upcoming' ? 'event-view active' : 'event-view'} onClick={() => setEventView('upcoming')}>{t("upcoming")}</button>
