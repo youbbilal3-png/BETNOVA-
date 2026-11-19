@@ -37,3 +37,5 @@
 .earn-review-note{display:flex;gap:7px;align-items:flex-start;color:#708378;font-size:10px;line-height:1.55;margin:0}
 .earn-review-note svg{flex-shrink:0;color:#178252}
 @media(max-width:600px){.rewards-panel{padding:25px 16px 32px}.rewards-panel h2{font-size:25px}.reward-card{padding:12px;grid-template-columns:36px minmax(0,1fr);gap:9px}.reward-card-icon{width:36px;height:36px}.rewards-backdrop{justify-content:center}}
+
+.rewards-disclaimer{margin:14px 0 0;color:#78877e;font-size:10px;line-height:1.65}
