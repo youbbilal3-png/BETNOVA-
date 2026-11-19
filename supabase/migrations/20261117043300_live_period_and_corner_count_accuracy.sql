@@ -15,10 +15,19 @@ declare
            and e.event_type='corner';$new$;
 begin
   select pg_get_functiondef('public.betnova_process_live_event(uuid)'::regprocedure) into v_definition;
-  if position(v_first_old in v_definition)=0 then raise exception 'First-half goal count expression not found'; end if;
-  v_definition := replace(v_definition,v_first_old,v_first_new);
-  if position(v_corner_old in v_definition)=0 then raise exception 'Total corner count expression not found'; end if;
-  v_definition := replace(v_definition,v_corner_old,v_corner_new);
+
+  if position(v_first_old in v_definition)>0 then
+    v_definition:=replace(v_definition,v_first_old,v_first_new);
+  elsif position(v_first_new in v_definition)=0 then
+    raise exception 'First-half goal count expression not found';
+  end if;
+
+  if position(v_corner_old in v_definition)>0 then
+    v_definition:=replace(v_definition,v_corner_old,v_corner_new);
+  elsif position(v_corner_new in v_definition)=0 then
+    raise exception 'Total corner count expression not found';
+  end if;
+
   execute v_definition;
 end
 $migration$;
