@@ -49,6 +49,8 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const [appleTraps,setAppleTraps]=useState<number[]>(()=>newAppleTraps())
   const [applePicks,setApplePicks]=useState<number[]>([])
   const [realAppleRound,setRealAppleRound]=useState<{id:string;stake:number;currentRow:number;multiplier:number}|null>(null)
+  const [applePickKey,setApplePickKey]=useState(()=>crypto.randomUUID())
+  const [appleCashoutKey,setAppleCashoutKey]=useState<string|null>(null)
   const [plinkoSlot,setPlinkoSlot]=useState<number|null>(null)
   const [plinkoDropping,setPlinkoDropping]=useState(false)
   const [slotSymbols,setSlotSymbols]=useState<string[]>(['🍒','⭐','🍋'])
@@ -276,9 +278,9 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     if(!realAppleRound||!supabase||realBetBusy||appleDone)return
     setRealBetBusy(true);setRealBetMessage('')
     try{
-      const {data,error}=await supabase.rpc('betnova_pick_apple',{p_round_id:realAppleRound.id,p_column:column,p_idempotency_key:crypto.randomUUID()});if(error)throw error
+      const {data,error}=await supabase.rpc('betnova_pick_apple',{p_round_id:realAppleRound.id,p_column:column,p_idempotency_key:applePickKey});if(error)throw error
       const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>;const row=Number(result.current_row??appleLevel+1)
-      setApplePicks(current=>[...current.slice(0,row-1),column]);setAppleLevel(row);setRealBalance(Number(result.balance_after??realBalance??0))
+      setApplePicks(current=>[...current.slice(0,row-1),column]);setAppleLevel(result.safe?row:row-1);setApplePickKey(crypto.randomUUID());setRealBalance(Number(result.balance_after??realBalance??0))
       if(result.safe&&result.status==='active'){const nextMultiplier=Number(result.multiplier??0);setRealAppleRound(current=>current?{...current,currentRow:row,multiplier:nextMultiplier}:current);setPracticeResult(arabic?'اختيار آمن! العائد الحالي '+nextMultiplier.toFixed(2)+'×':'Safe apple! Current return '+nextMultiplier.toFixed(2)+'×')}
       else{setRealAppleRound(null);setAppleDone(true);const won=Boolean(result.won);setPracticeResult(won?(arabic?'أكملت جميع الصفوف! تمت إضافة أرباحك.':'All rows cleared! Your winnings were paid.'):(arabic?'وجدت التفاحة الخطرة. انتهت الجولة.':'Trap apple! The round is over.'));setRealBetResult({round_id:result.round_id,result:won?'APPLE_COMPLETE':'TRAP_FOUND',stake:result.stake??realStake,payout:result.payout??0,net_result:result.net_result??-Number(result.stake??realStake)});setRealRoundKey(crypto.randomUUID())}
     }catch(error){setRealBetMessage(error instanceof Error?error.message:'Could not confirm this apple. Try again.')}
@@ -286,8 +288,9 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   }
   const cashOutRealApple=async()=>{
     if(!realAppleRound||!supabase||realBetBusy)return
+    const cashoutKey=appleCashoutKey??crypto.randomUUID();if(!appleCashoutKey)setAppleCashoutKey(cashoutKey)
     setRealBetBusy(true);setRealBetMessage('')
-    try{const {data,error}=await supabase.rpc('betnova_cashout_apple_round',{p_round_id:realAppleRound.id,p_idempotency_key:crypto.randomUUID()});if(error)throw error;const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>;setRealBalance(Number(result.balance_after??realBalance??0));setRealBetResult(result);setRealAppleRound(null);setAppleDone(true);setPracticeResult(arabic?'تم سحب أرباحك وإضافتها إلى رصيدك.':'Winnings cashed out to your balance.');setRealRoundKey(crypto.randomUUID())}
+    try{const {data,error}=await supabase.rpc('betnova_cashout_apple_round',{p_round_id:realAppleRound.id,p_idempotency_key:cashoutKey});if(error)throw error;const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>;setRealBalance(Number(result.balance_after??realBalance??0));setRealBetResult(result);setRealAppleRound(null);setAppleDone(true);setPracticeResult(arabic?'تم سحب أرباحك وإضافتها إلى رصيدك.':'Winnings cashed out to your balance.');setRealRoundKey(crypto.randomUUID())}
     catch(error){setRealBetMessage(error instanceof Error?error.message:'Apple cash-out failed.')}
     finally{setRealBetBusy(false)}
   }
@@ -340,7 +343,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
             <div className="crash-sky-grid"/><div className="crash-sun-glow"/><div className="crash-cloud cloud-a"/><div className="crash-cloud cloud-b"/>
             <div className="crash-mountains mountain-back"/><div className="crash-mountains mountain-front"/>
             <div className="crash-flight-path"/><div className="crash-flight-trail" style={{width:(Math.max(0,Math.min(1,Math.log(Math.max(1,multiplier))/Math.log(8)))*70)+'%',opacity:crashActive?0.9:0}}/>
-            <div className={`crash-helicopter ${crashActive?'helicopter-flying':crashExploding?'helicopter-crashed':'helicopter-idle'}`} style={{left:(5+Math.max(0,Math.min(1,Math.log(Math.max(1,multiplier))\/Math.log(8)))*67)+'%',top:(66-Math.max(0,Math.min(1,Math.log(Math.max(1,multiplier))\/Math.log(8)))*45)+'%'}} aria-hidden="true">
+            <div className={`crash-helicopter ${crashActive?'helicopter-flying':crashExploding?'helicopter-crashed':'helicopter-idle'}`} style={{left:(5+Math.max(0,Math.min(1,Math.log(Math.max(1,multiplier))/Math.log(8)))*67)+'%',top:(66-Math.max(0,Math.min(1,Math.log(Math.max(1,multiplier))/Math.log(8)))*45)+'%'}} aria-hidden="true">
               <svg viewBox="0 0 180 120">
                 <defs>
                   <linearGradient id="bnHeliBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#a8ffe7"/><stop offset=".42" stopColor="#20c99b"/><stop offset="1" stopColor="#08765f"/></linearGradient>
@@ -368,7 +371,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
           {realCrashRound&&<button className="arcade-wager-submit arcade-crash-cashout crash-inline-cashout" type="button" onClick={cashOutRealCrash} disabled={realBetBusy}>{realBetBusy?(arabic?'جارٍ السحب...':'CASHING OUT...'):(arabic?'اسحب الأرباح':'CASH OUT')+' · '+multiplier.toFixed(2)+'×'}</button>}
         </div>}
         {selected.id==='apple'&&<div className="game-practice-controls apple-odds-board">
-          <div className="apple-board">{Array.from({length:APPLE_ROWS},(_,row)=>{const rowNumber=row+1;const odds=0.95/Math.pow(0.8,rowNumber);return <div className={"apple-odds-row "+(row<appleLevel?'cleared':row===appleLevel&&realAppleRound?'current':'')} key={rowNumber}><div className="apple-odds-fruits">{Array.from({length:APPLE_COLUMNS},(_,col)=><button type="button" className={applePicks[row]===col?'picked':''} key={col} onClick={()=>void pickRealApple(col)} disabled={!realAppleRound||row!==appleLevel||realBetBusy||appleDone} aria-label={arabic?'اختر التفاحة':'Pick apple'}>🍏</button>)}</div><strong className="apple-row-multiplier">{odds.toFixed(2)}×</strong></div>})}</div>
+          <div className="apple-board">{Array.from({length:APPLE_ROWS},(_,row)=>{const rowNumber=row+1;const odds=0.95/Math.pow(0.8,rowNumber);return <div className={"apple-odds-row "+(row<appleLevel?'cleared':row===appleLevel&&realAppleRound?'current':realBetResult?.result==='TRAP_FOUND'&&row===appleLevel?'failed':'')} key={rowNumber}><div className="apple-odds-fruits">{Array.from({length:APPLE_COLUMNS},(_,col)=><button type="button" className={applePicks[row]===col?(realBetResult?.result==='TRAP_FOUND'&&row===appleLevel?'trap':'picked'):''} key={col} onClick={()=>void pickRealApple(col)} disabled={!realAppleRound||row!==appleLevel||realBetBusy||appleDone} aria-label={arabic?'اختر التفاحة':'Pick apple'}>🍏</button>)}</div><strong className="apple-row-multiplier">{odds.toFixed(2)}×</strong></div>})}</div>
           {realAppleRound&&appleLevel>0&&<button type="button" className="apple-cashout-button" onClick={()=>void cashOutRealApple()} disabled={realBetBusy}>{arabic?'اسحب':'CASH OUT'} · {(realAppleRound.stake*realAppleRound.multiplier).toFixed(2)} DZD</button>}
         </div>}
         {selected.id==='plinko'&&<div className="game-practice-controls"><div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:9},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:10},(_,i)=><span key={i}>{i+1}</span>)}</div></div></div>}
