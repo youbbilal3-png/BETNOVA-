@@ -4,8 +4,6 @@
 
 revoke all on table public.profiles from anon;
 revoke all on table public.profiles from authenticated;
-revoke update (account_type, avatar_url, country_code, created_at, display_name, id, phone, preferred_language, role, updated_at)
-  on table public.profiles from anon, authenticated;
 grant select on table public.profiles to authenticated;
 grant update (display_name, avatar_url, country_code, phone)
   on table public.profiles to authenticated;

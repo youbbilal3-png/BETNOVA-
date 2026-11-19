@@ -150,7 +150,7 @@ begin
    end if;
  end loop;
  return v_settled;
-end; $function$
+end; $function$;
 
 
 CREATE OR REPLACE FUNCTION public.betnova_settle_market(p_market_id uuid, p_winning_selection_ids uuid[], p_void boolean DEFAULT false)
@@ -203,7 +203,7 @@ begin
    v_result:=v_result+1;
  end loop;
  return v_result;
-end; $function$
+end; $function$;
 
 revoke all on function public.betnova_settle_market(uuid,uuid[],boolean) from public,anon;
 grant execute on function public.betnova_settle_market(uuid,uuid[],boolean) to authenticated,service_role;
