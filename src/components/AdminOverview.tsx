@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Activity, CalendarDays, CheckCircle2, Clock3, CreditCard, RefreshCw, ShieldCheck, Trophy, Users, Wallet, X, XCircle } from 'lucide-react'
+import { Activity, CalendarDays, CheckCircle2, Clock3, CreditCard, Headphones, Mail, RefreshCw, ShieldCheck, Trophy, Users, Wallet, X, XCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import PaymentMethodLogo from './PaymentMethodLogo'
 
@@ -27,6 +27,7 @@ type Deposit = { id: string; user_id: string; payment_method: string; amount: nu
 type Withdrawal = { id: string; user_id: string; payment_method: string; amount: number; currency: string; destination_details: string; created_at: string }
 type BonusWithdrawal = { id:string; user_id:string; payment_method:string; amount:number; currency:string; bonus_amount_usd:number; destination_details:string; created_at:string }
 type PaymentMethod = { id: string; code: string; display_name: string; is_enabled: boolean; is_withdrawal_enabled: boolean; supported_currencies: string[]; instructions: Record<string, unknown> }
+type SupportRequest = { id: string; user_id: string | null; full_name: string | null; email: string; category: string; subject: string; message: string; status: 'open' | 'in_progress' | 'resolved'; admin_note: string | null; created_at: string }
 
 const money = (amount: number, currency: string) => new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
 
@@ -38,9 +39,13 @@ export default function AdminOverview({ onClose }: Props) {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
   const [bonusWithdrawals, setBonusWithdrawals] = useState<BonusWithdrawal[]>([])
   const [methods, setMethods] = useState<PaymentMethod[]>([])
+  const [supportRequests, setSupportRequests] = useState<SupportRequest[]>([])
+  const [supportEmail, setSupportEmail] = useState('')
+  const [supportEmailDraft, setSupportEmailDraft] = useState('')
+  const [supportNotes, setSupportNotes] = useState<Record<string, string>>({})
   const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null)
   const [providerHealthError, setProviderHealthError] = useState('')
-  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'bonus' | 'payments' | 'providers' | 'wallet'>('deposits')
+  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'bonus' | 'support' | 'payments' | 'providers' | 'wallet'>('deposits')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -65,6 +70,19 @@ export default function AdminOverview({ onClose }: Props) {
     } catch (caught) {
       setProviderHealthError(caught instanceof Error ? caught.message : 'Provider health could not be loaded.')
     }
+  }, [])
+
+  const loadSupport = useCallback(async () => {
+    if (!supabase) return
+    const [requests, settings] = await Promise.all([
+      supabase.from('support_requests').select('id,user_id,full_name,email,category,subject,message,status,admin_note,created_at').order('created_at', { ascending: false }).limit(100),
+      supabase.from('support_settings').select('support_email').eq('id', true).maybeSingle()
+    ])
+    if (requests.error) throw requests.error
+    if (settings.error) throw settings.error
+    setSupportRequests((requests.data ?? []) as SupportRequest[])
+    setSupportEmail(String(settings.data?.support_email ?? ''))
+    setSupportEmailDraft(String(settings.data?.support_email ?? ''))
   }, [])
 
   const loadFinance = useCallback(async () => {
@@ -118,14 +136,40 @@ export default function AdminOverview({ onClose }: Props) {
           sports: results[0].count ?? 0, competitions: results[1].count ?? 0,
           teams: results[2].count ?? 0, fixtures: results[3].count ?? 0, markets: results[4].count ?? 0,
         })
-        await Promise.all([loadFinance(), loadProviderHealth()])
+        await Promise.all([loadFinance(), loadProviderHealth(), loadSupport()])
       } catch (caught) {
         if (active) setError(caught instanceof Error ? caught.message : 'Could not load the admin overview.')
       } finally { if (active) setChecking(false) }
     }
     void load()
     return () => { active = false }
-  }, [loadFinance, loadProviderHealth])
+  }, [loadFinance, loadProviderHealth, loadSupport])
+
+  async function saveSupportEmail() {
+    if (!supabase) return
+    const value = supportEmailDraft.trim()
+    if (value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) { setError('Enter a valid support email address.'); return }
+    setBusyId('support-email'); setError(''); setNotice('')
+    try {
+      const { error: updateError } = await supabase.from('support_settings').update({ support_email: value || null, updated_at: new Date().toISOString() }).eq('id', true)
+      if (updateError) throw updateError
+      setSupportEmail(value)
+      setNotice('Public support email saved.')
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save the support email.') }
+    finally { setBusyId(null) }
+  }
+
+  async function updateSupportRequest(item: SupportRequest) {
+    if (!supabase) return
+    setBusyId(item.id); setError(''); setNotice('')
+    try {
+      const { error: updateError } = await supabase.from('support_requests').update({ status: item.status, admin_note: supportNotes[item.id] ?? item.admin_note, updated_at: new Date().toISOString() }).eq('id', item.id)
+      if (updateError) throw updateError
+      setNotice('Support request updated.')
+      await loadSupport()
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not update this support request.') }
+    finally { setBusyId(null) }
+  }
 
   async function loadOwnerWallet() {
     if (!supabase) return
@@ -293,6 +337,7 @@ export default function AdminOverview({ onClose }: Props) {
             <button className={tab === 'deposits' ? 'active' : ''} onClick={() => setTab('deposits')}><Wallet size={14}/> Deposits <b>{deposits.length}</b></button>
             <button className={tab === 'withdrawals' ? 'active' : ''} onClick={() => setTab('withdrawals')}><CreditCard size={14}/> Withdrawals <b>{withdrawals.length}</b></button>
             <button className={tab === 'bonus' ? 'active' : ''} onClick={() => setTab('bonus')}><Wallet size={14}/> Bonus withdrawals <b>{bonusWithdrawals.length}</b></button>
+            <button className={tab === 'support' ? 'active' : ''} onClick={() => { setTab('support'); void loadSupport() }}><Headphones size={14}/> Help & support <b>{supportRequests.filter(item => item.status === 'open').length}</b></button>
             <button className={tab === 'payments' ? 'active' : ''} onClick={() => setTab('payments')}><ShieldCheck size={14}/> Methods</button>
             <button className={tab === 'providers' ? 'active' : ''} onClick={() => { setTab('providers'); void loadProviderHealth() }}><Activity size={14}/> Data health</button>
             <button className={tab === 'wallet' ? 'active' : ''} onClick={() => { setTab('wallet'); void loadOwnerWallet() }}><Wallet size={14}/> My wallet</button>
@@ -325,6 +370,20 @@ export default function AdminOverview({ onClose }: Props) {
               <small>Destination: {item.destination_details}</small>
               <label className="admin-payout-reference">External transfer reference<input value={payoutReferences[item.id] ?? ''} onChange={event => setPayoutReferences(current => ({...current,[item.id]:event.target.value}))} placeholder="Transaction / transfer ID" maxLength={160}/></label>
               <div className="admin-finance-actions"><button disabled={busyId===item.id || (payoutReferences[item.id] ?? '').trim().length<4} onClick={() => void reviewBonusWithdrawal(item.id,'paid')}><CheckCircle2 size={14}/> Mark paid</button><button className="reject" disabled={busyId===item.id} onClick={() => void reviewBonusWithdrawal(item.id,'reject')}><XCircle size={14}/> Reject & return bonus</button></div>
+            </article>)}
+          </div>}
+          {tab === 'support' && <div className="admin-finance-list">
+            <article className="admin-finance-item admin-support-settings">
+              <div className="admin-finance-top"><b><Mail size={15}/> Public contact email</b><span>Shown on Help & Support</span></div>
+              <label className="admin-payout-reference">Official BETNOVA support email<input type="email" value={supportEmailDraft} onChange={event => setSupportEmailDraft(event.target.value)} maxLength={254} placeholder="support@your-domain.com" /></label>
+              <div className="admin-finance-actions"><button disabled={busyId === 'support-email'} onClick={() => void saveSupportEmail()}>Save contact email</button></div>
+            </article>
+            {supportRequests.length === 0 ? <p className="admin-message">No support requests received yet.</p> : supportRequests.map(item => <article className="admin-finance-item admin-support-request" key={item.id}>
+              <div className="admin-finance-top"><b>{item.subject}</b><span><Clock3 size={12}/> {new Date(item.created_at).toLocaleString()}</span></div>
+              <p>{item.category} · {item.full_name || 'Visitor'} · {item.email}</p>
+              <div className="admin-support-message">{item.message}</div>
+              <div className="admin-support-controls"><label>Status<select value={item.status} onChange={event => setSupportRequests(current => current.map(row => row.id === item.id ? { ...row, status: event.target.value as SupportRequest['status'] } : row))}><option value="open">Open</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option></select></label><label>Administration note (optional)<textarea rows={2} value={supportNotes[item.id] ?? item.admin_note ?? ''} onChange={event => setSupportNotes(current => ({ ...current, [item.id]: event.target.value }))} maxLength={2000} placeholder="Internal note for this request" /></label></div>
+              <div className="admin-finance-actions"><button onClick={() => { window.location.href = `mailto:${item.email}?subject=${encodeURIComponent('BETNOVA Support: ' + item.subject)}` }}><Mail size={14}/> Reply by email</button><button disabled={busyId === item.id} onClick={() => void updateSupportRequest(item)}><CheckCircle2 size={14}/> Save request</button></div>
             </article>)}
           </div>}
           {tab === 'wallet' && <div className="admin-finance-list">
