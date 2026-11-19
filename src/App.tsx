@@ -758,7 +758,7 @@ export default function App() {
           <button className={showFavorites ? 'rail-item selected' : 'rail-item'} onClick={() => { setActivePage('sports'); setShowFavorites(!showFavorites); setEventView('upcoming') }}><Star size={18}/> Favourites <span className="rail-count">{favoriteIds.length}</span></button>
           <div className="rail-separator"/>
           <div className="rail-heading">{t("sports_heading")}</div>
-          {sports.map((s, i) => <button key={s} onClick={() => { if (s === 'Football') openFootball(); else { setSport(s); setActivePage('sports') } }} className={(s === 'Football' ? activePage === 'football' : sport === s && activePage === 'sports') ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
+          {sports.map((s, i) => <button key={s} onClick={() => { if (s === 'Football') openFootball(); else { setSport(s); setActivePage('sports') } }} className={sport === s && activePage === 'sports' ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
           <div className="rail-promo"><div className="promo-orb"><Sparkles size={20}/></div><b>{t("new_way")}</b><p>{t("sports_reimagined")}</p><span>{t("discover_betnova")} <ArrowRight size={13}/></span></div>
         </aside>}
 
