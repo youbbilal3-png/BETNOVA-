@@ -814,7 +814,7 @@ export default function App() {
             <div className="featured-games-grid">
               <button type="button" className="featured-game-card featured-crash" onClick={() => openFeaturedGame('crash')}>
                 <span className="featured-game-art crash-art" aria-hidden="true"><span className="art-glow"/><svg viewBox="0 0 180 92" role="img"><defs><linearGradient id="crashHull" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#eafff4"/><stop offset=".48" stopColor="#55e6a1"/><stop offset="1" stopColor="#08784d"/></linearGradient><linearGradient id="crashFlame" x1="0" y1="0" x2="1" y2="0"><stop stopColor="#fff7a6"/><stop offset=".45" stopColor="#ffb34e"/><stop offset="1" stopColor="#ff5c43" stopOpacity="0"/></linearGradient></defs><path className="crash-speed" d="M9 28h42M2 39h34M15 50h30" stroke="#9dffd0" strokeWidth="2" strokeLinecap="round" opacity=".55"/><path d="M35 57L72 48 99 20Q105 14 109 20L103 43 151 34Q160 34 165 39L151 47 102 55 90 74 80 76 82 59 54 67Z" fill="url(#crashHull)" stroke="#d9ffec" strokeWidth="1.5"/><path d="M108 21L122 9 127 10 119 39 103 43Z" fill="#dffff0"/><path d="M35 57L10 67 41 65 55 61Z" fill="url(#crashFlame)"/><path d="M89 49L103 45 101 53 88 57Z" fill="#eafff5" opacity=".8"/><circle cx="111" cy="38" r="4" fill="#c9fff0"/><path d="M70 48L82 31 89 31 86 47" fill="#b7f8db"/></svg><span className="art-stamp">x</span></span>
-                <span className="featured-game-name">CRASH</span><span className="featured-game-action">{language === 'ar' ? 'العب الآن' : 'PLAY NOW'} <ArrowRight size={11}/></span>
+                <span className="featured-game-name">CRASH</span><span className="featured-game-action">{language === 'ar' ? 'العب الآن' : t('play_now')} <ArrowRight size={11}/></span>
               </button>
               <button type="button" className="featured-game-card featured-apple" onClick={() => openFeaturedGame('apple')}>
                 <span className="featured-game-art apple-art" aria-hidden="true"><span className="art-glow"/><svg viewBox="0 0 180 92" role="img"><defs><linearGradient id="appleSkin" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#e5ff91"/><stop offset=".35" stopColor="#8ce64c"/><stop offset="1" stopColor="#218b42"/></linearGradient></defs><circle cx="90" cy="48" r="37" fill="#8bff70" opacity=".09"/><path d="M91 28C76 12 51 26 52 49c1 22 19 34 35 29 3-1 6-1 9 0 17 6 34-10 34-31 0-23-23-35-39-19Z" fill="url(#appleSkin)" stroke="#dfffad" strokeWidth="1.5"/><path d="M91 28Q87 16 96 9" fill="none" stroke="#b8f08a" strokeWidth="4" strokeLinecap="round"/><path d="M96 15Q113 3 124 13 113 27 96 21Z" fill="#50d78b" stroke="#b4ffc4" strokeWidth="1.2"/><path d="M66 43Q68 31 80 31" fill="none" stroke="#f5ffd6" strokeWidth="5" strokeLinecap="round" opacity=".7"/><path d="M111 41l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z" fill="#f2ffb2" opacity=".85"/></svg><span className="art-stamp">LUCKY</span></span>
@@ -898,11 +898,11 @@ export default function App() {
           <button onClick={() => { closeMobileMenuToPage(); openFootball() }}><Trophy size={17}/>{language === 'ar' ? 'كرة القدم' : 'Football'}</button>
           <button onClick={() => { closeMobileMenuToPage(); openGames() }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
           <button onClick={() => { closeMobileMenuToPage(); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
-          <button onClick={openSupport}><CircleHelp size={17}/>Help & support</button>
-          <button onClick={openResponsible}><ShieldCheck size={17}/>Responsible play</button>
+          <button onClick={openSupport}><CircleHelp size={17}/>{t('help_support')}</button>
+          <button onClick={openResponsible}><ShieldCheck size={17}/>{t('responsible_play')}</button>
           {userEmail ? <>
             <button className="mobile-account-entry" onClick={() => { openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
-            <button onClick={() => openWallet('deposit')}><Wallet size={17}/>Deposit</button>
+            <button onClick={() => openWallet('deposit')}><Wallet size={17}/>{t('deposit')}</button>
             <button onClick={() => { openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
               {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
