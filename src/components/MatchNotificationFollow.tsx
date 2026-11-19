@@ -24,7 +24,15 @@ export default function MatchNotificationFollow({ fixtureId, homeName, awayName,
     if (!supabase) { setLoading(false); return }
     let mounted = true
     void supabase.auth.getUser().then(({ data }) => { if (mounted) setUserId(data.user?.id ?? null) })
-    return () => { mounted = false }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return
+      setUserId(session?.user?.id ?? null)
+      setActive({ fixture: false, home: false, away: false })
+    })
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
