@@ -78,7 +78,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   useEffect(()=>{
     if(!selected)return
     setRealBetResult(null);setRealBetMessage('');setRealBalance(null)
-    setRealChoice(selected.id==='crash'?'2.00':selected.id==='apple'?'1':selected.id==='plinko'?'medium':selected.id==='roulette'?'red':selected.id==='baccarat'?'player':'standard')
+    setRealChoice(selected.id==='crash'?'2.00':selected.id==='apple'?'1':selected.id==='plinko'?'medium':selected.id==='roulette'?'red':selected.id==='baccarat'?'player':selected.id==='blackjack'?'stand':'standard')
     const client=supabase
     if(!client){setRealBetMessage(arabic?'خدمة الرهان غير متاحة حالياً.':'Betting service is unavailable.');return}
     let active=true
@@ -159,7 +159,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       setRealBetMessage(error instanceof Error?error.message:'The round could not be confirmed. Retry safely; duplicate requests use the same round key.')
     }finally{setRealBetBusy(false)}
   }
-  const paidTableUnavailable=selected?.id==='blackjack'
+  const paidTableUnavailable=false
   return <section className="games-hub" id="games">
     <div className="games-hub-head">
       <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>{labels.heading} <em>{labels.zone}</em></h2><p>{labels.subtitle}</p></div>
@@ -230,18 +230,19 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
         {practiceResult&&<div className="game-practice-result" role="status"><strong>{arabic?`الجولة ${practiceCount}`:practiceCount===0?'PRACTICE UPDATE':`ROUND ${practiceCount}`}</strong><span>{practiceResult}</span></div>}
         <section className="arcade-wager-panel" aria-label={arabic?'رهان بأموال حقيقية':'Real-money game wager'}>
           <div className="arcade-wager-heading"><span>{arabic?'رهان حقيقي':'REAL MONEY ROUND'}</span><b>{selected.id==='roulette'?'94.86%':'95%'} RTP</b></div>
-          <p className="arcade-wager-paytable">{selected.id==='crash'?'Crash: target 1.20×–10× · win probability = 95% ÷ target.':selected.id==='apple'?'Apple: 1–5 safe rows · probability = 80%^rows · payout = 95% ÷ probability.':selected.id==='plinko'?'Plinko: Low 80% ×1.1875 · Medium 50% ×1.90 · High 25% ×3.80.':selected.id==='lucky-fruits'?'Lucky Fruits: no match 55% · pair 25% ×1.5 · triple 15% ×2 · jackpot 5% ×5.5.':selected.id==='pharaoh'?'Pharaoh: no prize 70% · scarab 20% ×1.5 · treasure 8% ×3 · jackpot 2% ×20.5.':selected.id==='space-spin'?'Space Spin: empty 60% · star pair 30% ×1.5 · planet triple 9% ×3 · jackpot 1% ×23.':selected.id==='roulette'?'European Roulette: red/black each 18/37 · gross win 1.95× · RTP 94.86%.':selected.id==='baccarat'?'Baccarat: Player 44.61% ×2.1293 · Banker 45.84% ×2.0723 · Tie 9.54% ×9.9554.':'Blackjack paid play is not enabled.'}</p>
+          <p className="arcade-wager-paytable">{selected.id==='crash'?'Crash: target 1.20×–10× · win probability = 95% ÷ target.':selected.id==='apple'?'Apple: 1–5 safe rows · probability = 80%^rows · payout = 95% ÷ probability.':selected.id==='plinko'?'Plinko: Low 80% ×1.1875 · Medium 50% ×1.90 · High 25% ×3.80.':selected.id==='lucky-fruits'?'Lucky Fruits: no match 55% · pair 25% ×1.5 · triple 15% ×2 · jackpot 5% ×5.5.':selected.id==='pharaoh'?'Pharaoh: no prize 70% · scarab 20% ×1.5 · treasure 8% ×3 · jackpot 2% ×20.5.':selected.id==='space-spin'?'Space Spin: empty 60% · star pair 30% ×1.5 · planet triple 9% ×3 · jackpot 1% ×23.':selected.id==='roulette'?'European Roulette: red/black each 18/37 · gross win 1.95× · RTP 94.86%.':selected.id==='baccarat'?'Baccarat: Player 44.61% ×2.1293 · Banker 45.84% ×2.0723 · Tie 9.54% ×9.9554.':'Blackjack one-hit: Stand win ×2.3407 · Hit once win ×2.9957 · Natural ×2.5 · Push ×1.00 · RTP 95%.'}</p>
           {paidTableUnavailable?
             <p className="arcade-wager-note">{arabic?'المراهنة المالية على البلاك جاك ستُفعّل بعد اكتمال قواعد السحب والوقوف والتسوية.':'Real-money blackjack will be enabled after its full hit/stand round settlement is implemented.'}</p>:
             <>
               <div className="arcade-wallet-line"><span>{arabic?'رصيدك الحقيقي':'Available real balance'}</span><strong>{realBalance===null?'—':realBalance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' DZD'}</strong></div>
               <label className="arcade-wager-field"><span>{arabic?'مبلغ الرهان (DZD)':'Stake (DZD)'}</span><input type="number" min="0.01" max="1000000" step="0.01" inputMode="decimal" value={realStake} onChange={event=>setRealStake(event.target.value)} disabled={realBetBusy}/></label>
-              {['crash','apple','plinko','roulette','baccarat'].includes(selected.id)&&<label className="arcade-wager-field"><span>{selected.id==='crash'?(arabic?'هدف السحب':'Cash-out target'):selected.id==='apple'?(arabic?'عدد الصفوف الآمنة':'Safe rows'):selected.id==='plinko'?(arabic?'مستوى المخاطرة':'Risk level') :selected.id==='baccarat'?(arabic?'رهان على':'Bet on'):(arabic?'اختر اللون':'Choose color')}</span><select value={realChoice} onChange={event=>setRealChoice(event.target.value)} disabled={realBetBusy}>
+              {['crash','apple','plinko','roulette','baccarat','blackjack'].includes(selected.id)&&<label className="arcade-wager-field"><span>{selected.id==='crash'?(arabic?'هدف السحب':'Cash-out target'):selected.id==='apple'?(arabic?'عدد الصفوف الآمنة':'Safe rows'):selected.id==='plinko'?(arabic?'مستوى المخاطرة':'Risk level') :selected.id==='baccarat'?(arabic?'رهان على':'Bet on'):selected.id==='blackjack'?(arabic?'الحركة قبل التوزيع':'Action before deal'):(arabic?'اختر اللون':'Choose color')}</span><select value={realChoice} onChange={event=>setRealChoice(event.target.value)} disabled={realBetBusy}>
                 {selected.id==='crash'&&['1.20','1.50','2.00','3.00','5.00','10.00'].map(value=><option key={value} value={value}>{value}×</option>)}
                 {selected.id==='apple'&&['1','2','3','4','5'].map(value=><option key={value} value={value}>{value}</option>)}
                 {selected.id==='plinko'&&<><option value="low">{arabic?'منخفض':'Low'}</option><option value="medium">{arabic?'متوسط':'Medium'}</option><option value="high">{arabic?'مرتفع':'High'}</option></>}
                 {selected.id==='roulette'&&<><option value="red">{arabic?'أحمر':'Red'}</option><option value="black">{arabic?'أسود':'Black'}</option></>}
                 {selected.id==='baccarat'&&<><option value="player">{arabic?'اللاعب':'Player'}</option><option value="banker">{arabic?'المصرف':'Banker'}</option><option value="tie">{arabic?'تعادل':'Tie'}</option></>}
+                {selected.id==='blackjack'&&<><option value="stand">{arabic?'قف':'Stand'}</option><option value="hit">{arabic?'اسحب ورقة واحدة':'Hit once'}</option></>}
               </select></label>}
               <p className="arcade-wager-note">{arabic?'النتيجة تُولّد على الخادم. النسبة المعروضة عائد نظري طويل الأجل وليست ضماناً لنتيجة جولة.':'The server generates each result. Published RTP is a long-run theoretical return, not a promise about any single round.'}</p>
               <button className="arcade-wager-submit" type="button" onClick={playRealRound} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ تنفيذ الجولة...':'PROCESSING ROUND'):arabic?'ضع الرهان والعب':'PLACE BET & PLAY'}</button>
