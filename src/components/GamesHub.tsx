@@ -30,9 +30,9 @@ const baccaratValue=(value:number)=>value===11?1:value>=10?0:value
 const baccaratTotal=(hand:number[])=>hand.reduce((sum,value)=>sum+baccaratValue(value),0)%10
 
 export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:string;token:number}|null}){
-  const {language}=useLanguage()
+  const {language,t}=useLanguage()
   const arabic=language==='ar'
-  const labels=arabic?{all:'كل الألعاب',games:'الألعاب',slots:'السلوتس',casino:'الكازينو',heading:'ادخل إلى',zone:'منطقة اللعب',subtitle:'اكتشف بُعداً جديداً من الترفيه.',explore:'استكشف اللعبة',safety:'تجارب تدريبية مجانية فقط. لا توجد إيداعات أو رهانات أو سحوبات أو جوائز أو أموال حقيقية.',practice:'تجربة مجانية',demo:'وضع تجريبي · بدون أموال أو رهانات',start:'ابدأ جولة تدريبية',next:'الخطوة التالية +0.25×',stop:'توقف الآن',pick:'اختر التفاحة التالية',drop:'أسقط الكرة',tryDemo:'جرّب العرض المجاني',reset:'إعادة التجربة',close:'إغلاق'}:{all:'ALL GAMES',games:'GAMES',slots:'SLOTS',casino:'CASINO',heading:'ENTER THE',zone:'PLAY ZONE',subtitle:'Discover a new dimension of play.',explore:'EXPLORE GAME',safety:'Free practice demonstrations only. No deposits, wagers, cash-out value, prizes or real-money play are enabled.',practice:'FREE PRACTICE',demo:'DEMO MODE · NO MONEY OR BETS',start:'START PRACTICE ROUND',next:'NEXT STEP +0.25×',stop:'STOP HERE',pick:'PICK NEXT APPLE',drop:'DROP PRACTICE BALL',tryDemo:'TRY FREE DEMO',reset:'RESET PRACTICE',close:'CLOSE'}
+  const labels={all:t('all_games'),games:t('games'),slots:t('slots'),casino:t('casino'),heading:arabic?'ادخل إلى':'ENTER THE',zone:t('game_zone'),subtitle:arabic?'اكتشف بُعداً جديداً من الترفيه.':'Discover a new dimension of play.',explore:t('explore_game'),safety:arabic?'تجارب تدريبية مجانية فقط. لا توجد إيداعات أو رهانات أو سحوبات أو جوائز أو أموال حقيقية.':'Free practice demonstrations only. No deposits, wagers, cash-out value, prizes or real-money play are enabled.',practice:t('free_practice'),demo:t('demo_mode'),start:t('start_practice'),next:t('next_step'),stop:t('stop_now'),pick:t('pick_apple'),drop:t('drop_ball'),tryDemo:t('try_demo'),reset:t('reset_practice'),close:t('close')}
   const [category,setCategory]=useState<Category>('all')
   const [selected,setSelected]=useState<Game|null>(null)
   const [practiceResult,setPracticeResult]=useState('')

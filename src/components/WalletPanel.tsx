@@ -77,11 +77,11 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
   async function submitDeposit(event: FormEvent) {
     event.preventDefault()
     if (!supabase || !userId || !selectedMethod) return
-    if (!proofFile) { setError('Upload your transfer receipt before submitting.'); return }
-    if (!reference.trim()) { setError('Enter the transfer reference.'); return }
-    if (proofFile.size > 5 * 1024 * 1024) { setError('The receipt must be 5 MB or smaller.'); return }
+    if (!proofFile) { setError(t('add_transfer_proof')); return }
+    if (!reference.trim()) { setError(t('transaction_reference')); return }
+    if (proofFile.size > 5 * 1024 * 1024) { setError(t('proof_format')); return }
     if (!['image/jpeg','image/png','image/webp','application/pdf'].includes(proofFile.type)) {
-      setError('Use a JPG, PNG, WEBP or PDF receipt.'); return
+      setError(t('proof_format')); return
     }
     const numericAmount = Number(amount)
     const depositLimits: Record<string,[number,number]> = {DZD:[500,100000],USD:[1,5000],EUR:[1,5000]}
@@ -107,13 +107,13 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         await supabase.storage.from('deposit-proofs').remove([proofPath])
         throw requestError
       }
-      setNotice('Deposit request submitted. Your wallet will be credited after the transfer is verified.')
+      setNotice(t('deposit_sent'))
       setAmount(''); setReference(''); setProofFile(null)
       const fileInput = document.getElementById('wallet-proof-input') as HTMLInputElement | null
       if (fileInput) fileInput.value = ''
       await refresh()
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not submit your deposit request.')
+      setError(caught instanceof Error ? caught.message : t('could_not_load_wallet'))
     } finally { setBusy(false) }
   }
 
@@ -124,8 +124,8 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     const withdrawalLimits: Record<string,[number,number]> = {DZD:[1000,1500000],USD:[1.5,50000],EUR:[1.5,50000]}
     const [withdrawMin,withdrawMax] = withdrawalLimits[currency]
     if (!Number.isFinite(numericAmount) || numericAmount < withdrawMin || numericAmount > withdrawMax) { setError('Withdrawal limits: ' + withdrawMin + '–' + withdrawMax + ' ' + currency + '.'); return }
-    if (!destination.trim() || destination.trim().length < 4) { setError('Enter valid receiving account details.'); return }
-    if (numericAmount > Number(account?.available_balance ?? 0)) { setError('Insufficient available balance.'); return }
+    if (!destination.trim() || destination.trim().length < 4) { setError(t('receiving_placeholder')); return }
+    if (numericAmount > Number(account?.available_balance ?? 0)) { setError(t('could_not_load_wallet')); return }
 
     setBusy(true); setError(''); setNotice('')
     try {
@@ -136,11 +136,11 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         p_destination_details: destination.trim()
       })
       if (requestError) throw requestError
-      setNotice('Withdrawal request submitted. The amount is reserved while the administrator processes your transfer.')
+      setNotice(t('withdrawal_sent'))
       setAmount(''); setDestination('')
       await refresh()
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not submit your withdrawal request.')
+      setError(caught instanceof Error ? caught.message : t('could_not_load_wallet'))
     } finally { setBusy(false) }
   }
 
@@ -153,14 +153,14 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     const usdValue = currency === 'DZD' ? numericAmount/260 : currency === 'EUR' ? numericAmount/0.9 : numericAmount
     if (!Number.isFinite(numericAmount) || numericAmount < minimum || numericAmount > maximum) { setError('Withdrawal limits: ' + minimum + '–' + maximum + ' ' + currency + '.'); return }
     if (usdValue > bonus.available_balance + 0.0001) { setError('Insufficient available bonus balance.'); return }
-    if (!destination.trim() || destination.trim().length < 4) { setError('Enter valid receiving account details.'); return }
+    if (!destination.trim() || destination.trim().length < 4) { setError(t('receiving_placeholder')); return }
     setBusy(true); setError(''); setNotice('')
     try {
       const { error: requestError } = await supabase.rpc('betnova_request_bonus_withdrawal', {p_payment_method:selectedMethod.code,p_amount:numericAmount,p_currency:currency,p_destination_details:destination.trim()})
       if (requestError) throw requestError
-      setNotice('Bonus withdrawal request submitted. Your bonus funds are reserved for admin review.')
+      setNotice(t('withdrawal_sent'))
       setAmount(''); setDestination(''); await refresh()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not submit bonus withdrawal.') }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : t('could_not_load_wallet')) }
     finally { setBusy(false) }
   }
   const instructions = selectedMethod?.instructions ?? {}
@@ -175,16 +175,16 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
   return <div className="wallet-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
     <section className="wallet-panel" role="dialog" aria-modal="true" aria-labelledby="wallet-title">
       <button className="wallet-close" onClick={onClose} aria-label={t('close')}><X size={19}/></button>
-      <div className="wallet-kicker"><Wallet size={15}/> BETNOVA WALLET</div>
+      <div className="wallet-kicker"><Wallet size={15}/> {t('wallet')}</div>
       <h2 id="wallet-title">{t('wallet')}</h2>
-      <div className="wallet-recovery-notice"><b>Real-money wallet</b><span>Deposits are credited after manual verification. Withdrawals are sent manually by the administrator.</span></div>
+      <div className="wallet-recovery-notice"><b>{t('real_money_wallet')}</b><span>{t('deposit_manual_note')}</span></div>
       <div className="wallet-currency-row">{currencies.map(code => <button key={code} className={currency === code ? 'active' : ''} onClick={() => { setCurrency(code); setMethod('') }}>{code}</button>)}</div>
       <div className="wallet-balance-card">
         <span>{t('available_balance')} · REAL MONEY</span>
         <strong>{formatMoney(Number(account?.available_balance ?? 0), currency)}</strong>
-        <small>{Number(account?.reserved_balance ?? 0) > 0 ? `${formatMoney(Number(account?.reserved_balance),currency)} reserved for withdrawals` : t('available_wallet_balance')}</small>{Number(account?.recovery_balance ?? 0) > 0 && <div className="wallet-recovery-chip"><b>{t('recovery_balance')}</b><strong>{formatMoney(Number(account?.recovery_balance),currency)}</strong></div>}
+        <small>{Number(account?.reserved_balance ?? 0) > 0 ? `${formatMoney(Number(account?.reserved_balance),currency)} {t('reserved_for_withdrawals_label')}` : t('available_wallet_balance')}</small>{Number(account?.recovery_balance ?? 0) > 0 && <div className="wallet-recovery-chip"><b>{t('recovery_balance')}</b><strong>{formatMoney(Number(account?.recovery_balance),currency)}</strong></div>}
       </div>
-      <div className="wallet-balance-card wallet-bonus-balance"><span>WELCOME BONUS · SEPARATE BALANCE</span><strong>{formatMoney(bonus.available_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1), currency)}</strong><small>{formatMoney(bonus.reserved_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1), currency)} reserved</small><small>100 USD welcome bonus · deposit unlock: 2,600 DZD / 9 EUR</small></div>
+      <div className="wallet-balance-card wallet-bonus-balance"><span>{t('bonus_separate_balance')}</span><strong>{formatMoney(bonus.available_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1), currency)}</strong><small>{formatMoney(bonus.reserved_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1), currency)} reserved</small><small>{t('bonus_unlock_note')}</small></div>
       <div className="wallet-tabs">
         <button className={tab === 'deposit' ? 'active' : ''} onClick={() => setTab('deposit')}><ArrowDownToLine size={14}/> {t('deposit_tab')}</button>
         <button className={tab === 'withdraw' ? 'active' : ''} onClick={() => setTab('withdraw')}><ArrowUpFromLine size={14}/> {t('withdraw_tab')}</button>
@@ -193,7 +193,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
       {Number(account?.recovery_balance ?? 0) > 0 && <div className="wallet-recovery-notice"><b>{t('recovery_notice')}</b><span>{t('recovery_blocks_withdrawal')}</span></div>}{error && <p className="wallet-message error">{error}</p>}
       {notice && <p className="wallet-message success">{notice}</p>}
       {tab === 'deposit' && <form className="wallet-form" onSubmit={submitDeposit}>
-        <div className="wallet-method-section"><label>{t('payment_method')}</label><div className="wallet-method-grid">{methods.map(item => { const supportsCurrency = item.supported_currencies.includes(currency); const available = item.is_enabled && supportsCurrency; return <button type="button" key={item.code} disabled={!available} className={['wallet-method-card', method === item.code ? 'active' : '', !available ? 'unavailable' : ''].filter(Boolean).join(' ')} onClick={() => setMethod(item.code)} aria-pressed={method === item.code}><PaymentMethodLogo code={item.code} size={42}/><span><b>{item.display_name}</b><small>{supportsCurrency ? (available ? currency : 'Not configured yet') : 'Available: ' + item.supported_currencies.join(' / ')}</small></span><i>{method === item.code ? '✓' : available ? '›' : '•'}</i></button> })}</div><small className="wallet-method-hint">Choose a currency supported by the payment method. Deposit methods appear as unavailable until the administrator adds real receiving details and enables them.</small></div>
+        <div className="wallet-method-section"><label>{t('payment_method')}</label><div className="wallet-method-grid">{methods.map(item => { const supportsCurrency = item.supported_currencies.includes(currency); const available = item.is_enabled && supportsCurrency; return <button type="button" key={item.code} disabled={!available} className={['wallet-method-card', method === item.code ? 'active' : '', !available ? 'unavailable' : ''].filter(Boolean).join(' ')} onClick={() => setMethod(item.code)} aria-pressed={method === item.code}><PaymentMethodLogo code={item.code} size={42}/><span><b>{item.display_name}</b><small>{supportsCurrency ? (available ? currency : t('not_configured')) : t('available_label') + ' ' + item.supported_currencies.join(' / ')}</small></span><i>{method === item.code ? '✓' : available ? '›' : '•'}</i></button> })}</div><small className="wallet-method-hint">{t('wallet_method_hint')}</small></div>
         {selectedMethod && <div className="wallet-instructions">
           {receivingDetail && <p className="wallet-receiving-detail"><b>{receivingLabel}</b> <span>{receivingDetail}</span><button type="button" onClick={() => { void navigator.clipboard?.writeText(receivingDetail) }}>Copy</button></p>}
           {instructionText && <p>{instructionText}</p>}
@@ -202,14 +202,14 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min={currency === 'DZD' ? 500 : 1} max={currency === 'DZD' ? 100000 : 5000} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('payment_proof')}<input id="wallet-proof-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={event => setProofFile(event.target.files?.[0] ?? null)}/>{proofFile && <small className="wallet-file-name">{proofFile.name}</small>}</label>
         <label>{t('transfer_reference')}<input value={reference} onChange={event => setReference(event.target.value)} placeholder={t('transaction_reference')}/></label>
-        <button className="wallet-submit" disabled={busy || !selectedMethod}>{busy ? 'Submitting…' : 'Submit deposit request'}</button>
+        <button className="wallet-submit" disabled={busy || !selectedMethod}>{busy ? t('submitting_btn') : t('submit_deposit_request')}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('balance_after_verification')}</p>
       </form>}
-      {tab === 'withdraw' && <><div className="wallet-tabs"><button type="button" className={!bonusWithdrawMode ? 'active' : ''} onClick={() => {setBonusWithdrawMode(false);setAmount('');setError('')}}>Real balance</button><button type="button" className={bonusWithdrawMode ? 'active' : ''} onClick={() => {setBonusWithdrawMode(true);setAmount('');setError('')}}>Bonus balance</button></div>{bonusWithdrawMode && <div className="wallet-recovery-notice"><b>Bonus withdrawal condition</b><span>Complete verified deposits totaling 10 USD (2,600 DZD or 9 EUR). The deposit remains in your real-money wallet. This condition never applies to real balance withdrawals.</span></div>}<form className="wallet-form" onSubmit={bonusWithdrawMode ? submitBonusWithdrawal : submitWithdrawal}>
-        <div className="wallet-method-section"><label>{t('withdrawal_method')}</label><div className="wallet-method-grid">{methods.filter(item => item.is_withdrawal_enabled).map(item => { const supportsCurrency = item.supported_currencies.includes(currency); return <button type="button" key={item.code} className={['wallet-method-card', method === item.code ? 'active' : '', !supportsCurrency ? 'currency-switch' : ''].filter(Boolean).join(' ')} onClick={() => { if (!supportsCurrency) setCurrency(item.supported_currencies[0] ?? 'DZD'); setMethod(item.code) }} aria-pressed={method === item.code}><PaymentMethodLogo code={item.code} size={42}/><span><b>{item.display_name}</b><small>{supportsCurrency ? currency : 'Switch to ' + item.supported_currencies.join(' / ')}</small></span><i>{method === item.code ? '✓' : '›'}</i></button> })}</div>{methods.filter(item => item.is_withdrawal_enabled).length === 0 && <p className="wallet-method-empty">No withdrawal method is enabled yet. Please contact support.</p>}<small className="wallet-method-hint">Tap RedotPay or Paysera to switch automatically to USD/EUR. BaridiMob supports DZD; Binance supports DZD/USD/EUR.</small></div>
+      {tab === 'withdraw' && <><div className="wallet-tabs"><button type="button" className={!bonusWithdrawMode ? 'active' : ''} onClick={() => {setBonusWithdrawMode(false);setAmount('');setError('')}}>{t('real_balance')}</button><button type="button" className={bonusWithdrawMode ? 'active' : ''} onClick={() => {setBonusWithdrawMode(true);setAmount('');setError('')}}>{t('bonus_balance')}</button></div>{bonusWithdrawMode && <div className="wallet-recovery-notice"><b>{t('bonus_withdrawal_condition')}</b><span>Complete verified deposits totaling 10 USD (2,600 DZD or 9 EUR). The deposit remains in your real-money wallet. This condition never applies to real balance withdrawals.</span></div>}<form className="wallet-form" onSubmit={bonusWithdrawMode ? submitBonusWithdrawal : submitWithdrawal}>
+        <div className="wallet-method-section"><label>{t('withdrawal_method')}</label><div className="wallet-method-grid">{methods.filter(item => item.is_withdrawal_enabled).map(item => { const supportsCurrency = item.supported_currencies.includes(currency); return <button type="button" key={item.code} className={['wallet-method-card', method === item.code ? 'active' : '', !supportsCurrency ? 'currency-switch' : ''].filter(Boolean).join(' ')} onClick={() => { if (!supportsCurrency) setCurrency(item.supported_currencies[0] ?? 'DZD'); setMethod(item.code) }} aria-pressed={method === item.code}><PaymentMethodLogo code={item.code} size={42}/><span><b>{item.display_name}</b><small>{supportsCurrency ? currency : t('switch_to') + ' ' + item.supported_currencies.join(' / ')}</small></span><i>{method === item.code ? '✓' : '›'}</i></button> })}</div>{methods.filter(item => item.is_withdrawal_enabled).length === 0 && <p className="wallet-method-empty">{t('not_enabled_withdrawal')}</p>}<small className="wallet-method-hint">Tap RedotPay or Paysera to switch automatically to USD/EUR. BaridiMob supports DZD; Binance supports DZD/USD/EUR.</small></div>
         <label>{t('amount')} ({currency})<input inputMode="decimal" type="number" min={currency === 'DZD' ? 1000 : 1.5} max={bonusWithdrawMode ? bonus.available_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1) : Math.min(currency === 'DZD' ? 1500000 : 50000, account?.available_balance ?? 0)} step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder={t('enter_amount')} required/></label>
         <label>{t('receiving_details')}<textarea value={destination} onChange={event => setDestination(event.target.value)} placeholder={t('receiving_placeholder')} rows={3} required maxLength={1000}/></label>
-        <button className="wallet-submit" disabled={busy || !selectedMethod || (bonusWithdrawMode ? bonus.available_balance <= 0 : !account || Number(account.available_balance) <= 0)}>{busy ? 'Submitting…' : bonusWithdrawMode ? 'Request bonus withdrawal' : 'Request withdrawal'}</button>
+        <button className="wallet-submit" disabled={busy || !selectedMethod || (bonusWithdrawMode ? bonus.available_balance <= 0 : !account || Number(account.available_balance) <= 0)}>{busy ? t('submitting_btn') : bonusWithdrawMode ? t('request_bonus_withdrawal') : t('request_withdrawal_btn')}</button>
         <p className="wallet-footnote"><ShieldCheck size={13}/> {t('withdrawal_reserved')}</p>
        </form></>}
       {tab === 'history' && <div className="wallet-history">
