@@ -43,8 +43,8 @@ const rows: NotificationRow[] = [
 export default function NotificationSettings({ language = 'en' }: { language?: string }) {
   const isArabic = language === 'ar'
   const isFrench = language === 'fr'
-  const localize = (ar: string, en: string, fr: string) => isArabic ? ar : isFrench ? fr : en
   const isNative = Capacitor.isNativePlatform()
+  const localize = useCallback((ar: string, en: string, fr: string) => isArabic ? ar : isFrench ? fr : en, [isArabic, isFrench])
   const [userId, setUserId] = useState<string | null>(null)
   const [prefs, setPrefs] = useState<Preferences>(defaults)
   const [loading, setLoading] = useState(true)
@@ -95,7 +95,7 @@ export default function NotificationSettings({ language = 'en' }: { language?: s
         setLoading(false)
       })
     return () => { active = false }
-  }, [userId, isArabic, isFrench])
+  }, [userId, localize])
 
   const toggle = useCallback(async (key: PreferenceKey, value: boolean) => {
     if (!supabase || !userId) {
@@ -160,7 +160,7 @@ export default function NotificationSettings({ language = 'en' }: { language?: s
       setPrefs(next)
     }
     setSaving(null)
-  }, [userId, prefs, isNative, isArabic, isFrench])
+  }, [userId, prefs, isNative, localize])
 
   if (!userId) {
     return <section className="bn-notification-settings">
