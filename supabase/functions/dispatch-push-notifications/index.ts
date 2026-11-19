@@ -118,7 +118,10 @@ Deno.serve(async (req: Request) => {
     .from("fixtures").select("id,home_team_id,away_team_id").eq("id", event.fixture_id).maybeSingle();
   if (fixtureError || !fixture) return json({ error: "Fixture not found" }, 404);
 
-  const targetIds = [event.fixture_id, event.team_id].filter(Boolean);
+  const followedTeamIds = event.event_type === "match_start"
+    ? [fixture.home_team_id, fixture.away_team_id]
+    : [event.team_id].filter(Boolean);
+  const targetIds = [event.fixture_id, ...followedTeamIds].filter(Boolean);
   const { data: follows, error: followsError } = await supabase
     .from("notification_subscriptions").select("user_id,target_type,target_id")
     .in("target_id", targetIds);
@@ -126,7 +129,7 @@ Deno.serve(async (req: Request) => {
 
   const interestedUsers = new Set((follows ?? []).filter(row =>
     (row.target_type === "fixture" && row.target_id === event.fixture_id) ||
-    (row.target_type === "team" && event.team_id && row.target_id === event.team_id)
+    (row.target_type === "team" && followedTeamIds.includes(row.target_id))
   ).map(row => row.user_id));
   if (interestedUsers.size === 0) return json({ ok: true, sent: 0, skipped: "no_followers" });
 
