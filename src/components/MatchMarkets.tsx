@@ -189,7 +189,6 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
       })
   }, [markets, t, language])
 
-  const defaultCategories = [t('goals'), t('match_result'), t('corners'), t('cards_fouls'), t('player_markets'), t('match_markets')]
   const categoryNames = grouped.map(group => group.category)
   async function toggleCategory(category: string) {
     const opening = expanded !== category
