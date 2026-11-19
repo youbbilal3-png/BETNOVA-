@@ -871,3 +871,82 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
   .mobile-sheet .slip-cta{position:sticky;bottom:0;z-index:3;min-height:48px;margin-top:14px;font-size:13px;box-shadow:0 -8px 18px rgba(248,251,246,.92);}
   .mobile-sheet .bet-slip-message,.mobile-sheet .guest-slip-note{font-size:11px;line-height:1.5;}
 }
+
+
+/* BETNOVA mobile bet slip palette: readable forest text on soft green surfaces. */
+.mobile-sheet{
+  color:#173b31!important;
+  background:linear-gradient(160deg,#fbfdf9 0%,#f0f7ef 100%)!important;
+  border-color:#cfe3d3!important;
+}
+.mobile-sheet .slip-head{
+  background:#fbfdf9!important;
+  border-bottom-color:#dceadd!important;
+}
+.mobile-sheet .eyebrow.dark{color:#16845f!important;}
+.mobile-sheet .slip-head h3{color:#173b31!important;}
+.mobile-sheet .slip-head h3 span{
+  background:#dff2e5!important;
+  color:#117a57!important;
+}
+.mobile-sheet .slip-clear{color:#16845f!important;font-weight:800;}
+.mobile-sheet .slip-selection{
+  background:#fff!important;
+  border:1px solid #e0ece0!important;
+  border-radius:11px!important;
+  margin:8px 0!important;
+  padding:12px!important;
+  box-shadow:0 3px 10px #214b3210!important;
+}
+.mobile-sheet .slip-selection b{color:#234b3a!important;}
+.mobile-sheet .slip-selection small{color:#668174!important;}
+.mobile-sheet .slip-selection strong{color:#11845f!important;}
+.mobile-sheet .slip-selection button,
+.mobile-sheet .slip-remove{
+  color:#557b68!important;
+  background:#edf6ee!important;
+  border-radius:8px!important;
+}
+.mobile-sheet .slip-empty b{color:#234b3a!important;}
+.mobile-sheet .slip-empty p{color:#71877a!important;}
+.mobile-sheet .slip-empty-icon{background:#e3f2e6!important;color:#16845f!important;}
+.mobile-sheet .bet-slip-stake{
+  background:#fff!important;
+  border-color:#dceadd!important;
+}
+.mobile-sheet .bet-slip-stake label{color:#315f4b!important;}
+.mobile-sheet .bet-slip-stake input,
+.mobile-sheet .bet-slip-stake select{
+  color:#173b31!important;
+  background:#fbfdf9!important;
+  border-color:#cfe1d1!important;
+}
+.mobile-sheet .bet-slip-stake input::placeholder{color:#8a9d91!important;}
+.mobile-sheet .bet-slip-stake>div span{color:#668174!important;}
+.mobile-sheet .bet-slip-stake>div b{color:#11845f!important;}
+.mobile-sheet .guest-slip-note{
+  color:#557466!important;
+  background:#e8f4e9!important;
+  border:1px solid #d5e9d8!important;
+  border-radius:10px!important;
+  padding:10px!important;
+}
+.mobile-sheet .bet-slip-message{
+  color:#246344!important;
+  background:#e3f4e7!important;
+  border:1px solid #cde8d3!important;
+}
+.mobile-sheet .slip-cta{
+  color:#fff!important;
+  background:linear-gradient(135deg,#128a65,#20b985)!important;
+  box-shadow:0 -8px 18px rgba(240,247,239,.96)!important;
+}
+.mobile-sheet .slip-cta:disabled{
+  color:#71877a!important;
+  background:#dce9dd!important;
+}
+.mobile-sheet .icon-btn{
+  color:#315f4b!important;
+  background:#e8f3e9!important;
+  border:1px solid #d6e7d8!important;
+}
