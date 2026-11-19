@@ -48,7 +48,7 @@ begin
   values(v_earn_user,'authenticated','authenticated','earn-user-test@example.invalid','',now(),now(),now(),'{}'::jsonb);
 
   insert into public.earn_post_submissions(user_id,platform,post_url,proof_path,proof_sha256)
-  values(v_earn_user,'instagram','https://www.instagram.com/p/betnova-test/ ',v_earn_user::text||'/proof.png',repeat('a',64));
+  values(v_earn_user,'instagram','https://www.instagram.com/p/betnova-test/',v_earn_user::text||'/proof.png',repeat('a',64));
 
   perform set_config('request.jwt.claim.sub',v_admin::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_admin::text,'role','authenticated')::text,true);
