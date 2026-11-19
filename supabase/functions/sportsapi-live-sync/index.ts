@@ -3,8 +3,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const API_BASE = "https://api.sportsapi.app/v2";
 const PROVIDER = "sportsapi";
-const DAILY_REQUEST_LIMIT = 900;
-const FULL_MODE_REQUEST_LIMIT = 2;
+const DAILY_REQUEST_LIMIT = 95;
+const MAX_REQUESTS_PER_RUN = 8;
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, x-betnova-sync-secret",
@@ -130,11 +130,6 @@ Deno.serve(async (req: Request) => {
     const delta = Date.now() - startTime.getTime();
     return Number.isFinite(delta) && delta >= -5 * 60_000 && delta <= 15 * 60_000;
   }
-  let requestBody: any = {};
-  try { requestBody = await req.json(); } catch { requestBody = {}; }
-  const mode = requestBody?.mode === "scores" ? "scores" : "full";
-  const requestLimit = mode === "scores" ? 1 : FULL_MODE_REQUEST_LIMIT;
-
   let requestsMade = 0;
   let quotaLimited = false;
   let providerLimited = false;
@@ -147,7 +142,7 @@ Deno.serve(async (req: Request) => {
   let finalized = 0;
 
   async function providerGet(path: string): Promise<any | null> {
-    if (requestsMade >= requestLimit || quotaLimited || providerLimited) return null;
+    if (requestsMade >= MAX_REQUESTS_PER_RUN || quotaLimited || providerLimited) return null;
     const { data: allowed, error: reserveError } = await supabase.rpc(
       "betnova_reserve_sportsapi_request",
       { p_daily_limit: DAILY_REQUEST_LIMIT },
@@ -569,7 +564,7 @@ Deno.serve(async (req: Request) => {
         status: "live", home_score: homeScore, away_score: awayScore, updated_at: new Date().toISOString(),
       }).eq("id", targetFixtureId);
       await invalidateLivePrices(targetFixtureId);
-      if (mode !== "scores" && !baselineReady && requestsMade < requestLimit) {
+      if (mode !== "scores" && !baselineReady && requestsMade < MAX_REQUESTS_PER_RUN) {
         await fetchAndProcessGoals(providerFixtureId, targetFixtureId, link, { home: homeScore, away: awayScore }, true);
         const { data: refreshedLink } = await supabase.from("sportsapi_fixture_links")
           .select("*").eq("provider_fixture_id", providerFixtureId).maybeSingle();
@@ -616,7 +611,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!Boolean(link.baseline_ready)) {
-      if (mode !== "scores" && requestsMade < requestLimit) {
+      if (mode !== "scores" && requestsMade < MAX_REQUESTS_PER_RUN) {
         await fetchAndProcessGoals(providerFixtureId, link.fixture_id, { ...link, baseline_ready: false }, { home: homeScore, away: awayScore }, true);
       }
       continue;
@@ -630,14 +625,14 @@ Deno.serve(async (req: Request) => {
       Number(link.last_processed_goal_count ?? 0) !== homeScore + awayScore ||
       (nextObservations >= 2 && Boolean(eventSnapshotPredatesScore));
     if (mode !== "scores" && needsEventReconciliation && nextObservations >= 2 && stableSince > 0 &&
-        Date.now() - stableSince >= 90000 && requestsMade < requestLimit) {
+        Date.now() - stableSince >= 90000 && requestsMade < MAX_REQUESTS_PER_RUN) {
       await fetchAndProcessGoals(providerFixtureId, link.fixture_id, { ...link, settlement_hold: nextHold }, { home: homeScore, away: awayScore }, false);
     }
   }
 
   // A finished fixture disappears from /livescores. Confirm its final state once,
   // then process final goals and full-time only when the score/event list agrees.
-  if (mode !== "scores" && requestsMade < requestLimit && !quotaLimited && !providerLimited) {
+  if (mode !== "scores" && requestsMade < MAX_REQUESTS_PER_RUN && !quotaLimited && !providerLimited) {
     const { data: missingLinks } = await supabase.from("sportsapi_fixture_links")
       .select("*")
       .eq("last_status", "inprogress")
@@ -648,7 +643,7 @@ Deno.serve(async (req: Request) => {
       .limit(7);
 
     for (const link of missingLinks ?? []) {
-      if (requestsMade >= requestLimit || quotaLimited || providerLimited) break;
+      if (requestsMade >= MAX_REQUESTS_PER_RUN || quotaLimited || providerLimited) break;
       if (seenProviderIds.has(Number(link.provider_fixture_id))) continue;
       const detail = await providerGet("/fixtures/" + Number(link.provider_fixture_id));
       if (!detail || typeof detail !== "object") continue;
