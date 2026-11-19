@@ -345,7 +345,7 @@ Deno.serve(async (req: Request) => {
     const [oldGoals, linkResult, fixtureResult] = await Promise.all([
       supabase.from("fixture_events").select("id,provider_event_id,event_type,event_data")
         .eq("fixture_id", fixtureId).eq("provider", PROVIDER).in("event_type", ["goal","goal_cancelled"]),
-      supabase.from("fivedollar_fixture_links").select("processed_goal_snapshot,pending_retraction_ids,pending_retraction_observations")
+      supabase.from("fivedollar_fixture_links").select("processed_goal_snapshot,pending_retraction_ids,pending_retraction_observations,last_event_sync_at")
         .eq("provider_fixture_id", String(item.id)).maybeSingle(),
       supabase.from("fixtures").select("home_score,away_score,status").eq("id", fixtureId).maybeSingle(),
     ]);
