@@ -278,7 +278,7 @@ Deno.serve(async (req: Request) => {
     const events = item.events;
     const occurrences = new Map<string, number>();
     let eventTimelineChanged = false;
-    const newlyObservedGoalIds: string[] = [];
+    const newlyObservedPushEvents: Array<{ id: string; eventType: string }> = [];
 
     for (const event of events) {
       const type = eventType(event?.type);
@@ -311,9 +311,15 @@ Deno.serve(async (req: Request) => {
         assist_player_name: event?.assist?.name ?? null,
         event_data: { source: "5DollarFootballAPI", source_event: event, side, confirmed: true },
         occurred_at: occurredAt,
-      }, { onConflict: "provider,provider_event_id" });
+      }, { onConflict: "provider,provider_event_id" })
+        .select("id").maybeSingle();
       if (saved.error) errors.push("event " + providerEventId + ": " + saved.error.message.slice(0, 100));
-      else eventsSynced++;
+      else {
+        eventsSynced++;
+        if (!prior.data && saved.data?.id && ["goal", "red_card"].includes(type)) {
+          newlyObservedPushEvents.push({ id: saved.data.id, eventType: type });
+        }
+      }
     }
 
     // Full-time is a distinct settlement event and is written only when the
@@ -435,15 +441,9 @@ Deno.serve(async (req: Request) => {
 
     // The first snapshot establishes a baseline; only later newly observed goals
     // are eligible for alerts, and only after score/retraction reconciliation succeeds.
-    if (link?.last_event_sync_at && newlyObservedGoalIds.length > 0) {
-      const { data: goalRows, error: goalLookupError } = await supabase.from("fixture_events")
-        .select("id,provider_event_id")
-        .eq("fixture_id", fixtureId).eq("provider", PROVIDER).eq("event_type", "goal")
-        .in("provider_event_id", newlyObservedGoalIds);
-      if (goalLookupError) {
-        errors.push("verified goals stored but notification lookup failed");
-      } else {
-        for (const goal of goalRows ?? []) await dispatchVerifiedPush(goal.id, true);
+    if (link?.last_event_sync_at && newlyObservedPushEvents.length > 0) {
+      for (const event of newlyObservedPushEvents) {
+        await dispatchVerifiedPush(event.id, event.eventType === "goal");
       }
     }
     if (newFullTimeEvent && fullTimeEventId) await dispatchVerifiedPush(fullTimeEventId);
