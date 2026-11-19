@@ -20,6 +20,7 @@ const games:Game[] = [
 const categoryIcons:Record<Category,typeof Grid3X3>={all:Grid3X3,games:Zap,slots:Gem,casino:Crown}
 const arabicDescriptions:Record<string,string>={crash:'ابدأ جولة تدريبية مجانية، راقب المضاعف واختر وقت التوقف.',apple:'اختر التفاحات الآمنة عبر ثلاثة مستويات تدريبية دون أموال أو نتائج حقيقية.',plinko:'أسقط كرة تدريبية عبر المسامير وشاهد خانة الهبوط.', 'lucky-fruits':'تصميم فواكه كلاسيكي بألوان زاهية وبكرات عصرية.',pharaoh:'أجواء مصرية قديمة أنيقة مع الذهب والرموز الملكية.','space-spin':'تصميم فضائي مستقبلي بالكواكب والنجوم والألوان المتوهجة.',roulette:'تصميم أنيق لعجلة روليت أوروبية ذات صفر واحد.',blackjack:'تصميم لطاولة بلاك جاك بأوراق واضحة وأجواء راقية.',baccarat:'تصميم أنيق لطاولة باكارات بين اللاعب والمصرف.'}
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
+const newAppleTraps=()=>Array.from({length:3},()=>Math.floor(Math.random()*3))
 const rouletteReds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36])
 const drawCard=()=>{const value=Math.floor(Math.random()*13)+1;return value===1?11:Math.min(value,10)}
 const cardLabel=(value:number)=>value===11?'A':String(value)
@@ -39,6 +40,8 @@ export default function GamesHub(){
   const [crashActive,setCrashActive]=useState(false)
   const [appleLevel,setAppleLevel]=useState(0)
   const [appleDone,setAppleDone]=useState(false)
+  const [appleTraps,setAppleTraps]=useState<number[]>(()=>newAppleTraps())
+  const [applePicks,setApplePicks]=useState<number[]>([])
   const [plinkoSlot,setPlinkoSlot]=useState<number|null>(null)
   const [plinkoDropping,setPlinkoDropping]=useState(false)
   const [slotSymbols,setSlotSymbols]=useState<string[]>(['🍒','⭐','🍋'])
@@ -53,7 +56,7 @@ export default function GamesHub(){
   const resetDemo=()=>{
     if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;setSlotSpinning(false)
     setPracticeResult('');setPracticeCount(0);setCrashAt(0);setMultiplier(1)
-    setCrashActive(false);setAppleLevel(0);setAppleDone(false);setPlinkoSlot(null);setPlinkoDropping(false)
+    setCrashActive(false);setAppleLevel(0);setAppleDone(false);setAppleTraps(newAppleTraps());setApplePicks([]);setPlinkoSlot(null);setPlinkoDropping(false)
     setSlotSymbols(['🍒','⭐','🍋']);setRouletteNumber(null);setCardHand([]);setDealerHand([]);setBlackjackDone(false);setBaccaratHand(null)
   }
   const closeGame=()=>{setSelected(null);resetDemo()}
@@ -69,15 +72,11 @@ export default function GamesHub(){
     setCrashActive(false)
     setPracticeResult(arabic?`أوقفت الجولة عند ${multiplier.toFixed(2)}×. نتيجة للعرض فقط دون أرباح.`:`Practice stop at ${multiplier.toFixed(2)}×. Display-only result; no winnings were created.`)
   }
-  const pickApple=()=>{
-    if(appleDone)return
-    if(Math.random()<0.27){
-      setAppleDone(true);setPracticeResult(arabic?`ظهرت التفاحة الخاسرة في المستوى ${appleLevel+1}. أعد التجربة للمحاولة مجدداً.`:`Trap revealed at level ${appleLevel+1}. Start a fresh practice round to try again.`)
-    }else{
-      const next=appleLevel+1;setAppleLevel(next)
-      if(next>=3){setAppleDone(true);setPracticeResult(arabic?'ثلاث تفاحات آمنة! اكتمل المستوى التدريبي دون جوائز أو رصيد.':'Three safe picks! Practice level completed. No prize or balance was awarded.')}
-      else setPracticeResult(arabic?`تفاحة آمنة! أكملت المستوى ${next} من 3. يمكنك المتابعة.`:`Safe apple! Level ${next} of 3 completed. Continue this practice round.`)
-    }
+  const pickApple=(column:number)=>{
+    if(appleDone||appleLevel>=3)return
+    setApplePicks(current=>[...current,column])
+    if(column===appleTraps[appleLevel]){setAppleDone(true);setPracticeResult(arabic?`وجدت التفاحة الخطرة في الصف ${appleLevel+1}. انتهت الجولة التدريبية.`:`Trap apple found in row ${appleLevel+1}. Practice round over.`)}
+    else{const next=appleLevel+1;setAppleLevel(next);if(next>=3){setAppleDone(true);setPracticeResult(arabic?'ثلاث اختيارات آمنة! اكتملت الجولة التدريبية دون جوائز أو رصيد.':'Three safe picks! Practice round completed with no prize or balance award.')}else setPracticeResult(arabic?`اختيار آمن! انتقل إلى الصف ${next+1}.`:`Safe pick! Continue to row ${next+1}.`)}
     setPracticeCount(value=>value+1)
   }
   const dropPlinko=()=>{
@@ -131,8 +130,7 @@ export default function GamesHub(){
           {!crashActive?<button className="game-detail-done" type="button" onClick={startCrash}><Play size={15}/> {labels.start}</button>:<div className="game-action-row"><button type="button" onClick={cashOutCrash}>{labels.stop}</button></div>}
         </div>}
         {selected.id==='apple'&&<div className="game-practice-controls">
-          <div className="apple-levels">{[0,1,2].map(i=><span key={i} className={i<appleLevel?'safe':''}>{i<appleLevel?'✓':'🍏'}</span>)}</div>
-          <button className="game-detail-done" type="button" disabled={appleDone} onClick={pickApple}>{labels.pick} · LEVEL {Math.min(appleLevel+1,3)}</button>
+          <div className="apple-board" aria-label={arabic?'اختر تفاحة واحدة في كل صف':'Choose one apple in each row'}>{[0,1,2].map(row=><div className="apple-row" key={row}>{[0,1,2].map(col=>{const chosen=applePicks[row]===col;const revealed=row<appleLevel||(appleDone&&row===appleLevel);const trap=appleTraps[row]===col;return <button key={col} type="button" disabled={appleDone||row!==appleLevel} className={`${chosen?'chosen ':''}${revealed&&trap?'trap ':''}${revealed&&chosen&&!trap?'safe ':''}${row>appleLevel?'locked':''}`} onClick={()=>pickApple(col)} aria-label={`${arabic?'الصف':'Row'} ${row+1}, ${arabic?'الخيار':'choice'} ${col+1}`}>{revealed?(chosen?(trap?'💥':'🍏'):(trap?'💣':'·')):row===appleLevel?'🍏':'🔒'}</button>})}</div>)}</div>
         </div>}
         {selected.id==='plinko'&&<div className="game-practice-controls">
           <div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:6},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:9},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div></div>
