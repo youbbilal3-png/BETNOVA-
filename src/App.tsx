@@ -711,7 +711,7 @@ export default function App() {
               <button type="button" className="featured-game-card featured-apple" onClick={() => openFeaturedGame('apple')}><span className="featured-game-art" aria-hidden="true">🍏</span><span className="featured-game-name">APPLE</span><span className="featured-game-action">{language === 'ar' ? 'العب الآن' : 'PLAY NOW'} <ArrowRight size={11}/></span></button>
               <button type="button" className="featured-game-card featured-plinko" onClick={() => openFeaturedGame('plinko')}><span className="featured-game-art" aria-hidden="true">🔮</span><span className="featured-game-name">PLINKO</span><span className="featured-game-action">{language === 'ar' ? 'العب الآن' : 'PLAY NOW'} <ArrowRight size={11}/></span></button>
             </div>
-          </section>
+          </section>}
 
           <div className="quick-stats"><div><span className="stat-icon"><Activity size={17}/></span><span><b>{t("live_energy")}</b><small>{t("follow_action")}</small></span></div><div><span className="stat-icon teal"><Globe2 size={17}/></span><span><b>{t("global_sports")}</b><small>{t("every_corner")}</small></span></div><div><span className="stat-icon lime"><ShieldCheck size={17}/></span><span><b>{t("player_first")}</b><small>{t("safety_design")}</small></span></div></div>
 
