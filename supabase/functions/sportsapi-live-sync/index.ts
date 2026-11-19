@@ -87,9 +87,7 @@ Deno.serve(async (req: Request) => {
   const apiKey = String(config.api_key ?? "");
   if (!apiKey) return json({ error: "Add sportsapi_live_api_key to Supabase Vault to activate live scores" }, 503);
 
-  const notificationDispatchSecret = Deno.env.get("BETNOVA_NOTIFICATION_DISPATCH_SECRET") ?? "";
   async function dispatchVerifiedPush(eventId: string, verified = false) {
-    if (!notificationDispatchSecret) return;
     try {
       const response = await fetch(`${supabaseUrl}/functions/v1/dispatch-push-notifications`, {
         method: "POST",
@@ -97,7 +95,6 @@ Deno.serve(async (req: Request) => {
           "Authorization": `Bearer ${serviceKey}`,
           "apikey": serviceKey,
           "Content-Type": "application/json",
-          "x-betnova-notification-secret": notificationDispatchSecret,
         },
         body: JSON.stringify({ event_id: eventId, verified }),
         signal: AbortSignal.timeout(7000),
