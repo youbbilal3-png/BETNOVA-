@@ -22,6 +22,9 @@ const arabicDescriptions:Record<string,string>={crash:'ابدأ جولة تدر�
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
 
 export default function GamesHub(){
+  const {language}=useLanguage()
+  const arabic=language==='ar'
+  const labels=arabic?{all:'كل الألعاب',games:'الألعاب',slots:'السلوتس',casino:'الكازينو',heading:'ادخل إلى',zone:'منطقة اللعب',subtitle:'اكتشف بُعداً جديداً من الترفيه.',explore:'استكشف اللعبة',safety:'تجارب تدريبية مجانية فقط. لا توجد إيداعات أو رهانات أو سحوبات أو جوائز أو أموال حقيقية.',practice:'تجربة مجانية',demo:'وضع تجريبي · بدون أموال أو رهانات',start:'ابدأ جولة تدريبية',next:'الخطوة التالية +0.25×',stop:'توقف الآن',pick:'اختر التفاحة التالية',drop:'أسقط الكرة',tryDemo:'جرّب العرض المجاني',reset:'إعادة التجربة',close:'إغلاق'}:{all:'ALL GAMES',games:'GAMES',slots:'SLOTS',casino:'CASINO',heading:'ENTER THE',zone:'PLAY ZONE',subtitle:'Discover a new dimension of play.',explore:'EXPLORE GAME',safety:'Free practice demonstrations only. No deposits, wagers, cash-out value, prizes or real-money play are enabled.',practice:'FREE PRACTICE',demo:'DEMO MODE · NO MONEY OR BETS',start:'START PRACTICE ROUND',next:'NEXT STEP +0.25×',stop:'STOP HERE',pick:'PICK NEXT APPLE',drop:'DROP PRACTICE BALL',tryDemo:'TRY FREE DEMO',reset:'RESET PRACTICE',close:'CLOSE'}
   const [category,setCategory]=useState<Category>('all')
   const [selected,setSelected]=useState<Game|null>(null)
   const [practiceResult,setPracticeResult]=useState('')
