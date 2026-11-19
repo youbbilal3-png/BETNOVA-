@@ -21,8 +21,11 @@ The application code includes:
 - Match and team follow subscriptions.
 - Server-side FCM HTTP v1 delivery with per-user/event idempotency.
 - Verified-goal handling that avoids sending alerts for VAR-overturned goals.
-- Live-provider integration for confirmed goals, red cards, kickoff and full-time events.
-- Automatic removal of FCM tokens that Firebase reports as permanently unregistered.
+- Live-provider integration for confirmed goals, red cards, kickoff, half-time and full-time events.
+- Automatic token refresh/registration across Android app launches and cleanup of permanently unregistered FCM tokens.
+- Match/team follows that route alerts only to opted-in users following the relevant fixture or team.
+
+Bet-settlement and account-activity preferences are visibly marked as coming soon; their separate secure event pipeline is not implemented yet.
 
 Push delivery is not live until the Edge Functions are deployed and the following secrets are configured securely in Supabase:
 
