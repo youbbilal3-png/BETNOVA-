@@ -9,8 +9,8 @@
   .app-shell .brand{gap:8px!important;font-size:20px!important;letter-spacing:-.8px!important}
   .app-shell .brand-symbol{width:36px!important;height:36px!important;border-radius:11px!important}
   .app-shell .brand small{display:none!important}
-  .app-shell .brand .nova-brand-word{font-size:0!important}
-  .app-shell .brand .nova-brand-word:after{content:"BETNOVA";font-size:20px;letter-spacing:-.8px;color:#f5fff7}
+  .app-shell .brand .nova-brand-word{font-size:20px!important;letter-spacing:-.8px!important;color:#f5fff7!important}
+  .app-shell .brand .nova-brand-word:after{content:none!important;display:none!important}
   .app-shell .brand .brand-accent{display:none!important}
   .app-shell .desktop-nav,.app-shell>.ticker{display:none!important}
   .app-shell .top-actions{margin-left:auto!important;gap:7px!important}
