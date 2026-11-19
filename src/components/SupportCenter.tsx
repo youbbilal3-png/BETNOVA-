@@ -11,7 +11,7 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState(userEmail ?? '')
   const [category, setCategory] = useState('Account & profile')
-  const [subject, set{t('support_subject')}] = useState('')
+  const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -30,8 +30,8 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
 
   async function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!supabase) { setError('support_temporarily_unavailable'); return }
-    if (message.trim().length < 12) { setError('support_message_too_short'); return }
+    if (!supabase) { setError(t('something_wrong')); return }
+    if (message.trim().length < 12) { setError(t('something_wrong')); return }
     setBusy(true); setError('')
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -46,9 +46,9 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
       })
       if (insertError) throw insertError
       setSent(true)
-      set{t('support_subject')}(''); setMessage('')
+      setSubject(''); setMessage('')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'support_send_failed')
+      setError(caught instanceof Error ? caught.message : t('something_wrong'))
     } finally { setBusy(false) }
   }
 
@@ -91,17 +91,17 @@ export default function SupportCenter({ onClose, userEmail }: Props) {
             <span className="support-card-kicker">{t('support_request_title').toUpperCase()}</span>
             <h3>{t('support_request_title')}</h3>
             <p>Send a request from here. It will appear in the administration support inbox.</p>
-            <a href="#support-form">{t('support_write_request')} <ArrowRight size={16}/></a>
+            <a href="#support-form">{t('support_submit_request')} <ArrowRight size={16}/></a>
           </article>
         </div>
 
         <section className="support-form-card" id="support-form">
           <div className="support-form-heading"><div><span className="support-card-kicker">WE’RE LISTENING</span><h2>{t('support_request_title')}</h2><p>Tell us what happened and how we can reach you.</p></div><div className="support-form-mark"><Send size={22}/></div></div>
-          {sent ? <div className="support-success"><CheckCircle2 size={25}/><div><b>{t('support_received')}</b><p>Thank you for contacting BETNOVA. {t('support_message')} has been added to the support inbox.</p></div><button type="button" onClick={() => setSent(false)}>{t('support_send_another')}</button></div> :
+          {sent ? <div className="support-success"><CheckCircle2 size={25}/><div><b>{t('confirmation_resent')}</b><p>Thank you for contacting BETNOVA. {t('support_how_help')} has been added to the support inbox.</p></div><button type="button" onClick={() => setSent(false)}>{t('support_send_another')}</button></div> :
             <form onSubmit={event => void submitRequest(event)} className="support-form">
               <div className="support-form-row"><label>{t('your_name')} <span>Optional</span><input value={name} onChange={event => setName(event.target.value)} maxLength={100} placeholder="How should we address you?"/></label><label>{t('email_address')}<input type="email" required value={email} onChange={event => setEmail(event.target.value)} maxLength={254} placeholder="you@example.com"/></label></div>
-              <div className="support-form-row"><label>{t('support_request_title')}<select value={category} onChange={event => setCategory(event.target.value)}><option>Account & profile</option><option>Deposit</option><option>Withdrawal</option><option>Wallet & balance</option><option>Sports & markets</option><option>Games</option><option>Technical issue</option><option>Other</option></select></label><label>{t('support_subject')}<input required value={subject} onChange={event => set{t('support_subject')}(event.target.value)} maxLength={140} placeholder="Briefly describe your issue"/></label></div>
-              <label className="support-message-label">{t('support_message')}<textarea required value={message} onChange={event => setMessage(event.target.value)} minLength={12} maxLength={4000} rows={5} placeholder="Write the details of your request here…"/></label>
+              <div className="support-form-row"><label>{t('support_request_title')}<select value={category} onChange={event => setCategory(event.target.value)}><option>Account & profile</option><option>Deposit</option><option>Withdrawal</option><option>Wallet & balance</option><option>Sports & markets</option><option>Games</option><option>Technical issue</option><option>Other</option></select></label><label>{t('support_request_title')}<input required value={subject} onChange={event => setSubject(event.target.value)} maxLength={140} placeholder="Briefly describe your issue"/></label></div>
+              <label className="support-message-label">{t('support_how_help')}<textarea required value={message} onChange={event => setMessage(event.target.value)} minLength={12} maxLength={4000} rows={5} placeholder="Write the details of your request here…"/></label>
               {error && <p className="support-error" role="alert">{error}</p>}
               <div className="support-submit-row"><small><ShieldCheck size={14}/> Your request is visible to the BETNOVA administration only.</small><button type="submit" disabled={busy}>{busy ? t('sending') : t('support_send')} <Send size={15}/></button></div>
             </form>}
