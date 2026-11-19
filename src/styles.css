@@ -790,3 +790,66 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
  .support-footer-note{align-items:flex-start;line-height:1.6}
  .admin-panel{max-height:calc(100dvh - 18px);padding:22px 15px 18px}
 }
+
+
+/* BETNOVA Responsible Play dedicated page */
+.responsible-backdrop{position:fixed;inset:0;z-index:11100;overflow-y:auto;background:#061a14ed;overscroll-behavior:contain}
+.responsible-page{min-height:100%;background:#f4faf6;color:#173d2d}
+.responsible-topbar{height:66px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 clamp(14px,5vw,64px);background:#071d16;color:#effff4;border-bottom:1px solid #ffffff18}
+.responsible-topbar>button{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 12px;border:1px solid #ffffff28;border-radius:10px;background:#ffffff0b;color:#effff4;font-size:11px;font-weight:800}
+.responsible-topbar>b{font:900 14px 'Space Grotesk',sans-serif;letter-spacing:.12em}
+.responsible-topbar>b span{margin-left:8px;color:#7be6ad;font-size:9px;letter-spacing:.16em}
+.responsible-topbar .responsible-close{width:39px;justify-content:center;padding:0}
+.responsible-hero{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(190px,.65fr);align-items:center;gap:28px;min-height:300px;padding:42px clamp(22px,9vw,120px);background:radial-gradient(ellipse at 82% 35%,#2dc17a3b,transparent 32%),linear-gradient(125deg,#061b15,#0c3929 60%,#10291f);color:#f2fff6}
+.responsible-hero:after{content:"";position:absolute;z-index:-1;width:430px;height:430px;right:12%;top:-300px;border:1px solid #75e9ae40;border-radius:50%;box-shadow:0 0 0 38px #ffffff08,0 0 0 78px #ffffff05}
+.responsible-kicker{display:inline-flex;align-items:center;gap:8px;color:#16885b;font-size:9px;font-weight:950;letter-spacing:.16em}
+.responsible-hero .responsible-kicker{color:#84eeb8}
+.responsible-hero h1{max-width:760px;margin:14px 0;font:850 clamp(31px,4.5vw,48px)/1.12 'Space Grotesk',sans-serif;letter-spacing:-.04em}
+.responsible-hero h1 em{display:block;margin-top:5px;color:#7ceab0;font-style:normal}
+.responsible-hero-copy>p{max-width:680px;color:#c5ddce;font-size:13px;line-height:1.85}
+.responsible-hero-mark{justify-self:center;display:grid;place-items:center;gap:14px;color:#8af0b9;text-align:center}
+.responsible-hero-mark>div{display:grid;place-items:center;width:116px;height:116px;border:1px solid #80eab566;border-radius:34px;background:linear-gradient(145deg,#1b7652,#0b3828);box-shadow:0 18px 48px #0006,0 0 45px #3bdc8c22;transform:rotate(-7deg)}
+.responsible-hero-mark>span{font-size:8px;font-weight:900;letter-spacing:.2em;line-height:1.6}
+.responsible-content{width:min(100%,1040px);margin:0 auto;padding:32px 22px 28px}
+.responsible-principles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.responsible-principles article{padding:20px;border:1px solid #deebe1;border-radius:15px;background:#fff;box-shadow:0 9px 25px #17452e09}
+.responsible-principles article>span{color:#299a69;font-size:10px;font-weight:950;letter-spacing:.15em}
+.responsible-principles h3{margin:10px 0 7px;color:#1a4733;font-size:15px;font-weight:900}
+.responsible-principles p{margin:0;color:#748a7d;font-size:11px;line-height:1.75}
+.responsible-warning{display:flex;align-items:flex-start;gap:13px;margin-top:14px;padding:17px;border:1px solid #d7e9dc;border-radius:14px;background:#eaf6ed;color:#1c8055}
+.responsible-warning>svg{flex:none;margin-top:2px}
+.responsible-warning b{font-size:12px}
+.responsible-warning p{margin:4px 0 0;color:#557565;font-size:11px;line-height:1.75}
+.responsible-request{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,.9fr);gap:28px;margin-top:20px;padding:24px;border:1px solid #dce9df;border-radius:17px;background:#fff;box-shadow:0 12px 30px #17452e0a}
+.responsible-request h2{margin:8px 0;color:#183f2e;font:850 24px 'Space Grotesk',sans-serif}
+.responsible-request>div>p{max-width:460px;color:#748a7d;font-size:12px;line-height:1.8}
+.responsible-request form{display:grid;gap:11px}
+.responsible-request label{display:grid;gap:6px;color:#315443;font-size:10px;font-weight:850}
+.responsible-request input,.responsible-request select,.responsible-request textarea{width:100%;min-width:0;min-height:42px;padding:10px 11px;border:1px solid #dce9df;border-radius:9px;background:#fbfdfb;color:#1b3f2e;font:inherit;font-size:11px}
+.responsible-request textarea{resize:vertical;line-height:1.6}
+.responsible-request form>button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:43px;border:0;border-radius:10px;background:linear-gradient(135deg,#239a68,#126047);color:white;font-size:11px;font-weight:900}
+.responsible-request form>button:disabled{opacity:.5}
+.responsible-request form>small{display:flex;align-items:flex-start;gap:6px;color:#85968b;font-size:9px;line-height:1.6}
+.responsible-request form>small svg{flex:none}
+.responsible-login-note,.responsible-error{margin:0;color:#a07832;font-size:10px}
+.responsible-error{color:#b43f3f}
+.responsible-success{display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid #ccebd6;border-radius:12px;background:#effaf2;color:#1b7d53}
+.responsible-success>svg{flex:none}
+.responsible-success b{font-size:13px}
+.responsible-success p{margin:5px 0 0;color:#648473;font-size:11px;line-height:1.7}
+.responsible-footer{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:18px;color:#82958a;font-size:9px;text-align:center}
+.responsible-footer svg{color:#23885d}
+@media(max-width:680px){
+ .responsible-topbar{height:58px;padding:0 10px}
+ .responsible-topbar>b{font-size:11px}
+ .responsible-topbar>b span{font-size:8px}
+ .responsible-topbar>button{font-size:9px;padding:0 8px}
+ .responsible-hero{grid-template-columns:1fr;min-height:0;padding:30px 20px}
+ .responsible-hero h1{font-size:34px}
+ .responsible-hero-mark{position:absolute;right:-34px;bottom:-30px;opacity:.18}
+ .responsible-content{padding:20px 13px 24px}
+ .responsible-principles{grid-template-columns:1fr;gap:9px}
+ .responsible-principles article{padding:16px}
+ .responsible-request{grid-template-columns:1fr;gap:12px;padding:18px 14px}
+ .responsible-request h2{font-size:22px}
+}
