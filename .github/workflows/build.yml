@@ -12,6 +12,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Set up Deno
         uses: denoland/setup-deno@v2
         with:
@@ -22,10 +26,6 @@ jobs:
           deno check --config=deno.json supabase/functions/sportsapi-live-sync/index.ts
           deno check --config=deno.json supabase/functions/fivedollar-football-sync/index.ts
           deno check --config=deno.json supabase/functions/dispatch-push-notifications/index.ts
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Build application
