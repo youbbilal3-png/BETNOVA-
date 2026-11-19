@@ -239,7 +239,6 @@ export default function App() {
     setAccountOpen(false); setWalletOpen(false); setAdminOpen(false); setBetsOpen(false)
     setAuthOpen(false); setNotificationsOpen(false); setSettingsOpen(false)
     setMobileMoreOpen(false); setMobileSlip(false); setDetailMatch(null)
-    setDetailMatch(null)
   }
   function openGames() {
     if (activePage !== 'games') window.history.pushState({ ...window.history.state, betnovaPage: 'games' }, '', '#games')
@@ -685,7 +684,7 @@ export default function App() {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError) throw authError
       if (!user) {
-        setAuthMode('login'); setAuthOpen(true)
+        setAuthMode('login'); openOverlay('auth')
         setBetMessage('Sign in to place a bet with your wallet balance.')
         return
       }
@@ -808,23 +807,23 @@ export default function App() {
         </aside>
       </main>
 
-      <nav className="mobile-nav"><button className={activePage === 'sports' ? 'mobile-active' : ''} onClick={() => { setActivePage('sports'); openEventView("upcoming") }}><Trophy size={19}/>{t("sports")}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>setMobileSlip(true)}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => setMobileMoreOpen(true)}><Menu size={19}/>{t("menu")}</button></nav>
+      <nav className="mobile-nav"><button className={activePage === 'sports' ? 'mobile-active' : ''} onClick={() => { setActivePage('sports'); openEventView("upcoming") }}><Trophy size={19}/>{t("sports")}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>openOverlay('mobileSlip')}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => openOverlay('mobileMore')}><Menu size={19}/>{t("menu")}</button></nav>
       {mobileMoreOpen && <div className="mobile-more-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('mobileMore') }}>
         <section className="mobile-more-panel" role="dialog" aria-modal="true" aria-label={t("menu")}>
           <div className="mobile-more-header"><div><b>BETNOVA</b><small>{t("menu")}</small></div><button className="icon-btn" onClick={() => closeOverlay('mobileMore')} aria-label={t("close")}><X size={18}/></button></div>
           <button onClick={() => { setMobileMoreOpen(false); openGames() }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
           <button onClick={() => { setMobileMoreOpen(false); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           {userEmail ? <>
-            <button className="mobile-account-entry" onClick={() => { setMobileMoreOpen(false); setAccountOpen(true) }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
+            <button className="mobile-account-entry" onClick={() => { closeOverlay('mobileMore'); openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>Deposit</button>
-            <button onClick={() => { setMobileMoreOpen(false); setBetsOpen(true) }}><Activity size={17}/>{t("my_bets")}</button>
-            <button onClick={() => { setMobileMoreOpen(false); setNotificationsOpen(true) }}><Bell size={17}/>{t("notifications")}</button>
+            <button onClick={() => { closeOverlay('mobileMore'); openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
+            <button onClick={() => { closeOverlay('mobileMore'); openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("responsible")?.scrollIntoView({behavior:"smooth"}) }}><ShieldCheck size={17}/>Responsible play</button>
             <button onClick={() => { setMobileMoreOpen(false); document.getElementById("help")?.scrollIntoView({behavior:"smooth"}) }}><CircleHelp size={17}/>Help & support</button>
-            {isAdminUser && <button onClick={() => { setMobileMoreOpen(false); setAdminOpen(true) }}><ShieldCheck size={17}/>{t("admin")}</button>}
+            {isAdminUser && <button onClick={() => { closeOverlay('mobileMore'); openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { setMobileMoreOpen(false); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
-            <button onClick={() => { setMobileMoreOpen(false); setAuthMode("login"); setAuthOpen(true) }}><ArrowRight size={17}/>{t("login")}</button>
+            <button onClick={() => { setMobileMoreOpen(false); setAuthMode("login"); openOverlay('auth') }}><ArrowRight size={17}/>{t("login")}</button>
             <button onClick={() => { closeOverlay('mobileMore'); setAuthMode("signup"); openOverlay('auth') }}><ShieldCheck size={17}/>{t("join")}</button>
           </>}
           <button onClick={() => { closeOverlay('mobileMore'); openOverlay('settings') }}><Settings size={17}/>{t("settings")}</button>
