@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const API = "https://api.5dollarfootballapi.com/v1";
 const PROVIDER = "fivedollarfootballapi";
-const MAX_ODDS_FIXTURES = 7;
+const MAX_ODDS_FIXTURES = 12;
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, x-betnova-sync-secret",
@@ -42,7 +42,7 @@ function safeDate(value: unknown): string | null {
   return Number.isFinite(d.getTime()) ? d.toISOString() : null;
 }
 function eventType(value: unknown): string | null {
-  const v = String(value ?? "").trim().toLowerCase();
+  const v = String(value ?? "").toLowerCase();
   return ["goal", "corner", "yellow_card", "red_card", "penalty_awarded", "half_time", "match_start"].includes(v) ? v : null;
 }
 function period(value: unknown): string | null {
@@ -58,7 +58,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration is incomplete" }, 503);
   const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
@@ -85,6 +85,31 @@ Deno.serve(async (req: Request) => {
     } catch (error) {
       console.error("Push dispatch failed without affecting FiveDollar sync", error);
     }
+  }
+
+  async function recordMatchStart(fixtureId: string, occurredAt: string) {
+    const { data: event, error } = await supabase.from("fixture_events")
+      .upsert({
+        fixture_id: fixtureId,
+        provider: "betnova_notifications",
+        provider_event_id: fixtureId + ":match_start",
+        event_type: "match_start",
+        period: "match_start",
+        event_data: { source: "live_feed", confirmed: true },
+        occurred_at: occurredAt,
+      }, { onConflict: "provider,provider_event_id", ignoreDuplicates: true })
+      .select("id").maybeSingle();
+    if (error) {
+      errors.push("could not store match-start event");
+      return;
+    }
+    if (event?.id) await dispatchVerifiedPush(event.id);
+  }
+
+  function isNearKickoff(kickoff: string) {
+    const time = Date.parse(kickoff);
+    const delta = Date.now() - time;
+    return Number.isFinite(delta) && delta >= -5 * 60_000 && delta <= 15 * 60_000;
   }
 
   const body = await req.json().catch(() => ({}));
@@ -161,9 +186,9 @@ Deno.serve(async (req: Request) => {
 
     // Reuse an already-imported fixture from another provider when both team names
     // and kickoff match. This prevents duplicate match cards when odds providers overlap.
-    const teamKey = (value: unknown) => String(value ?? "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
-      .toLowerCase().replace(/\\b(fc|cf|sc|ac|afc|club|football club)\\b/g, "")
-      .replace(/[^a-z0-9]+/g, " ").trim().replace(/\\s+/g, " ");
+    const teamKey = (value: unknown) => String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/\b(fc|cf|sc|ac|afc|club|football club)\b/g, "")
+      .replace(/[^\p{L}\p{N}]+/gu, " ").trim().replace(/\s+/g, " ");
     const kickoffMs = new Date(kickoff).getTime();
     const { data: candidates, error: candidateError } = await supabase.from("fixtures")
       .select("id,starts_at,home_team:teams!fixtures_home_team_id_fkey(name),away_team:teams!fixtures_away_team_id_fkey(name)")
@@ -296,9 +321,7 @@ Deno.serve(async (req: Request) => {
       const occurredAt = minute === null ? now.toISOString() : new Date(new Date(item.kickoff_utc).getTime() + minute * 60000 + (occurrence % 60) * 1000).toISOString();
       const prior = await supabase.from("fixture_events").select("id").eq("provider", PROVIDER).eq("provider_event_id", providerEventId).maybeSingle();
       if (prior.error) throw new Error("Could not inspect existing provider event");
-      if (!prior.data && ["goal", "corner", "yellow_card", "red_card", "penalty_awarded"].includes(type)) {
-        eventTimelineChanged = true;
-      }
+      if (!prior.data) eventTimelineChanged = true;
       const saved = await supabase.from("fixture_events").upsert({
         fixture_id: fixtureId, provider: PROVIDER, provider_event_id: providerEventId,
         event_type: type, period: period(event?.period), minute, added_time: added,
@@ -307,8 +330,7 @@ Deno.serve(async (req: Request) => {
         assist_player_name: event?.assist?.name ?? null,
         event_data: { source: "5DollarFootballAPI", source_event: event, side, confirmed: true },
         occurred_at: occurredAt,
-      }, { onConflict: "provider,provider_event_id" })
-        .select("id").maybeSingle();
+      }, { onConflict: "provider,provider_event_id" }).select("id").maybeSingle();
       if (saved.error) errors.push("event " + providerEventId + ": " + saved.error.message.slice(0, 100));
       else {
         eventsSynced++;
@@ -324,6 +346,7 @@ Deno.serve(async (req: Request) => {
     let fullTimeEventId: string | null = null;
     if (item?.status === "finished") {
       const fullTimeId = String(item.id) + ":full_time";
+      fullTimeEventId = fullTimeId;
       const priorFullTime = await supabase.from("fixture_events").select("id")
         .eq("provider", PROVIDER).eq("provider_event_id", fullTimeId).maybeSingle();
       if (priorFullTime.error) throw new Error("Could not inspect full-time event");
@@ -333,10 +356,8 @@ Deno.serve(async (req: Request) => {
         event_type: "full_time", period: "full_time",
         event_data: { source: PROVIDER, confirmed: true, final: true, home_score: finiteScore(item?.goals?.home), away_score: finiteScore(item?.goals?.away) },
         occurred_at: now.toISOString(),
-      }, { onConflict: "provider,provider_event_id" })
-        .select("id").maybeSingle();
-      if (fullTime.error || !fullTime.data?.id) throw new Error("Could not store provider full-time event");
-      fullTimeEventId = fullTime.data.id;
+      }, { onConflict: "provider,provider_event_id" });
+      if (fullTime.error) throw new Error("Could not store provider full-time event");
     }
 
     const [oldGoals, linkResult, fixtureResult] = await Promise.all([
@@ -433,10 +454,12 @@ Deno.serve(async (req: Request) => {
       pending_retraction_ids: [], pending_retraction_observations: 0,
       last_event_sync_at: now.toISOString(), updated_at: now.toISOString(),
     }, { onConflict: "provider_fixture_id" });
-    if (linkError) errors.push("could not save provider event checkpoint");
-
-    // The first snapshot establishes a baseline; only later newly observed goals
-    // are eligible for alerts, and only after score/retraction reconciliation succeeds.
+    if (linkError) {
+      errors.push("could not save provider event checkpoint");
+      return;
+    }
+    // The first provider snapshot is a historical baseline, not a live alert stream.
+    // Only subsequent newly observed events may notify users.
     if (link?.last_event_sync_at && newlyObservedPushEvents.length > 0) {
       for (const event of newlyObservedPushEvents) {
         await dispatchVerifiedPush(event.id, event.eventType === "goal");
@@ -497,7 +520,7 @@ Deno.serve(async (req: Request) => {
 
     const result = priceSet(odds["1x2"]);
     if (result) {
-      await saveMarket(fixtureId, isLive, "match_result", "Match Winner · Bet365", null, [
+      await saveMarket(fixtureId, isLive, "match_result", "Match Winner", null, [
         { name: "Home", key: "home", price: result.home },
         { name: "Draw", key: "draw", price: result.draw },
         { name: "Away", key: "away", price: result.away },
@@ -513,7 +536,7 @@ Deno.serve(async (req: Request) => {
       const prices = isLive ? row?.inplay : row?.closing;
       if (!prices) continue;
       const key = line.toFixed(1).replace(".", "_");
-      await saveMarket(fixtureId, isLive, "total_goals", "Total Goals · " + line + " · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "total_goals", "Total Goals · " + line + "", line, [
         { name: "Over " + line, key: "over_" + key, price: prices.over },
         { name: "Under " + line, key: "under_" + key, price: prices.under },
       ]);
@@ -524,7 +547,7 @@ Deno.serve(async (req: Request) => {
     if (goals && Number.isFinite(Number(goals.line)) && Math.round(Number(goals.line) * 2) === Number(goals.line) * 2 && !fixedLineNumbers.has(Number(goals.line))) {
       const line = Number(goals.line);
       const key = line.toFixed(1).replace(".", "_");
-      await saveMarket(fixtureId, isLive, "total_goals", "Main Total Goals · " + line + " · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "total_goals", "Main Total Goals · " + line + "", line, [
         { name: "Over " + line, key: "over_" + key, price: goals.over },
         { name: "Under " + line, key: "under_" + key, price: goals.under },
       ]);
@@ -534,7 +557,7 @@ Deno.serve(async (req: Request) => {
     if (firstHalfGoals && Number.isFinite(Number(firstHalfGoals.line)) && Math.round(Number(firstHalfGoals.line) * 2) === Number(firstHalfGoals.line) * 2) {
       const line = Number(firstHalfGoals.line);
       const key = line.toFixed(1).replace(".", "_");
-      await saveMarket(fixtureId, isLive, "total_goals", "1st Half Goals · " + line + " · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "total_goals", "1st Half Goals · " + line + "", line, [
         { name: "Over " + line, key: "over_" + key, price: firstHalfGoals.over },
         { name: "Under " + line, key: "under_" + key, price: firstHalfGoals.under },
       ], "first_half");
@@ -544,7 +567,7 @@ Deno.serve(async (req: Request) => {
     if (handicap && Number.isFinite(Number(handicap.line)) && Math.round(Number(handicap.line) * 2) === Number(handicap.line) * 2) {
       const line = Number(handicap.line);
       const formatLine = (value: number) => (value > 0 ? "+" : "") + value.toFixed(1);
-      await saveMarket(fixtureId, isLive, "asian_handicap", "Asian Handicap · " + formatLine(line) + " · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "asian_handicap", "Asian Handicap · " + formatLine(line) + "", line, [
         { name: "Home " + formatLine(line), key: "home", price: handicap.home },
         { name: "Away " + formatLine(-line), key: "away", price: handicap.away },
       ]);
@@ -554,7 +577,7 @@ Deno.serve(async (req: Request) => {
     if (firstHalfHandicap && Number.isFinite(Number(firstHalfHandicap.line)) && Math.round(Number(firstHalfHandicap.line) * 2) === Number(firstHalfHandicap.line) * 2) {
       const line = Number(firstHalfHandicap.line);
       const formatLine = (value: number) => (value > 0 ? "+" : "") + value.toFixed(1);
-      await saveMarket(fixtureId, isLive, "asian_handicap", "1st Half Asian Handicap · " + formatLine(line) + " · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "asian_handicap", "1st Half Asian Handicap · " + formatLine(line) + "", line, [
         { name: "Home " + formatLine(line), key: "home", price: firstHalfHandicap.home },
         { name: "Away " + formatLine(-line), key: "away", price: firstHalfHandicap.away },
       ], "first_half");
@@ -564,7 +587,7 @@ Deno.serve(async (req: Request) => {
     if (cornerHandicap && Number.isFinite(Number(cornerHandicap.line)) && Math.round(Number(cornerHandicap.line) * 2) === Number(cornerHandicap.line) * 2) {
       const line = Number(cornerHandicap.line);
       const formatLine = (value: number) => (value > 0 ? "+" : "") + value.toFixed(1);
-      await saveMarket(fixtureId, isLive, "corner_asian", "Asian Handicap Corners · " + formatLine(line) + " · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "corner_asian", "Asian Handicap Corners · " + formatLine(line) + "", line, [
         { name: "Home " + formatLine(line), key: "home", price: cornerHandicap.home },
         { name: "Away " + formatLine(-line), key: "away", price: cornerHandicap.away },
       ]);
@@ -572,7 +595,7 @@ Deno.serve(async (req: Request) => {
 
     const btts = priceSet(odds.btts);
     if (btts) {
-      await saveMarket(fixtureId, isLive, "both_teams_score", "Both Teams To Score · Bet365", null, [
+      await saveMarket(fixtureId, isLive, "both_teams_score", "Both Teams To Score", null, [
         { name: "Yes", key: "yes", price: btts.yes },
         { name: "No", key: "no", price: btts.no },
       ]);
@@ -582,7 +605,7 @@ Deno.serve(async (req: Request) => {
     if (corners && Number.isFinite(Number(corners.line)) && Math.round(Number(corners.line) * 2) === Number(corners.line) * 2) {
       const line = Number(corners.line);
       const key = line.toFixed(1).replace(".", "_");
-      await saveMarket(fixtureId, isLive, "total_corners", "Total Corners · " + line + " · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "total_corners", "Total Corners · " + line + "", line, [
         { name: "Over " + line, key: "over_" + key, price: corners.over },
         { name: "Under " + line, key: "under_" + key, price: corners.under },
       ]);
@@ -592,7 +615,7 @@ Deno.serve(async (req: Request) => {
     if (firstHalfCorners && Number.isFinite(Number(firstHalfCorners.line)) && Math.round(Number(firstHalfCorners.line) * 2) === Number(firstHalfCorners.line) * 2) {
       const line = Number(firstHalfCorners.line);
       const key = line.toFixed(1).replace(".", "_");
-      await saveMarket(fixtureId, isLive, "total_corners", "1st Half Total Corners · " + line + " · Bet365", line, [
+      await saveMarket(fixtureId, isLive, "total_corners", "1st Half Total Corners · " + line + "", line, [
         { name: "Over " + line, key: "over_" + key, price: firstHalfCorners.over },
         { name: "Under " + line, key: "under_" + key, price: firstHalfCorners.under },
       ], "first_half");
@@ -624,9 +647,29 @@ Deno.serve(async (req: Request) => {
       // Free gives the top five; Community Access adds its chosen country pack.
       const end = start + 7 * 24 * 60 * 60;
       const leagueData = await get("/leagues?active_since=" + start);
+      const leaguePriority = (league: any) => {
+        const name = normalized(league?.name);
+        const country = normalized(league?.country?.name ?? league?.country);
+        const value = name + " " + country;
+        if (/premier league/.test(value) && /england/.test(value)) return 0;
+        if (/la liga/.test(value) || /laliga/.test(value)) return 1;
+        if (/serie a/.test(value) && /italy|italia/.test(value)) return 2;
+        if (/bundesliga/.test(value) && /germany|deutschland/.test(value)) return 3;
+        if (/ligue 1/.test(value) && /france/.test(value)) return 4;
+        if (/uefa champions league|champions league/.test(value)) return 5;
+        if (/uefa europa league|europa league/.test(value)) return 6;
+        if (/conference league/.test(value)) return 7;
+        if (/championship/.test(value) && /england/.test(value)) return 8;
+        if (/eredivisie/.test(value)) return 9;
+        if (/primeira liga/.test(value)) return 10;
+        return 100;
+      };
       const leagues = (Array.isArray(leagueData) ? leagueData : [])
         .filter((league: any) => league?.id !== undefined && league?.id !== null)
-        .sort((a: any, b: any) => String(a.name ?? a.id).localeCompare(String(b.name ?? b.id)));
+        .sort((a: any, b: any) =>
+          leaguePriority(a) - leaguePriority(b) ||
+          String(a.name ?? a.id).localeCompare(String(b.name ?? b.id))
+        );
       if (leagues.length) {
         const leagueIndex = batch % leagues.length;
         const selectedLeague = leagues[leagueIndex];
@@ -654,13 +697,16 @@ Deno.serve(async (req: Request) => {
       if (!id) continue;
       stored.push({ item, id });
       await syncStatistics(item, id);
+      if (mode === "live" && isNearKickoff(String(item?.kickoff_utc ?? ""))) {
+        await recordMatchStart(id, now.toISOString());
+      }
       if (mode === "live" || mode === "finalize") await syncEvents(item, id);
     }
 
-    // Free/Community plans expose live Bet365 prices per fixture. The live endpoint
-    // costs one request plus one request per selected fixture. Seven fixtures every
-    // ten minutes use at most 48 requests/hour, below the local 50/hour and provider 60/hour caps.
-    // Rotate across the provider's live fixture list so later matches are not starved.
+    // Community Access allows 300 requests/hour and 20/minute. Keep a conservative
+    // local ceiling (120/hour, 15/minute); 12 fixtures plus one live-list request
+    // every ten minutes uses at most 78 requests/hour. Rotate to cover more matches
+    // without exhausting the account quota or starving later fixtures.
     let oddsTargets: Array<{item:any;id:string}> = [];
     if (mode === "live" && stored.length) {
       const { data: cursorState, error: cursorReadError } = await supabase.from("fivedollar_live_odds_state")
