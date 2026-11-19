@@ -216,11 +216,25 @@ export default function App() {
   }
   useEffect(() => {
     const handleBack = (event: PopStateEvent) => {
+      if (walletOpen) setWalletOpen(false)
+      else if (adminOpen) setAdminOpen(false)
+      else if (accountOpen) setAccountOpen(false)
       setActivePage(event.state?.betnovaPage === 'games' ? 'games' : 'sports')
     }
     window.addEventListener('popstate', handleBack)
     return () => window.removeEventListener('popstate', handleBack)
-  }, [])
+  }, [walletOpen, adminOpen, accountOpen])
+
+  // Treat account, wallet and admin panels as in-app navigation entries so
+  // Android's hardware Back closes the top panel instead of leaving BETNOVA.
+  useEffect(() => {
+    const panelOpen = walletOpen || adminOpen || accountOpen
+    if (panelOpen && !window.history.state?.betnovaOverlay) {
+      window.history.pushState({ ...window.history.state, betnovaOverlay: true }, '', window.location.href)
+    } else if (!panelOpen && window.history.state?.betnovaOverlay) {
+      window.history.back()
+    }
+  }, [walletOpen, adminOpen, accountOpen])
 
   useEffect(() => {
     const client = supabase

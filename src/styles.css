@@ -541,3 +541,26 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 @media(max-width:360px){.wallet-method-grid{grid-template-columns:1fr}.wallet-method-card{min-height:62px}}
 
 .wallet-method-hint{color:#82978a;font-size:8px;line-height:1.45}
+
+
+/* Keep panel close controls visible while long account/admin content scrolls. */
+.wallet-panel,.admin-panel,.account-panel{position:relative}
+.wallet-close,.admin-close,.account-close{
+  position:sticky!important;
+  top:8px!important;
+  float:right!important;
+  z-index:80!important;
+  margin:0 0 -38px auto!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  border-radius:12px!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.28)!important;
+}
+.wallet-method-card.unavailable{opacity:.68;cursor:not-allowed;background:#f0f3f1}
+.wallet-method-card.currency-switch{border-style:dashed;border-color:#d5a33c;background:#fffaf0}
+.payment-method-logo.baridimob-logo{width:42px;height:42px;display:grid;place-items:center;background:#fff;border-radius:11px;overflow:hidden}
+.payment-method-logo.baridimob-logo img{width:100%;height:100%;object-fit:contain}
