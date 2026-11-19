@@ -113,10 +113,10 @@ begin
       returning * into v_wallet;
 
     insert into public.wallet_ledger(
-      wallet_account_id,user_id,currency,entry_type,amount,balance_after,reserved_after,
+      id,wallet_account_id,user_id,currency,entry_type,amount,balance_after,reserved_after,
       reference_type,reference_id,idempotency_key,description
     ) values (
-      v_wallet.id,v_group.user_id,v_group.currency,'bonus',v_cashback,
+      v_claim_id,v_wallet.id,v_group.user_id,v_group.currency,'bonus',v_cashback,
       v_wallet.available_balance,v_wallet.reserved_balance,
       'weekly_cashback',v_claim_id,v_claim_id,
       'Weekly cashback 5% · ' || v_week_start::text || ' to ' || v_week_end::text
