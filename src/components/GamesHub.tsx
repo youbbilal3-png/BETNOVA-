@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useLanguage } from '../i18n'
 import '../games-hub.css'
 import { ArrowRight, Crown, Gem, Grid3X3, Play, Sparkles, X, Zap, RotateCw } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 type Category = 'all' | 'games' | 'slots' | 'casino'
 type Game = { id:string; name:string; category:Exclude<Category,'all'>; tag:string; description:string; art:string; accent:string; mark:string }
@@ -59,6 +60,13 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const [dealerHand,setDealerHand]=useState<number[]>([])
   const [blackjackDone,setBlackjackDone]=useState(false)
   const [baccaratHand,setBaccaratHand]=useState<{player:number[];banker:number[]}|null>(null)
+  const [realStake,setRealStake]=useState('100')
+  const [realChoice,setRealChoice]=useState('standard')
+  const [realBalance,setRealBalance]=useState<number|null>(null)
+  const [realBetBusy,setRealBetBusy]=useState(false)
+  const [realBetMessage,setRealBetMessage]=useState('')
+  const [realBetResult,setRealBetResult]=useState<Record<string,unknown>|null>(null)
+  const [realRoundKey,setRealRoundKey]=useState(()=>crypto.randomUUID())
   const visible=games.filter(game=>category==='all'||game.category===category)
   const resetDemo=()=>{
     if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;setSlotSpinning(false)
@@ -67,6 +75,21 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     setSlotSymbols(['🍒','⭐','🍋']);setRouletteNumber(null);setRouletteSpinning(false);setCardHand([]);setDealerHand([]);setBlackjackDone(false);setBaccaratHand(null)
   }
   useEffect(()=>{if(!initialGameRequest)return;const target=games.find(game=>game.id===initialGameRequest.id);if(target){setCategory('games');setSelected(target);resetDemo()}},[initialGameRequest])
+  useEffect(()=>{
+    if(!selected)return
+    setRealBetResult(null);setRealBetMessage('');setRealBalance(null)
+    setRealChoice(selected.id==='crash'?'2.00':selected.id==='apple'?'1':selected.id==='plinko'?'medium':selected.id==='roulette'?'red':'standard')
+    if(!supabase){setRealBetMessage(arabic?'خدمة الرهان غير متاحة حالياً.':'Betting service is unavailable.');return}
+    let active=true
+    supabase.auth.getUser().then(async({data,error})=>{
+      if(error)throw error
+      if(!data.user){if(active)setRealBalance(0);return}
+      const {data:wallet,error:walletError}=await supabase.from('wallet_accounts').select('available_balance').eq('user_id',data.user.id).eq('currency','DZD').maybeSingle()
+      if(walletError)throw walletError
+      if(active)setRealBalance(Number(wallet?.available_balance??0))
+    }).catch(error=>{if(active)setRealBetMessage(error instanceof Error?error.message:'Could not load wallet balance.')})
+    return()=>{active=false}
+  },[selected?.id,arabic])
   const closeGame=()=>{const modalHistory=Boolean(window.history.state?.betnovaGameModal);setSelected(null);resetDemo();if(modalHistory)window.history.back()}
   useEffect(()=>{if(!selected)return;const current=window.history.state;if(!current?.betnovaGameModal)window.history.pushState({...current,betnovaPage:'games',betnovaGameModal:true},'', '#game');const onPop=()=>{setSelected(null);resetDemo()};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[selected])
   useEffect(()=>{if(!selected)return;const previous=document.activeElement as HTMLElement|null;modalRef.current?.focus();const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape'){closeGame();return}if(event.key==='Tab'){const nodes=modalRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])');if(!nodes?.length){event.preventDefault();modalRef.current?.focus();return}const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}};window.addEventListener('keydown',onKeyDown);return()=>{window.removeEventListener('keydown',onKeyDown);if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;previous?.focus()}},[selected])
@@ -112,6 +135,30 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     }
     setPracticeResult(result);setPracticeCount(value=>value+1)
   }
+  const playRealRound=async()=>{
+    if(!selected||!supabase)return
+    const stake=Number(realStake)
+    if(!Number.isFinite(stake)||stake<=0||Math.round(stake*100)!==stake*100){setRealBetMessage(arabic?'أدخل مبلغاً صحيحاً بالدينار الجزائري.':'Enter a valid DZD stake with up to two decimals.');return}
+    if(realBalance!==null&&stake>realBalance){setRealBetMessage(arabic?'رصيدك المتاح غير كافٍ.':'Your available balance is insufficient.');return}
+    setRealBetBusy(true);setRealBetMessage('')
+    try{
+      const {data:{user},error:authError}=await supabase.auth.getUser()
+      if(authError)throw authError
+      if(!user)throw new Error(arabic?'سجّل الدخول أولاً للمراهنة.':'Sign in before placing a real-money bet.')
+      const {data,error}=await supabase.rpc('betnova_play_arcade_round',{
+        p_game_id:selected.id,p_stake:stake,p_choice:realChoice,p_idempotency_key:realRoundKey
+      })
+      if(error)throw error
+      const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
+      if(!result||!result.round_id)throw new Error('No round receipt was returned. Check game history before retrying.')
+      setRealBetResult(result)
+      setRealBalance(Number(result.balance_after??0))
+      setRealRoundKey(crypto.randomUUID())
+    }catch(error){
+      setRealBetMessage(error instanceof Error?error.message:'The round could not be confirmed. Retry safely; duplicate requests use the same round key.')
+    }finally{setRealBetBusy(false)}
+  }
+  const paidTableUnavailable=selected?.id==='blackjack'||selected?.id==='baccarat'
   return <section className="games-hub" id="games">
     <div className="games-hub-head">
       <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>{labels.heading} <em>{labels.zone}</em></h2><p>{labels.subtitle}</p></div>
@@ -180,6 +227,25 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
         {selected.id==='blackjack'&&<div className="game-practice-controls"><div className="practice-playing-cards">{(cardHand.length?cardHand:['?','?']).map((card,i)=><span key={i}>{typeof card==='number'?cardLabel(card):card}</span>)}</div><div className="blackjack-controls"><span>{arabic?'مجموعك':'YOUR TOTAL'}: {blackjackTotal(cardHand)}</span>{dealerHand.length>0&&<span>{arabic?'الموزع':'DEALER'}: {blackjackDone?blackjackTotal(dealerHand):cardLabel(dealerHand[0])+' + ?'}</span>}</div><div className="game-action-row"><button type="button" onClick={blackjackHit} disabled={blackjackDone||cardHand.length===0}>{arabic?'اسحب':'HIT'}</button><button type="button" onClick={blackjackStand} disabled={blackjackDone||cardHand.length===0}>{arabic?'قف':'STAND'}</button><button type="button" onClick={runOtherDemo}>{arabic?'جولة جديدة':'NEW HAND'}</button></div></div>}
         {selected.id==='baccarat'&&<div className="game-practice-controls"><div className="baccarat-preview"><div><small>{arabic?'اللاعب':'PLAYER'}</small><strong>{baccaratHand?`${baccaratHand.player.map(cardLabel).join(' · ')} = ${baccaratTotal(baccaratHand.player)}`:'—'}</strong></div><div><small>{arabic?'المصرف':'BANKER'}</small><strong>{baccaratHand?`${baccaratHand.banker.map(cardLabel).join(' · ')} = ${baccaratTotal(baccaratHand.banker)}`:'—'}</strong></div></div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
         {practiceResult&&<div className="game-practice-result" role="status"><strong>{arabic?`الجولة ${practiceCount}`:practiceCount===0?'PRACTICE UPDATE':`ROUND ${practiceCount}`}</strong><span>{practiceResult}</span></div>}
+        <section className="arcade-wager-panel" aria-label={arabic?'رهان بأموال حقيقية':'Real-money game wager'}>
+          <div className="arcade-wager-heading"><span>{arabic?'رهان حقيقي':'REAL MONEY ROUND'}</span><b>{selected.id==='roulette'?'94.86%':'95%'} RTP</b></div>
+          {paidTableUnavailable?
+            <p className="arcade-wager-note">{arabic?'المراهنة المالية على ألعاب الورق ستُفعّل بعد اكتمال قواعد اللعب والتسوية الخاصة بها.':'Real-money card-table play will be enabled after its complete card rules and settlement are implemented.'}</p>:
+            <>
+              <div className="arcade-wallet-line"><span>{arabic?'رصيدك الحقيقي':'Available real balance'}</span><strong>{realBalance===null?'—':realBalance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' DZD'}</strong></div>
+              <label className="arcade-wager-field"><span>{arabic?'مبلغ الرهان (DZD)':'Stake (DZD)'}</span><input type="number" min="0.01" max="1000000" step="0.01" inputMode="decimal" value={realStake} onChange={event=>setRealStake(event.target.value)} disabled={realBetBusy}/></label>
+              {['crash','apple','plinko','roulette'].includes(selected.id)&&<label className="arcade-wager-field"><span>{selected.id==='crash'?(arabic?'هدف السحب':'Cash-out target'):selected.id==='apple'?(arabic?'عدد الصفوف الآمنة':'Safe rows'):selected.id==='plinko'?(arabic?'مستوى المخاطرة':'Risk level'):(arabic?'اختر اللون':'Choose color')}</span><select value={realChoice} onChange={event=>setRealChoice(event.target.value)} disabled={realBetBusy}>
+                {selected.id==='crash'&&['1.20','1.50','2.00','3.00','5.00','10.00'].map(value=><option key={value} value={value}>{value}×</option>)}
+                {selected.id==='apple'&&['1','2','3','4','5'].map(value=><option key={value} value={value}>{value}</option>)}
+                {selected.id==='plinko'&&<><option value="low">{arabic?'منخفض':'Low'}</option><option value="medium">{arabic?'متوسط':'Medium'}</option><option value="high">{arabic?'مرتفع':'High'}</option></>}
+                {selected.id==='roulette'&&<><option value="red">{arabic?'أحمر':'Red'}</option><option value="black">{arabic?'أسود':'Black'}</option></>}
+              </select></label>}
+              <p className="arcade-wager-note">{arabic?'النتيجة تُولّد على الخادم. النسبة المعروضة عائد نظري طويل الأجل وليست ضماناً لنتيجة جولة.':'The server generates each result. Published RTP is a long-run theoretical return, not a promise about any single round.'}</p>
+              <button className="arcade-wager-submit" type="button" onClick={playRealRound} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ تنفيذ الجولة...':'PROCESSING ROUND'):arabic?'ضع الرهان والعب':'PLACE BET & PLAY'}</button>
+              {realBetMessage&&<p className="arcade-wager-error" role="alert">{realBetMessage}</p>}
+              {realBetResult&&<div className="arcade-wager-receipt" role="status"><strong>{String(realBetResult.result??'ROUND SETTLED')}</strong><span>{arabic?'الرهان':'Stake'}: {Number(realBetResult.stake??0).toFixed(2)} DZD</span><span>{arabic?'العائد':'Payout'}: {Number(realBetResult.payout??0).toFixed(2)} DZD</span><span>{arabic?'الربح/الخسارة الصافية':'Net result'}: {Number(realBetResult.net_result??0).toFixed(2)} DZD</span><small>{arabic?'رقم الجولة':'Round ID'}: {String(realBetResult.round_id??'')}</small></div>}
+            </>}
+        </section>
         <button className="game-detail-secondary" type="button" onClick={resetDemo}>{labels.reset}</button>
         <button className="game-detail-secondary" type="button" onClick={closeGame}>{labels.close}</button>
       </section>
