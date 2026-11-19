@@ -70,13 +70,14 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const [realCrashRound,setRealCrashRound]=useState<{id:string;stake:number;startedAt:number;clientAnchor:number;elapsedBase:number}|null>(null)
   const [realCrashCashoutKey,setRealCrashCashoutKey]=useState<string|null>(null)
   const visible=games.filter(game=>category==='all'||game.category===category)
-  const resetDemo=()=>{
+  const slotSymbolsFor=(id?:string)=>id==='pharaoh'?['𓂀','👑','⚱️']:id==='space-spin'?['🪐','🌟','🚀']:['🍒','⭐','🍋']
+  const resetDemo=(gameId=selected?.id)=>{
     if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;setSlotSpinning(false)
     setPracticeResult('');setPracticeCount(0);setCrashAt(0);setMultiplier(1)
     if(!realCrashRound){setCrashActive(false);setCrashExploding(false);setCrashCountdown(null)}setAppleLevel(0);setAppleDone(false);setAppleTraps(newAppleTraps());setApplePicks([]);setPlinkoSlot(null);setPlinkoDropping(false)
-    setSlotSymbols(['🍒','⭐','🍋']);setRouletteNumber(null);setRouletteSpinning(false);setCardHand([]);setDealerHand([]);setBlackjackDone(false);setBaccaratHand(null)
+    setSlotSymbols(slotSymbolsFor(gameId));setRouletteNumber(null);setRouletteSpinning(false);setCardHand([]);setDealerHand([]);setBlackjackDone(false);setBaccaratHand(null)
   }
-  useEffect(()=>{if(!initialGameRequest)return;const target=games.find(game=>game.id===initialGameRequest.id);if(target){setCategory('games');setSelected(target);resetDemo()}},[initialGameRequest])
+  useEffect(()=>{if(!initialGameRequest)return;const target=games.find(game=>game.id===initialGameRequest.id);if(target){setCategory('games');setSelected(target);resetDemo(target.id)}},[initialGameRequest])
   useEffect(()=>{
     if(!selected)return
     setRealBetResult(null);setRealBetMessage('');setRealBalance(null)
@@ -185,26 +186,53 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     setPracticeResult(result);setPracticeCount(value=>value+1)
   }
   const playRealRound=async()=>{
-    if(!selected||selected.id==='crash'||!supabase)return
+    if(!selected||selected.id==='crash'||paidTableUnavailable||!supabase)return
     const stake=Number(realStake)
     if(!Number.isFinite(stake)||stake<=0||Math.round(stake*100)!==stake*100){setRealBetMessage(arabic?'أدخل مبلغاً صحيحاً بالدينار الجزائري.':'Enter a valid DZD stake with up to two decimals.');return}
     if(realBalance!==null&&stake>realBalance){setRealBetMessage(arabic?'رصيدك المتاح غير كافٍ.':'Your available balance is insufficient.');return}
-    setRealBetBusy(true);setRealBetMessage('')
+    setRealBetBusy(true);setRealBetMessage('');setRealBetResult(null)
+    const animationStarted=Date.now()
+    if(selected.id==='plinko'){setPlinkoDropping(true);setPlinkoSlot(null)}
+    if(['lucky-fruits','pharaoh','space-spin'].includes(selected.id))setSlotSpinning(true)
+    if(selected.id==='roulette')setRouletteSpinning(true)
     try{
       const {data:{user},error:authError}=await supabase.auth.getUser()
       if(authError)throw authError
-      if(!user)throw new Error(arabic?'سجّل الدخول أولاً للمراهنة.':'Sign in before placing a real-money bet.')
+      if(!user)throw new Error(arabic?'سجّل الدخول أولاً للمراهنة.':'Sign in before starting the game.')
       const {data,error}=await supabase.rpc('betnova_play_arcade_round',{
         p_game_id:selected.id,p_stake:stake,p_choice:realChoice,p_idempotency_key:realRoundKey
       })
       if(error)throw error
       const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
       if(!result||!result.round_id)throw new Error('No round receipt was returned. Check game history before retrying.')
+      const animationDuration=selected.id==='plinko'?3800:['lucky-fruits','pharaoh','space-spin'].includes(selected.id)?1350:selected.id==='roulette'?1100:0
+      const remaining=Math.max(0,animationDuration-(Date.now()-animationStarted))
+      if(remaining)await new Promise(resolve=>window.setTimeout(resolve,remaining))
+      if(selected.id==='plinko')setPlinkoDropping(false)
+      if(['lucky-fruits','pharaoh','space-spin'].includes(selected.id)){
+        const outcome=String(result.result??'')
+        const reels=selected.id==='lucky-fruits'
+          ?outcome==='JACKPOT'?['7️⃣','7️⃣','7️⃣']:outcome==='FRUIT_TRIPLE'?['🍉','🍉','🍉']:outcome==='FRUIT_PAIR'?['🍒','🍒','🍋']:['🍒','🍋','🍉']
+          :selected.id==='pharaoh'
+            ?outcome==='PHARAOH_JACKPOT'?['𓂀','𓂀','𓂀']:outcome==='ROYAL_TREASURE'?['💎','💎','👑']:outcome==='SCARAB'?['𓂀','𓂀','⚱️']:['☀️','🐪','⚱️']
+            :outcome==='COSMIC_JACKPOT'?['🚀','🚀','🚀']:outcome==='PLANET_TRIPLE'?['🪐','🪐','🪐']:outcome==='STAR_PAIR'?['🌟','🌟','🌙']:['🪐','🌙','👾']
+        setSlotSymbols(reels);setSlotSpinning(false)
+      }
+      if(selected.id==='roulette'){setRouletteNumber(Number((result.details as Record<string,unknown>|undefined)?.number??0));setRouletteSpinning(false)}
+      if(selected.id==='apple'){setAppleLevel(Number(realChoice));setAppleDone(true)}
+      let outcomeText=String(result.result??'')
+      if(selected.id==='apple')outcomeText=result.won?(arabic?'مسار آمن!':'Safe path!'):(arabic?'وجدت التفاحة الخطرة.':'Trap found.')
+      else if(selected.id==='plinko')outcomeText=result.won?(arabic?'أصابت الكرة خانة رابحة!':'The ball landed in a winning slot!'):(arabic?'لم تصب الكرة خانة رابحة.':'The ball landed in a losing slot.')
+      else if(['lucky-fruits','pharaoh','space-spin'].includes(selected.id))outcomeText=result.won?(arabic?'مبروك! فزت في الجولة.':'Congratulations! You won the round.'):(arabic?'لم تفز هذه المرة.':'No win this time.')
+      else if(selected.id==='roulette')outcomeText=arabic?'النتيجة '+String((result.details as Record<string,unknown>|undefined)?.number??'—')+' · '+(result.won?'فوز':'لم تفز'):'Result '+String((result.details as Record<string,unknown>|undefined)?.number??'—')+' · '+(result.won?'WIN':'NO WIN')
+      setPracticeCount(value=>value+1)
+      setPracticeResult(outcomeText)
       setRealBetResult(result)
       setRealBalance(Number(result.balance_after??0))
       setRealRoundKey(crypto.randomUUID())
     }catch(error){
       setRealBetMessage(error instanceof Error?error.message:'The round could not be confirmed. Retry safely; duplicate requests use the same round key.')
+      setPlinkoDropping(false);setSlotSpinning(false);setRouletteSpinning(false)
     }finally{setRealBetBusy(false)}
   }
   const startRealCrash=async()=>{
@@ -223,8 +251,9 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       if(!result?.round_id||result.status!=='active')throw new Error(arabic?'تعذر بدء الجولة. تحقق من سجل الألعاب.':'The Crash round did not start. Check game history before retrying.')
       const elapsedBase=Math.max(0,(Date.parse(String(result.server_now))-Date.parse(String(result.started_at)))/1000)
       setRealCrashRound({id:String(result.round_id),stake,startedAt:Date.parse(String(result.started_at)),clientAnchor:performance.now(),elapsedBase})
-      setCrashActive(true);setCrashExploding(false);setMultiplier(Math.floor(Math.exp(elapsedBase*0.06)*100)/100)
+      setCrashActive(true);setCrashExploding(false);setMultiplier(Math.min(100,Math.floor(Math.exp(elapsedBase*0.06)*100)/100))
       setRealBalance(Number(result.balance_after??0));setRealRoundKey(crypto.randomUUID())
+      requestAnimationFrame(()=>modalRef.current?.scrollTo({top:0,behavior:'smooth'}))
     }catch(error){setRealBetMessage(error instanceof Error?error.message:'Could not start Crash. A retry with the same request key will not charge twice.')}
     finally{setRealBetBusy(false)}
   }
@@ -247,7 +276,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     }catch(error){setRealBetMessage(error instanceof Error?error.message:'Cash-out confirmation failed. Retry; the same request key prevents duplicate payout.')}
     finally{setRealBetBusy(false)}
   }
-  const paidTableUnavailable=false
+  const paidTableUnavailable=selected.id==='blackjack'||selected.id==='baccarat'
   return <section className="games-hub" id="games">
     <div className="games-hub-head">
       <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>{labels.heading} <em>{labels.zone}</em></h2><p>{labels.subtitle}</p></div>
@@ -263,7 +292,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
           <span className="game-art-orbit orbit-one"/><span className="game-art-orbit orbit-two"/>
           <span className="game-art-shine">✦</span><span className="game-art-code">BETNOVA / PLAY</span>
         </div>
-        <div className="game-tile-copy"><div className="game-tile-meta"><span>{translatedGameTag(game.id)}</span><span className="game-live-dot"/></div><h3>{game.name}</h3><p>{translatedGameDescription(game.id)}</p><button type="button" onClick={()=>{setSelected(game);resetDemo()}}>{labels.explore} <ArrowRight size={14}/></button></div>
+        <div className="game-tile-copy"><div className="game-tile-meta"><span>{translatedGameTag(game.id)}</span><span className="game-live-dot"/></div><h3>{game.name}</h3><p>{translatedGameDescription(game.id)}</p><button type="button" onClick={()=>{setSelected(game);resetDemo(game.id)}}>{labels.explore} <ArrowRight size={14}/></button></div>
       </article>)}
     </div>
     <div className="games-safety-note"><Sparkles size={15}/><span>{labels.safety}</span></div>
@@ -304,47 +333,28 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
           <div className={`crash-multiplier ${crashActive?'rising':''}`} aria-live="polite">{multiplier.toFixed(2)}<small>×</small></div>
           <div className="crash-auto-status">{crashActive?(arabic?'الطائرة في الجو':'IN FLIGHT'):crashExploding?(arabic?'انفجرت الطائرة':'CRASHED'):(arabic?'أدخل الرهان ثم ابدأ':'SET YOUR STAKE TO START')}</div>
         </div>}
-        {selected.id==='apple'&&<div className="game-practice-controls">
-          <div className="apple-board" aria-label={arabic?'خمسة صفوف من التفاحات، اختر تفاحة آمنة في كل صف':'Five rows of apples, choose one safe apple in each row'}>{Array.from({length:APPLE_ROWS},(_,row)=><div className="apple-row" key={row}>{Array.from({length:APPLE_COLUMNS},(_,col)=>{const chosen=applePicks[row]===col;const revealed=row<appleLevel||(appleDone&&row===appleLevel);const trap=appleTraps[row]===col;return <button key={col} type="button" disabled={appleDone||row!==appleLevel} className={`${chosen?'chosen ':''}${revealed&&trap?'trap ':''}${revealed&&chosen&&!trap?'safe ':''}${row>appleLevel?'locked':''}`} onClick={()=>pickApple(col)} aria-label={`${arabic?'الصف':'Row'} ${row+1}, ${arabic?'التفاحة':'apple'} ${col+1}`}>{revealed?(trap?'💣':chosen?'🍏':'🍎'):'🍏'}</button>})}</div>)}</div>
+        {selected.id==='apple'&&<div className="game-practice-controls apple-odds-board" aria-label={arabic?'اختر عدد الصفوف لمعرفة العائد':'Choose how many rows to clear'}>
+          <div className="apple-board">{Array.from({length:APPLE_ROWS},(_,row)=>{const rows=row+1;const odds=0.95/Math.pow(0.8,rows);return <div className={"apple-odds-row "+(realChoice===String(rows)?'selected':'')} key={rows}><div className="apple-odds-fruits" aria-hidden="true">{Array.from({length:APPLE_COLUMNS},(_,col)=><span key={col}>🍏</span>)}</div><button type="button" className="apple-odds-pick" onClick={()=>{setRealChoice(String(rows));setRealBetResult(null);setPracticeResult('')}} disabled={realBetBusy}><span>{arabic?'الصف '+rows:'ROW '+rows}</span><strong>{odds.toFixed(2)}×</strong></button></div>})}</div>
+          <p className="apple-odds-hint">{arabic?'اختر آخر صف تريد الوصول إليه. العائد موضح بجانب كل صف.':'Choose the last row you want to reach. Payout odds are shown beside each row.'}</p>
         </div>}
-        {selected.id==='plinko'&&<div className="game-practice-controls">
-          <div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:9},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:10},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div></div>
-          <button className="game-detail-done" type="button" onClick={dropPlinko} disabled={plinkoDropping}><Play size={15}/> {plinkoDropping?(arabic?'الكرة تهبط...':'BALL DROPPING...'):labels.drop}</button>
-        </div>}
-        {['lucky-fruits','pharaoh','space-spin'].includes(selected.id)&&<div className="game-practice-controls"><div className="slot-reels" aria-label="Practice slot reels">{slotSymbols.map((symbol,i)=><span className={slotSpinning?'spinning':''} key={i}>{symbol}</span>)}</div><button className="game-detail-done" type="button" onClick={spinSlots} disabled={slotSpinning}><RotateCw size={15}/> {slotSpinning?(arabic?'تدور البكرات...':'SPINNING...'):labels.tryDemo}</button></div>}
-        {selected.id==='roulette'&&<div className="game-practice-controls"><div className="roulette-preview"><div className={`roulette-wheel ${rouletteSpinning?'spinning':''}`}><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><b>{rouletteNumber===null?'?':rouletteNumber}</b></div><small>{rouletteSpinning?(arabic?'العجلة تدور...':'WHEEL SPINNING'):rouletteNumber===null?'READY TO SPIN':rouletteNumber===0?(arabic?'صفر أخضر':'GREEN ZERO'):rouletteReds.has(rouletteNumber)?(arabic?'نتيجة حمراء':'RED RESULT'):(arabic?'نتيجة سوداء':'BLACK RESULT')}</small></div><button className="game-detail-done" type="button" onClick={spinRoulette} disabled={rouletteSpinning}><RotateCw size={15}/> {rouletteSpinning?(arabic?'تدور العجلة...':'SPINNING...'):labels.tryDemo}</button></div>}
-        {selected.id==='blackjack'&&<div className="game-practice-controls"><div className="practice-playing-cards">{(cardHand.length?cardHand:['?','?']).map((card,i)=><span key={i}>{typeof card==='number'?cardLabel(card):card}</span>)}</div><div className="blackjack-controls"><span>{arabic?'مجموعك':'YOUR TOTAL'}: {blackjackTotal(cardHand)}</span>{dealerHand.length>0&&<span>{arabic?'الموزع':'DEALER'}: {blackjackDone?blackjackTotal(dealerHand):cardLabel(dealerHand[0])+' + ?'}</span>}</div><div className="game-action-row"><button type="button" onClick={blackjackHit} disabled={blackjackDone||cardHand.length===0}>{arabic?'اسحب':'HIT'}</button><button type="button" onClick={blackjackStand} disabled={blackjackDone||cardHand.length===0}>{arabic?'قف':'STAND'}</button><button type="button" onClick={runOtherDemo}>{arabic?'جولة جديدة':'NEW HAND'}</button></div></div>}
-        {selected.id==='baccarat'&&<div className="game-practice-controls"><div className="baccarat-preview"><div><small>{arabic?'اللاعب':'PLAYER'}</small><strong>{baccaratHand?`${baccaratHand.player.map(cardLabel).join(' · ')} = ${baccaratTotal(baccaratHand.player)}`:'—'}</strong></div><div><small>{arabic?'المصرف':'BANKER'}</small><strong>{baccaratHand?`${baccaratHand.banker.map(cardLabel).join(' · ')} = ${baccaratTotal(baccaratHand.banker)}`:'—'}</strong></div></div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
+        {selected.id==='plinko'&&<div className="game-practice-controls"><div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:9},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:10},(_,i)=><span key={i}>{i+1}</span>)}</div></div></div>}
+        {['lucky-fruits','pharaoh','space-spin'].includes(selected.id)&&<div className={"game-practice-controls slot-theme slot-theme-"+selected.id}><div className="slot-reels" aria-label={selected.name}>{slotSymbols.map((symbol,i)=><span className={slotSpinning?'spinning':''} key={i}>{symbol}</span>)}</div></div>}
+        {selected.id==='roulette'&&<div className="game-practice-controls"><div className="roulette-preview"><div className={"roulette-wheel "+(rouletteSpinning?'spinning':'')}><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><b>{rouletteNumber===null?'?':rouletteNumber}</b></div><small>{rouletteSpinning?(arabic?'العجلة تدور...':'WHEEL SPINNING'):rouletteNumber===null?(arabic?'جاهز':'READY'):rouletteNumber===0?(arabic?'صفر أخضر':'GREEN ZERO'):rouletteReds.has(rouletteNumber)?(arabic?'أحمر':'RED'):(arabic?'أسود':'BLACK')}</small></div></div>}
+        {selected.id==='blackjack'&&<div className="game-practice-controls"><div className="practice-playing-cards"><span>♠</span><span>♥</span></div></div>}
+        {selected.id==='baccarat'&&<div className="game-practice-controls"><div className="baccarat-preview"><div><small>{arabic?'اللاعب':'PLAYER'}</small><strong>—</strong></div><div><small>{arabic?'المصرف':'BANKER'}</small><strong>—</strong></div></div></div>}
         {practiceResult&&<div className="game-practice-result" role="status"><strong>{arabic?`الجولة ${practiceCount}`:practiceCount===0?'PRACTICE UPDATE':`ROUND ${practiceCount}`}</strong><span>{practiceResult}</span></div>}
-        <section className="arcade-wager-panel" aria-label={arabic?'رهان بأموال حقيقية':'Real-money game wager'}>
-          <div className="arcade-wager-heading"><span>{arabic?'رهان حقيقي':'REAL MONEY ROUND'}</span><b>{selected.id==='roulette'?'94.86%':'95%'} RTP</b></div>
-          <p className="arcade-wager-paytable">{arabic?(selected.id==='crash'?'كراش: المضاعف يرتفع تلقائياً حتى 100× · اسحب أرباحك قبل الانفجار. RTP 95%.':selected.id==='apple'?'التفاحة: من 1 إلى 5 صفوف آمنة · الاحتمال = 80%^عدد الصفوف · العائد = 95% ÷ الاحتمال.':selected.id==='plinko'?'بلينكو: مخاطرة منخفضة 80% ×1.1875 · متوسطة 50% ×1.90 · عالية 25% ×3.80.':selected.id==='lucky-fruits'?'الفواكه: دون تطابق 55% · زوج 25% ×1.5 · ثلاثي 15% ×2 · الجائزة الكبرى 5% ×5.5.':selected.id==='pharaoh'?'الفرعون: دون جائزة 70% · جعران 20% ×1.5 · كنز 8% ×3 · الجائزة الكبرى 2% ×20.5.':selected.id==='space-spin'?'الفضاء: دون جائزة 60% · زوج نجوم 30% ×1.5 · ثلاثي كواكب 9% ×3 · الجائزة الكبرى 1% ×23.':selected.id==='roulette'?'الروليت الأوروبي: الأحمر/الأسود لكل منهما 18/37 · العائد عند الفوز 1.95× · RTP 94.86%.':selected.id==='baccarat'?'باكارات: اللاعب 44.61% ×2.1293 · المصرف 45.84% ×2.0723 · التعادل 9.54% ×9.9554.':'بلاك جاك بضربة واحدة: الوقوف ×2.3407 · سحب ورقة واحدة ×2.9957 · بلاك جاك طبيعي ×2.5 · التعادل ×1 · RTP 95%.' ):(selected.id==='crash'?'Crash: the multiplier rises automatically up to 100×. Cash out before the crash. RTP 95%.':selected.id==='apple'?'Apple: 1–5 safe rows · probability = 80%^rows · payout = 95% ÷ probability.':selected.id==='plinko'?'Plinko: Low 80% ×1.1875 · Medium 50% ×1.90 · High 25% ×3.80.':selected.id==='lucky-fruits'?'Lucky Fruits: no match 55% · pair 25% ×1.5 · triple 15% ×2 · jackpot 5% ×5.5.':selected.id==='pharaoh'?'Pharaoh: no prize 70% · scarab 20% ×1.5 · treasure 8% ×3 · jackpot 2% ×20.5.':selected.id==='space-spin'?'Space Spin: empty 60% · star pair 30% ×1.5 · planet triple 9% ×3 · jackpot 1% ×23.':selected.id==='roulette'?'European Roulette: red/black each 18/37 · gross win 1.95× · RTP 94.86%.':selected.id==='baccarat'?'Baccarat: Player 44.61% ×2.1293 · Banker 45.84% ×2.0723 · Tie 9.54% ×9.9554.':'Blackjack one-hit: Stand win ×2.3407 · Hit once win ×2.9957 · Natural ×2.5 · Push ×1.00 · RTP 95%.' )}</p>
-          {selected.id==='crash'?<>
-            <div className="arcade-wallet-line"><span>{arabic?'رصيدك الحقيقي':'Available real balance'}</span><strong>{realBalance===null?'—':realBalance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' DZD'}</strong></div>
-            <label className="arcade-wager-field"><span>{arabic?'مبلغ الرهان (DZD)':'Stake (DZD)'}</span><input type="number" min="0.01" max="1000000" step="0.01" inputMode="decimal" value={realStake} onChange={event=>setRealStake(event.target.value)} disabled={realBetBusy||Boolean(realCrashRound)}/></label>
-            <p className="arcade-wager-note">{arabic?'اضغط ابدأ اللعبة. سيرتفع المضاعف تلقائياً، واضغط اسحب الأرباح قبل الانفجار.':'Press Start Game. The multiplier rises automatically; press Cash Out before the crash.'}</p>
-            {!realCrashRound?<button className="arcade-wager-submit" type="button" onClick={startRealCrash} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ بدء الجولة...':'STARTING ROUND'):arabic?'ابدأ اللعبة':'START GAME'}</button>:<button className="arcade-wager-submit arcade-crash-cashout" type="button" onClick={cashOutRealCrash} disabled={realBetBusy}>{realBetBusy?(arabic?'جارٍ تأكيد السحب...':'CASHING OUT...'):(arabic?'اسحب الأرباح':'CASH OUT')+' · '+multiplier.toFixed(2)+'×'}</button>}
+        <section className="arcade-wager-panel arcade-wager-simple" aria-label={arabic?'رهان اللعبة':'Game wager'}>
+          {paidTableUnavailable?<div className="arcade-coming-note">{arabic?'هذه اللعبة غير متاحة للرهان حالياً.':'Real-money play is not available for this table yet.'}</div>:<>
+            <div className="arcade-wallet-line"><span>{arabic?'رصيدك':'Your balance'}</span><strong>{realBalance===null?'—':realBalance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' DZD'}</strong></div>
+            {selected.id==='roulette'&&<div className="arcade-choice-row"><button type="button" className={realChoice==='red'?'active':''} onClick={()=>setRealChoice('red')} disabled={realBetBusy}>{arabic?'أحمر':'RED'}</button><button type="button" className={realChoice==='black'?'active':''} onClick={()=>setRealChoice('black')} disabled={realBetBusy}>{arabic?'أسود':'BLACK'}</button></div>}
+            <label className="arcade-wager-field"><span>{arabic?'مبلغ الرهان (DZD)':'Stake (DZD)'}</span><input type="number" min="0.01" max="1000000" step="0.01" inputMode="decimal" value={realStake} onChange={event=>setRealStake(event.target.value)} disabled={realBetBusy||(selected.id==='crash'&&Boolean(realCrashRound))}/></label>
+            {selected.id==='crash'?<>
+              {!realCrashRound?<button className="arcade-wager-submit" type="button" onClick={startRealCrash} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ البدء...':'STARTING...'):arabic?'ابدأ اللعبة':'START GAME'}</button>:<button className="arcade-wager-submit arcade-crash-cashout" type="button" onClick={cashOutRealCrash} disabled={realBetBusy}>{realBetBusy?(arabic?'جارٍ السحب...':'CASHING OUT...'):(arabic?'اسحب الأرباح':'CASH OUT')+' · '+multiplier.toFixed(2)+'×'}</button>}
+            </>:<button className="arcade-wager-submit" type="button" onClick={playRealRound} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ اللعب...':'PLAYING...'):arabic?'ابدأ اللعبة':'START GAME'}</button>}
             {realBetMessage&&<p className="arcade-wager-error" role="alert">{realBetMessage}</p>}
-            {realBetResult&&<div className="arcade-wager-receipt" role="status"><strong>{String(realBetResult.result??'ROUND SETTLED')}</strong><span>{arabic?'الرهان':'Stake'}: {Number(realBetResult.stake??0).toFixed(2)} DZD</span><span>{arabic?'العائد':'Payout'}: {Number(realBetResult.payout??0).toFixed(2)} DZD</span><span>{arabic?'الربح/الخسارة الصافية':'Net result'}: {Number(realBetResult.net_result??0).toFixed(2)} DZD</span><small>{arabic?'رقم الجولة':'Round ID'}: {String(realBetResult.round_id??'')}</small></div>}
-          </>:paidTableUnavailable?
-            <p className="arcade-wager-note">{arabic?'المراهنة المالية على البلاك جاك ستُفعّل بعد اكتمال قواعد السحب والوقوف والتسوية.':'Real-money blackjack will be enabled after its full hit/stand round settlement is implemented.'}</p>:
-            <>
-              <div className="arcade-wallet-line"><span>{arabic?'رصيدك الحقيقي':'Available real balance'}</span><strong>{realBalance===null?'—':realBalance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' DZD'}</strong></div>
-              <label className="arcade-wager-field"><span>{arabic?'مبلغ الرهان (DZD)':'Stake (DZD)'}</span><input type="number" min="0.01" max="1000000" step="0.01" inputMode="decimal" value={realStake} onChange={event=>setRealStake(event.target.value)} disabled={realBetBusy}/></label>
-              {['apple','plinko','roulette','baccarat','blackjack'].includes(selected.id)&&<label className="arcade-wager-field"><span>{selected.id==='crash'?(arabic?'هدف السحب':'Cash-out target'):selected.id==='apple'?(arabic?'عدد الصفوف الآمنة':'Safe rows'):selected.id==='plinko'?(arabic?'مستوى المخاطرة':'Risk level') :selected.id==='baccarat'?(arabic?'رهان على':'Bet on'):selected.id==='blackjack'?(arabic?'الحركة قبل التوزيع':'Action before deal'):(arabic?'اختر اللون':'Choose color')}</span><select value={realChoice} onChange={event=>setRealChoice(event.target.value)} disabled={realBetBusy}>
-                {selected.id==='apple'&&['1','2','3','4','5'].map(value=><option key={value} value={value}>{value}</option>)}
-                {selected.id==='plinko'&&<><option value="low">{arabic?'منخفض':'Low'}</option><option value="medium">{arabic?'متوسط':'Medium'}</option><option value="high">{arabic?'مرتفع':'High'}</option></>}
-                {selected.id==='roulette'&&<><option value="red">{arabic?'أحمر':'Red'}</option><option value="black">{arabic?'أسود':'Black'}</option></>}
-                {selected.id==='baccarat'&&<><option value="player">{arabic?'اللاعب':'Player'}</option><option value="banker">{arabic?'المصرف':'Banker'}</option><option value="tie">{arabic?'تعادل':'Tie'}</option></>}
-                {selected.id==='blackjack'&&<><option value="stand">{arabic?'قف':'Stand'}</option><option value="hit">{arabic?'اسحب ورقة واحدة':'Hit once'}</option></>}
-              </select></label>}
-              <p className="arcade-wager-note">{arabic?'النتيجة تُولّد على الخادم. النسبة المعروضة عائد نظري طويل الأجل وليست ضماناً لنتيجة جولة.':'The server generates each result. Published RTP is a long-run theoretical return, not a promise about any single round.'}</p>
-              <button className="arcade-wager-submit" type="button" onClick={playRealRound} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ تنفيذ الجولة...':'PROCESSING ROUND'):arabic?'ضع الرهان والعب':'PLACE BET & PLAY'}</button>
-              {realBetMessage&&<p className="arcade-wager-error" role="alert">{realBetMessage}</p>}
-              {realBetResult&&<div className="arcade-wager-receipt" role="status"><strong>{String(realBetResult.result??'ROUND SETTLED')}</strong><span>{arabic?'الرهان':'Stake'}: {Number(realBetResult.stake??0).toFixed(2)} DZD</span><span>{arabic?'العائد':'Payout'}: {Number(realBetResult.payout??0).toFixed(2)} DZD</span><span>{arabic?'الربح/الخسارة الصافية':'Net result'}: {Number(realBetResult.net_result??0).toFixed(2)} DZD</span><small>{arabic?'رقم الجولة':'Round ID'}: {String(realBetResult.round_id??'')}</small>{Boolean(realBetResult.details)&&<small>{JSON.stringify(realBetResult.details)}</small>}</div>}
-            </>}
+            {realBetResult&&<div className="arcade-wager-receipt" role="status"><strong>{String(realBetResult.result??'')}</strong><span>{arabic?'الرهان':'Stake'}: {Number(realBetResult.stake??0).toFixed(2)} DZD</span><span>{arabic?'العائد':'Payout'}: {Number(realBetResult.payout??0).toFixed(2)} DZD</span></div>}
+          </>}
         </section>
-        <button className="game-detail-secondary" type="button" onClick={resetDemo}>{labels.reset}</button>
         <button className="game-detail-secondary" type="button" onClick={closeGame}>{labels.close}</button>
       </section>
     </div>}
