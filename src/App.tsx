@@ -943,6 +943,7 @@ export default function App() {
           <button onClick={openResponsible}><ShieldCheck size={17}/>{t('responsible_play')}</button>
           {userEmail ? <>
             <button className="mobile-account-entry" onClick={() => { openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
+            <button onClick={() => { closeMobileMenuToPage(); openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>{t('deposit')}</button>
             <button onClick={() => { closeMobileMenuToPage(); openOverlay('mobileSlip') }}><Wallet size={17}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
