@@ -9,6 +9,7 @@ export default function PushNotificationRegistrar() {
 
     let active = true
     let userId: string | null = null
+    let registeredToken: string | null = null
     type SupabaseClient = NonNullable<typeof supabase>
     let preferenceChannel: ReturnType<SupabaseClient['channel']> | null = null
     let registrationHandle: { remove: () => Promise<void> } | undefined
@@ -41,7 +42,17 @@ export default function PushNotificationRegistrar() {
 
     const changeUser = (nextUserId: string | null) => {
       if (userId === nextUserId) return
+      const previousUserId = userId
       userId = nextUserId
+      if (previousUserId && registeredToken && supabase) {
+        const oldToken = registeredToken
+        registeredToken = null
+        void supabase.from('device_push_tokens').delete()
+          .eq('token', oldToken).eq('user_id', previousUserId)
+          .then(({ error }) => {
+            if (error) console.error('Could not remove previous account push token', error.message)
+          })
+      }
       if (preferenceChannel && supabase) {
         void supabase.removeChannel(preferenceChannel)
         preferenceChannel = null
@@ -79,6 +90,9 @@ export default function PushNotificationRegistrar() {
         // A sign-out/account switch may race with token registration; clean up the old owner only.
         await supabase.from('device_push_tokens').delete()
           .eq('token', token.value).eq('user_id', currentUserId)
+        if (registeredToken === token.value) registeredToken = null
+      } else {
+        registeredToken = token.value
       }
     }).then(handle => {
       registrationHandle = handle
