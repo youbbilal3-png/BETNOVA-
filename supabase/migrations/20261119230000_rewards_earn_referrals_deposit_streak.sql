@@ -75,15 +75,6 @@ create policy "Admins read earn submissions" on public.earn_post_submissions
   for select to authenticated using (exists (
     select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'
   ));
-create policy "Users submit own earn posts" on public.earn_post_submissions
-  for insert to authenticated with check (
-    user_id = (select auth.uid())
-    and status = 'pending'
-    and reward_amount = 50
-    and currency = 'DZD'
-    and proof_path like ((select auth.uid())::text || '/%')
-  );
-
 create policy "Users read referrals they invited" on public.referrals
   for select to authenticated using (referrer_user_id = (select auth.uid()));
 create policy "Admins read referrals" on public.referrals
@@ -99,7 +90,7 @@ create policy "Admins read deposit streak claims" on public.deposit_streak_claim
   ));
 
 revoke all on public.earn_post_submissions, public.referrals, public.deposit_streak_claims, public.referral_codes from anon, authenticated;
-grant select, insert on public.earn_post_submissions to authenticated;
+grant select on public.earn_post_submissions to authenticated;
 grant select on public.referrals, public.deposit_streak_claims to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
