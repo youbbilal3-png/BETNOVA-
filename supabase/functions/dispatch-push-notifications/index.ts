@@ -201,29 +201,35 @@ Deno.serve(async (req: Request) => {
     let delivered = 0;
     let lastError = "";
     for (const token of tokens) {
-      const response = await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(firebaseProjectId)}/messages:send`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: {
-            token,
-            notification: { title: message.title, body: message.body },
-            data: { category, fixture_id: event.fixture_id, event_id: event.id, route: "/" },
-            android: {
-              priority: "HIGH",
-              notification: { channel_id: "betnova_alerts", sound: "default" },
+      try {
+        const response = await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(firebaseProjectId)}/messages:send`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: {
+              token,
+              notification: { title: message.title, body: message.body },
+              data: { category, fixture_id: event.fixture_id, event_id: event.id, route: "/" },
+              android: {
+                priority: "HIGH",
+                notification: { channel_id: "betnova_alerts", sound: "default" },
+              },
             },
-          },
-        }),
-      });
-      if (response.ok) {
-        delivered++;
-      } else {
-        const details = await response.text();
-        lastError = `FCM ${response.status}: ${details.slice(0, 220)}`;
-        if (details.includes("UNREGISTERED")) {
-          await supabase.from("device_push_tokens").delete().eq("token", token);
+          }),
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (response.ok) {
+          delivered++;
+        } else {
+          const details = await response.text();
+          lastError = `FCM ${response.status}: ${details.slice(0, 220)}`;
+          if (details.includes("UNREGISTERED")) {
+            await supabase.from("device_push_tokens").delete().eq("token", token);
+          }
         }
+      } catch (error) {
+        lastError = error instanceof Error ? error.message.slice(0, 220) : "FCM request failed";
+        console.error("FCM send failed for one device", lastError);
       }
     }
 
