@@ -346,7 +346,6 @@ Deno.serve(async (req: Request) => {
     let fullTimeEventId: string | null = null;
     if (item?.status === "finished") {
       const fullTimeId = String(item.id) + ":full_time";
-      fullTimeEventId = fullTimeId;
       const priorFullTime = await supabase.from("fixture_events").select("id")
         .eq("provider", PROVIDER).eq("provider_event_id", fullTimeId).maybeSingle();
       if (priorFullTime.error) throw new Error("Could not inspect full-time event");
@@ -356,8 +355,9 @@ Deno.serve(async (req: Request) => {
         event_type: "full_time", period: "full_time",
         event_data: { source: PROVIDER, confirmed: true, final: true, home_score: finiteScore(item?.goals?.home), away_score: finiteScore(item?.goals?.away) },
         occurred_at: now.toISOString(),
-      }, { onConflict: "provider,provider_event_id" });
-      if (fullTime.error) throw new Error("Could not store provider full-time event");
+      }, { onConflict: "provider,provider_event_id" }).select("id").single();
+      if (fullTime.error || !fullTime.data?.id) throw new Error("Could not store provider full-time event");
+      fullTimeEventId = fullTime.data.id;
     }
 
     const [oldGoals, linkResult, fixtureResult] = await Promise.all([
