@@ -17,7 +17,6 @@ const games:Game[] = [
   {id:'baccarat',name:'BACCARAT',category:'casino',tag:'CARD TABLE',description:'A sophisticated Player-versus-Banker table concept with a minimal casino presentation.',art:'baccarat',accent:'gold',mark:'♦'},
 ]
 
-const categoryLabels:Record<Category,string>={all:'ALL GAMES',games:'GAMES',slots:'SLOTS',casino:'CASINO'}
 const categoryIcons:Record<Category,typeof Grid3X3>={all:Grid3X3,games:Zap,slots:Gem,casino:Crown}
 const arabicDescriptions:Record<string,string>={crash:'ابدأ جولة تدريبية مجانية، راقب المضاعف واختر وقت التوقف.',apple:'اختر التفاحات الآمنة عبر ثلاثة مستويات تدريبية دون أموال أو نتائج حقيقية.',plinko:'أسقط كرة تدريبية عبر المسامير وشاهد خانة الهبوط.', 'lucky-fruits':'تصميم فواكه كلاسيكي بألوان زاهية وبكرات عصرية.',pharaoh:'أجواء مصرية قديمة أنيقة مع الذهب والرموز الملكية.','space-spin':'تصميم فضائي مستقبلي بالكواكب والنجوم والألوان المتوهجة.',roulette:'تصميم أنيق لعجلة روليت أوروبية ذات صفر واحد.',blackjack:'تصميم لطاولة بلاك جاك بأوراق واضحة وأجواء راقية.',baccarat:'تصميم أنيق لطاولة باكارات بين اللاعب والمصرف.'}
 const choose=<T,>(items:T[])=>items[Math.floor(Math.random()*items.length)]
