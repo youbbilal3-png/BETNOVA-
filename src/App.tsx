@@ -899,12 +899,12 @@ export default function App() {
           <button onClick={() => { closeMobileMenuToPage(); openGames() }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
           <button onClick={() => { closeMobileMenuToPage(); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
           <button onClick={openSupport}><CircleHelp size={17}/>Help & support</button>
+          <button onClick={openResponsible}><ShieldCheck size={17}/>Responsible play</button>
           {userEmail ? <>
             <button className="mobile-account-entry" onClick={() => { openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>Deposit</button>
             <button onClick={() => { openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
-            <button onClick={openResponsible}><ShieldCheck size={17}/>Responsible play</button>
               {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { closeOverlay('mobileMore'); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
@@ -943,7 +943,7 @@ export default function App() {
       })()}
       {adminOpen && <AdminOverview onClose={() => closeOverlay('admin')} />}
       {supportOpen && <SupportCenter onClose={() => closeOverlay('support')} userEmail={userEmail} />}
-      {responsibleOpen && <ResponsiblePlay onClose={() => closeOverlay('responsible')} userEmail={userEmail} language={language} />
+      {responsibleOpen && <ResponsiblePlay onClose={() => closeOverlay('responsible')} userEmail={userEmail} language={language} />}
       {accountOpen && <AccountPanel onClose={() => closeOverlay('account')} onSignOut={() => { closeOverlay('account'); void supabase?.auth.signOut() }} onOpenWallet={openWallet} />}
       {settingsOpen && <div className="settings-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('settings') }}><section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><button className="settings-close" onClick={() => closeOverlay('settings')} aria-label={t('close')}><X size={19}/></button><div className="settings-kicker"><Settings size={15}/> BETNOVA · PREFERENCES</div><h2 id="settings-title">{t('settings')}</h2><p>Personalise your BETNOVA experience.</p><label><span><Globe2 size={16}/> {t('language')}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><label><span><Wallet size={16}/> Preferred currency</span><select value={betCurrency} onChange={event => setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select></label><div className="settings-note"><ShieldCheck size={16}/> Preferences apply to this session. Wallet deposits and withdrawals use manual verification and payout.</div><button className="settings-done" onClick={() => closeOverlay('settings')}>Done <ArrowRight size={15}/></button></section></div>}
       {walletOpen && <WalletPanel onClose={() => closeOverlay('wallet')} initialTab={walletInitialTab} />}
