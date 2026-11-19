@@ -388,10 +388,18 @@ export default function App() {
             .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
             .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString())
         } else if (eventView === 'results') {
-          fixtureQuery = fixtureQuery.eq('status', 'finished').gte('starts_at', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString())
+          const selectedDayStart = selectedMatchDate ? new Date(selectedMatchDate + 'T00:00:00') : null
+          const selectedDayEnd = selectedDayStart ? new Date(selectedDayStart.getTime() + 24 * 60 * 60 * 1000) : null
+          fixtureQuery = fixtureQuery.eq('status', 'finished')
+            .gte('starts_at', (selectedDayStart ?? new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)).toISOString())
+          if (selectedDayEnd) fixtureQuery = fixtureQuery.lt('starts_at', selectedDayEnd.toISOString())
         } else {
           const now = new Date()
-          fixtureQuery = fixtureQuery.eq('status', 'scheduled').gte('starts_at', now.toISOString()).lte('starts_at', new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString())
+          const selectedDayStart = selectedMatchDate ? new Date(selectedMatchDate + 'T00:00:00') : now
+          const selectedDayEnd = selectedMatchDate ? new Date(selectedDayStart.getTime() + 24 * 60 * 60 * 1000) : new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+          fixtureQuery = fixtureQuery.eq('status', 'scheduled')
+            .gte('starts_at', selectedDayStart.toISOString())
+            .lt('starts_at', selectedDayEnd.toISOString())
         }
         // Keep the first screen responsive: load a bounded two-week fixture window
         // and at most 1,000 rows instead of paging through the entire feed.
@@ -581,7 +589,7 @@ export default function App() {
       window.clearInterval(refreshTimer)
       if (client && channel) void client.removeChannel(channel)
     }
-  }, [sport, eventView])
+  }, [sport, eventView, selectedMatchDate])
 
   const competitionOptions = useMemo(() => {
     const byName = new Map<string, { name: string; country: string; count: number; international: boolean }>()
