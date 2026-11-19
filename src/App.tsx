@@ -123,6 +123,12 @@ function isInternationalCompetition(competition: string, country: string) {
 
 const sports = ['Football', 'Basketball', 'Tennis', 'Ice Hockey', 'Volleyball']
 
+function localDateKey(value: string | Date) {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return String(date.getFullYear()) + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
+}
+
 function normalizedPick(value: string) {
   return String(value ?? '').trim().toLowerCase().replace(/[ _-]+/g, ' ')
 }
@@ -205,6 +211,7 @@ export default function App() {
   const [activePage, setActivePage] = useState<'sports' | 'games' | 'football'>('sports')
   const [selectedMatchDate, setSelectedMatchDate] = useState('')
   const [selectedMatchTime, setSelectedMatchTime] = useState('')
+  const [selectedMatchTimeTo, setSelectedMatchTimeTo] = useState('')
   const [featuredGameRequest, setFeaturedGameRequest] = useState<{id:string;token:number}|null>(null)
   function openFeaturedGame(id:string) { setFeaturedGameRequest(current => ({id,token:(current?.token ?? 0)+1})); openGames() }
 
@@ -264,6 +271,7 @@ export default function App() {
     setShowFavorites(false)
     setLeague('All matches')
     setActivePage('football')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   useEffect(() => {
     const handleBack = (event: PopStateEvent) => {
@@ -380,19 +388,29 @@ export default function App() {
             .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
             .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString())
         } else if (eventView === 'results') {
+          const selectedDayStart = selectedMatchDate ? new Date(selectedMatchDate + 'T00:00:00') : null
+          const selectedDayEnd = selectedDayStart ? new Date(selectedDayStart.getTime() + 24 * 60 * 60 * 1000) : null
           fixtureQuery = fixtureQuery.eq('status', 'finished')
+            .gte('starts_at', (selectedDayStart ?? new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)).toISOString())
+          if (selectedDayEnd) fixtureQuery = fixtureQuery.lt('starts_at', selectedDayEnd.toISOString())
         } else {
-          fixtureQuery = fixtureQuery.eq('status', 'scheduled').gte('starts_at', new Date().toISOString())
+          const now = new Date()
+          const selectedDayStart = selectedMatchDate ? new Date(selectedMatchDate + 'T00:00:00') : now
+          const selectedDayEnd = selectedMatchDate ? new Date(selectedDayStart.getTime() + 24 * 60 * 60 * 1000) : new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+          fixtureQuery = fixtureQuery.eq('status', 'scheduled')
+            .gte('starts_at', selectedDayStart.toISOString())
+            .lt('starts_at', selectedDayEnd.toISOString())
         }
-        // Supabase may cap a single response at 1,000 rows. Page through the
-        // full fixture window so the European leagues are not hidden behind that cap.
+        // Keep the first screen responsive: load a bounded two-week fixture window
+        // and at most 1,000 rows instead of paging through the entire feed.
         const orderedFixtureQuery = fixtureQuery.order('starts_at', { ascending: eventView !== 'results' })
-        const allFixtureRows: any[] = []
-        for (let from = 0; ; from += 1000) {
-          const { data: pageRows, error } = await orderedFixtureQuery.range(from, from + 999)
-          if (error) throw error
-          allFixtureRows.push(...(pageRows ?? []))
-          if (!pageRows || pageRows.length < 1000) break
+        const firstPage = await orderedFixtureQuery.range(0, 499)
+        if (firstPage.error) throw firstPage.error
+        const allFixtureRows: any[] = [...(firstPage.data ?? [])]
+        if (firstPage.data?.length === 500) {
+          const secondPage = await orderedFixtureQuery.range(500, 999)
+          if (secondPage.error) throw secondPage.error
+          allFixtureRows.push(...(secondPage.data ?? []))
         }
         const data = allFixtureRows
         if (!active || requestId !== latestRequest) return
@@ -565,13 +583,13 @@ export default function App() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fixtures' }, () => { void loadFixtures() })
       .subscribe()
     // Poll local DB for live updates when Realtime is temporarily disconnected.
-    const refreshTimer = window.setInterval(() => { void loadFixtures() }, 60000)
+    const refreshTimer = window.setInterval(() => { void loadFixtures() }, 120000)
     return () => {
       active = false
       window.clearInterval(refreshTimer)
       if (client && channel) void client.removeChannel(channel)
     }
-  }, [sport, userEmail, eventView])
+  }, [sport, eventView, selectedMatchDate])
 
   const competitionOptions = useMemo(() => {
     const byName = new Map<string, { name: string; country: string; count: number; international: boolean }>()
@@ -613,9 +631,10 @@ export default function App() {
     (!showFavorites || favoriteIds.includes(String(m.id))) &&
     (league === 'All matches' || m.league === league) &&
     (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase()) &&
-    (!selectedMatchDate || (m.startsAt ? new Date(m.startsAt).toLocaleDateString('en-CA') === selectedMatchDate : false)) &&
-    (!selectedMatchTime || (m.startsAt ? new Date(m.startsAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) >= selectedMatchTime : false))
-  ), [matches, league, query, showFavorites, favoriteIds, selectedMatchDate, selectedMatchTime])
+    (!selectedMatchDate || (m.startsAt ? localDateKey(m.startsAt) === selectedMatchDate : false)) &&
+    (!selectedMatchTime || (m.startsAt ? new Date(m.startsAt).toTimeString().slice(0, 5) >= selectedMatchTime : false)) &&
+    (!selectedMatchTimeTo || (m.startsAt ? new Date(m.startsAt).toTimeString().slice(0, 5) <= selectedMatchTimeTo : false))
+  ), [matches, league, query, showFavorites, favoriteIds, selectedMatchDate, selectedMatchTime, selectedMatchTimeTo])
 
   const visibleMatches = useMemo(
     () => filteredMatches.slice(0, visibleMatchLimit),
@@ -738,8 +757,8 @@ export default function App() {
 
       <div className="ticker"><span className="live-dot"/><strong>{t("sports_center")}</strong><span className="ticker-divider"/><span>{t('ticker_explore')}</span><span className="ticker-right"><ShieldCheck size={14}/> {t("secure_experience")} <span>·</span> {matches.length > 0 ? t("sports_data_connected") : "Verified feed not connected"}</span></div>
 
-      <main className="layout nova-dashboard">
-        <aside className="left-rail">
+      <main className={`layout nova-dashboard ${activePage === 'football' ? 'football-mode' : ''}`}>
+        {activePage !== 'football' && <aside className="left-rail">
           <div className="rail-heading">{t("discover")} <span>•••</span></div>
           <button className={activePage === 'sports' ? 'rail-item selected' : 'rail-item'} onClick={() => { setActivePage('sports'); openEventView('upcoming') }}><Trophy size={18}/> {t("sports")} <span className="rail-count">24</span></button>
           <button className={activePage === 'games' ? 'rail-item selected' : 'rail-item'} onClick={() => openGames()}><Sparkles size={18}/> Games <span className="rail-count">9</span></button>
@@ -747,16 +766,16 @@ export default function App() {
           <button className={showFavorites ? 'rail-item selected' : 'rail-item'} onClick={() => { setActivePage('sports'); setShowFavorites(!showFavorites); setEventView('upcoming') }}><Star size={18}/> Favourites <span className="rail-count">{favoriteIds.length}</span></button>
           <div className="rail-separator"/>
           <div className="rail-heading">{t("sports_heading")}</div>
-          {sports.map((s, i) => <button key={s} onClick={() => { if (s === 'Football') openFootball(); else { setSport(s); setActivePage('sports') } }} className={(s === 'Football' ? activePage === 'football' : sport === s && activePage === 'sports') ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
+          {sports.map((s, i) => <button key={s} onClick={() => { if (s === 'Football') openFootball(); else { setSport(s); setActivePage('sports') } }} className={sport === s && activePage === 'sports' ? 'sport-item chosen' : 'sport-item'}><span className="sport-emoji">{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}<span className="sport-chevron">›</span></button>)}
           <div className="rail-promo"><div className="promo-orb"><Sparkles size={20}/></div><b>{t("new_way")}</b><p>{t("sports_reimagined")}</p><span>{t("discover_betnova")} <ArrowRight size={13}/></span></div>
-        </aside>
+        </aside>}
 
         <section className="main-content nova-content">
-          <section className="hero">
+          {activePage === 'sports' && <section className="hero">
             <div className="hero-copy"><div className="eyebrow"><span/> {t("game_starts")} <strong className="hero-bonus-tag"><span className="hero-bonus-amount">100$</span><span className="hero-bonus-copy">WELCOME BONUS · مكافأة ترحيبية</span></strong></div><h1>{t("feel_every")}<br/><em>{t("moment")}</em></h1><p>{t("hero_subtitle")}</p><div className="hero-actions"><button onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}>{t("explore_events_btn")} <ArrowRight size={16}/></button><span><ShieldCheck size={15}/> {t("safer_experience")}</span></div></div>
             <div className="hero-art nova-hero-scene"><div className="nova-scene-grid"/><div className="orbit orbit-a"/><div className="orbit orbit-b"/><div className="nova-core"><div className="nova-core-inner">B</div></div><div className="nova-float-card nova-float-live"><span className="live-dot"/> LIVE ARENA <b>01</b></div><div className="nova-float-card nova-float-signal"><Sparkles size={13}/> NEXT LEVEL <b>SPORTS</b></div><div className="nova-scene-spark nova-spark-one">✦</div><div className="nova-scene-spark nova-spark-two">✧</div></div>
             <div className="hero-index">01 <span>/</span> 04</div>
-          </section>
+          </section>}
 
 
           {activePage === 'sports' && <section className="featured-games-panel" aria-label={language === 'ar' ? 'ألعاب مميزة' : 'Featured games'}>
@@ -777,29 +796,41 @@ export default function App() {
             </div>
           </section>}
 
-          <div className="quick-stats"><div><span className="stat-icon"><Activity size={17}/></span><span><b>{t("live_energy")}</b><small>{t("follow_action")}</small></span></div><div><span className="stat-icon teal"><Globe2 size={17}/></span><span><b>{t("global_sports")}</b><small>{t("every_corner")}</small></span></div><div><span className="stat-icon lime"><ShieldCheck size={17}/></span><span><b>{t("player_first")}</b><small>{t("safety_design")}</small></span></div></div>
+          {activePage === 'sports' &&           <div className="quick-stats"><div><span className="stat-icon"><Activity size={17}/></span><span><b>{t("live_energy")}</b><small>{t("follow_action")}</small></span></div><div><span className="stat-icon teal"><Globe2 size={17}/></span><span><b>{t("global_sports")}</b><small>{t("every_corner")}</small></span></div><div><span className="stat-icon lime"><ShieldCheck size={17}/></span><span><b>{t("player_first")}</b><small>{t("safety_design")}</small></span></div></div>}
 
           {activePage === 'games' ? <><Suspense fallback={<div className="games-loading" role="status">BETNOVA</div>}><GamesHub initialGameRequest={featuredGameRequest} /></Suspense></> : <><section className="events-section" id="events">
-            <div className="section-heading"><div><div className="eyebrow dark"><span/> {t("today_lineup")}</div><h2>{showFavorites ? t('your_favourites') : eventView === 'live' ? t('live_events') : eventView === 'results' ? t('latest_results') : t('featured_events_title')} <span className="heading-star">✳</span></h2><p>{t("find_moments")}</p></div><button className="view-all" onClick={() => openEventView('upcoming')}>{t("upcoming_schedule")} <ArrowRight size={15}/></button></div>
+            <div className="section-heading"><div><div className="eyebrow dark"><span/> {activePage === 'football' ? (language === 'ar' ? 'جدول كرة القدم' : 'FOOTBALL SCHEDULE') : t("today_lineup")}</div><h2>{activePage === 'football' ? (language === 'ar' ? 'مباريات كرة القدم' : 'Football matches') : showFavorites ? t('your_favourites') : eventView === 'live' ? t('live_events') : eventView === 'results' ? t('latest_results') : t('featured_events_title')} <span className="heading-star">✳</span></h2><p>{activePage === 'football' ? (language === 'ar' ? 'اختر البطولة أو حدّد التاريخ والوقت للوصول إلى المباراة بسرعة.' : 'Choose a competition or set a date and time to find a match.') : t("find_moments")}</p></div><button className="view-all" onClick={() => openEventView('upcoming')}>{t("upcoming_schedule")} <ArrowRight size={15}/></button></div>
             <div className="event-view-tabs" role="tablist" aria-label="Event type">
               <button className={eventView === 'upcoming' ? 'event-view active' : 'event-view'} onClick={() => setEventView('upcoming')}>{t("upcoming")}</button>
               <button className={eventView === 'live' ? 'event-view active' : 'event-view'} onClick={() => setEventView('live')}>{t("live")} <span className="live-dot"/></button>
               <button className={eventView === 'results' ? 'event-view active' : 'event-view'} onClick={() => setEventView('results')}>{t("results")}</button>
             </div>
-            <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>
-            <div className="filter-row"><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("search")}/></label></div>
+            {activePage === 'sports' && <div className="sports-tabs">{sports.map((s,i)=><button key={s} className={sport===s?'tab active-tab':'tab'} onClick={()=>setSport(s)}><span>{['⚽','🏀','🎾','🏒','🏐'][i]}</span>{s}</button>)}</div>}
+            <div className="filter-row"><label className="search-field"><Search size={15}/><input id="match-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={activePage === "football" ? (language === "ar" ? "ابحث عن فريق أو بطولة..." : "Search team or competition...") : t("search")}/></label></div>
             {activePage === 'football' && !showFavorites && <div className="competition-browser" aria-label="Browse upcoming competitions">
-              <div className="competition-browser-top"><span>{language === 'ar' ? 'البطولات والدوريات' : 'Browse by competition'}</span><small>{competitionOptions.length} competitions · {matches.length} matches</small></div>
-              <div className="filter-row competition-date-row"><label className="search-field"><span>{language === 'ar' ? 'التاريخ' : 'Date'}</span><input aria-label="Filter matches by date" type="date" value={selectedMatchDate} onChange={event => setSelectedMatchDate(event.target.value)}/></label><label className="search-field"><span>{language === 'ar' ? 'ابتداءً من الوقت' : 'From time'}</span><input aria-label="Filter matches from time" type="time" value={selectedMatchTime} onChange={event => setSelectedMatchTime(event.target.value)}/></label><button type="button" className="competition-chip" onClick={() => { setSelectedMatchDate(''); setSelectedMatchTime('') }}>{language === 'ar' ? 'مسح التاريخ والوقت' : 'Clear date & time'}</button></div>
-              <div className="competition-chip-list competition-all-row">
-                <button type="button" className={league === 'All matches' ? 'competition-chip selected' : 'competition-chip'} onClick={() => setLeague('All matches')}>All competitions <b>{matches.length}</b></button>
+              <div className="competition-browser-top"><span>{language === 'ar' ? 'البطولات والدوريات' : 'Leagues & tournaments'}</span><small>{competitionOptions.length} {language === 'ar' ? 'بطولة' : 'competitions'} · {matches.length} {language === 'ar' ? 'مباراة' : 'matches'}</small></div>
+              <div className="football-date-panel">
+                <div className="football-filter-heading"><span>{language === 'ar' ? 'البحث حسب الموعد' : 'Find by kick-off'}</span><small>{language === 'ar' ? 'حدّد اليوم والوقت' : 'Choose a day and time window'}</small></div>
+                <div className="football-date-fields">
+                  <label className="football-date-field"><span>{language === 'ar' ? 'تاريخ المباراة' : 'Match date'}</span><input aria-label="Match date" type="date" value={selectedMatchDate} onChange={event => setSelectedMatchDate(event.target.value)}/></label>
+                  <label className="football-date-field"><span>{language === 'ar' ? 'من الساعة' : 'From'}</span><input aria-label="Start time" type="time" value={selectedMatchTime} onChange={event => setSelectedMatchTime(event.target.value)}/></label>
+                  <label className="football-date-field"><span>{language === 'ar' ? 'إلى الساعة' : 'Until'}</span><input aria-label="End time" type="time" value={selectedMatchTimeTo} onChange={event => setSelectedMatchTimeTo(event.target.value)}/></label>
+                </div>
+                <div className="football-date-actions">
+                  <button type="button" onClick={() => setSelectedMatchDate(localDateKey(new Date()))}>{language === 'ar' ? 'اليوم' : 'Today'}</button>
+                  <button type="button" onClick={() => { const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); setSelectedMatchDate(localDateKey(tomorrow)) }}>{language === 'ar' ? 'غدًا' : 'Tomorrow'}</button>
+                  <button type="button" className="football-clear-filters" onClick={() => { setSelectedMatchDate(''); setSelectedMatchTime(''); setSelectedMatchTimeTo('') }}>{language === 'ar' ? 'إعادة ضبط' : 'Reset filters'}</button>
+                </div>
+              </div>
+                            <div className="competition-chip-list competition-all-row">
+                <button type="button" className={league === 'All matches' ? 'competition-chip selected' : 'competition-chip'} onClick={() => setLeague('All matches')}>{language === 'ar' ? 'كل البطولات' : 'All competitions'} <b>{matches.length}</b></button>
               </div>
               {internationalCompetitions.length > 0 && <section className="competition-group">
-                <div className="competition-group-title"><Globe2 size={13}/> International competitions</div>
+                <div className="competition-group-title"><Globe2 size={13}/> {language === 'ar' ? 'بطولات دولية' : 'International competitions'}</div>
                 <div className="competition-chip-list">{internationalCompetitions.map(item => <button type="button" key={item.name} title={item.name} className={league === item.name ? 'competition-chip selected international' : 'competition-chip international'} onClick={() => setLeague(item.name)}><span className="competition-chip-flag">{countryFlagForCompetition(item.name, item.country)}</span><span className="competition-chip-name">{item.name}</span><b>{item.count}</b></button>)}</div>
               </section>}
               {domesticCompetitions.length > 0 && <section className="competition-group">
-                <div className="competition-group-title"><Trophy size={13}/> Domestic leagues & cups</div>
+                <div className="competition-group-title"><Trophy size={13}/> {language === 'ar' ? 'الدوريات والكؤوس المحلية' : 'Domestic leagues & cups'}</div>
                 <div className="competition-chip-list">{domesticCompetitions.map(item => <button type="button" key={item.name} title={item.name} className={league === item.name ? 'competition-chip selected' : 'competition-chip'} onClick={() => setLeague(item.name)}><span className="competition-chip-flag">{countryFlagForCompetition(item.name, item.country)}</span><span className="competition-chip-name">{item.name}</span><b>{item.count}</b></button>)}</div>
               </section>}
             </div>}
@@ -815,7 +846,7 @@ export default function App() {
           </section></>}
         </section>
 
-        <aside className="right-rail">
+        {activePage !== 'football' && <aside className="right-rail">
           <div className="slip-card"><div className="slip-head"><div><span className="eyebrow dark">{t('your_picks')}</span><h3>{t('bet_slip')} <span>{selected.length}</span></h3></div><button className="slip-clear" onClick={()=>setSelected([])}>{t("clear")}</button></div>
             {selected.length ? <div className="slip-selections">{selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button onClick={()=>setSelected(current=>current.filter(x=>x.selectionId!==s.selectionId))}><X size={14}/></button></div>)}</div> : <div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>{t("slip_waiting")}</b><p>{t("select_price")}</p></div>}
             {selected.some(item => item.isDemo) ? <><p className="guest-slip-note">BETNOVA PRACTICE · No cash stake, wallet debit, or real payout.</p><div className="bet-slip-stake"><label>Practice stake<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder="Practice amount"/></label><div><span>Practice return</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} {betCurrency}</b></div></div></> : userEmail ? <div className="bet-slip-stake"><label>Stake<select value={betCurrency} onChange={event=>setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select><input type="number" min="0.01" step="0.01" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t('potential_return')}</span><b>{(hasSameMatchBuilder ? 'Combined price pending' : (Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2))} {betCurrency}</b></div></div> : <p className="guest-slip-note">Sign in to view your wallet balance and place real bets.</p>}
@@ -824,7 +855,7 @@ export default function App() {
           </div>
           <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><a href="#help">Get support <ArrowRight size={13}/></a></div></div>
           <div className="responsible-card" id="responsible"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
-        </aside>
+        </aside>}
       </main>
 
       <nav className="mobile-nav"><button className={activePage === 'football' ? 'mobile-active' : ''} onClick={openFootball}><Trophy size={19}/>{language === 'ar' ? 'كرة القدم' : 'Football'}</button><button onClick={() => { setActivePage('sports'); openEventView('live') }}><Activity size={19}/>{t("live")}</button><button onClick={()=>openOverlay('mobileSlip')}><Wallet size={19}/>{t("bet_slip")} {selected.length>0&&<i>{selected.length}</i>}</button><button onClick={() => { setActivePage('sports'); setShowFavorites(true); setEventView('upcoming'); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }) }}><Star size={19}/>{t("favourites")}</button><button onClick={() => openOverlay('mobileMore')}><Menu size={19}/>{t("menu")}</button></nav>

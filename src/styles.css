@@ -581,3 +581,71 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 }
 .global-home-button:hover{filter:brightness(1.12)}
 @media(max-width:640px){.global-home-button{right:12px!important;bottom:calc(78px + env(safe-area-inset-bottom))!important;min-height:40px!important}}
+
+
+/* Dedicated Football page: a clean, full-width competition and fixture workspace. */
+.layout.football-mode{grid-template-columns:minmax(0,1fr);max-width:1220px;padding-top:24px}
+.football-mode .main-content{width:100%;min-width:0}
+.football-mode .events-section{margin-top:0}
+.football-mode .section-heading{align-items:center;margin-bottom:20px;padding:0 2px}
+.football-mode .section-heading h2{font-size:clamp(23px,3vw,30px);color:#163d30}
+.football-mode .section-heading p{font-size:12px;line-height:1.6;max-width:620px}
+.football-mode .view-all{display:none}
+.football-mode .filter-row{margin:12px 0}
+.football-mode .search-field{min-height:48px;border:1px solid #dce9df;border-radius:13px;background:#fff;box-shadow:0 4px 14px #214b3210;padding:0 15px;gap:10px}
+.football-mode .search-field input{font-size:13px}
+.competition-browser{margin:18px 0 22px;padding:18px;border:1px solid #dcebe0;border-radius:18px;background:linear-gradient(145deg,#fff 0%,#f5fbf6 100%);box-shadow:0 10px 28px #194a3010}
+.competition-browser-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;color:#1a4937;font-size:15px;font-weight:850}
+.competition-browser-top small{color:#81968a;font-size:10px;font-weight:700}
+.football-date-panel{padding:15px;border:1px solid #dcece1;border-radius:14px;background:#edf7ef;margin-bottom:16px}
+.football-filter-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;color:#24543f;font-size:12px;font-weight:850}
+.football-filter-heading small{color:#7a9384;font-size:10px;font-weight:600}
+.football-date-fields{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:10px}
+.football-date-field{display:grid;gap:6px;min-width:0;color:#6e8778;font-size:10px;font-weight:800}
+.football-date-field input{width:100%;min-width:0;height:44px;padding:0 11px;border:1px solid #d4e4d8;border-radius:10px;background:#fff;color:#234b38;font-size:13px;font-weight:700;color-scheme:light}
+.football-date-field input:focus{outline:2px solid #42b985;outline-offset:1px;border-color:#42b985}
+.football-date-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.football-date-actions button{min-height:34px;padding:0 13px;border:1px solid #cfe3d5;border-radius:9px;background:#fff;color:#286247;font-size:10px;font-weight:800}
+.football-date-actions button:hover{border-color:#35ad7b;background:#e3f5e9}
+.football-date-actions .football-clear-filters{margin-inline-start:auto;background:#174f3c;border-color:#174f3c;color:#fff}
+.competition-group{margin-top:14px}
+.competition-group-title{display:flex;align-items:center;gap:8px;margin:0 0 9px;color:#577365;font-size:11px;font-weight:850}
+.competition-chip-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:8px}
+.competition-chip{display:flex;align-items:center;gap:9px;min-width:0;min-height:42px;padding:8px 11px;border:1px solid #e0ebe2;border-radius:10px;background:#fff;color:#496858;text-align:start;font-size:11px;font-weight:750;transition:border-color .15s,background .15s}
+.competition-chip:hover{border-color:#72c99c;background:#f1faf3}
+.competition-chip.selected{border-color:#25a978;background:#e7f7ed;color:#147a55;box-shadow:inset 0 0 0 1px #25a97820}
+.competition-chip-flag{flex:none;font-size:16px}
+.competition-chip-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.competition-chip b{flex:none;min-width:22px;padding:3px 6px;border-radius:20px;background:#edf4ee;color:#698273;text-align:center;font-size:9px}
+.competition-chip.selected b{background:#ccebd8;color:#147a55}
+.competition-all-row{grid-template-columns:minmax(0,1fr)}
+.competition-all-row .competition-chip{justify-content:space-between}
+.football-mode .match-list{gap:11px}
+.football-mode .match-card{padding:15px 17px;border-color:#e2ece4;border-radius:15px}
+.football-mode .match-card:hover{transform:translateY(-1px)}
+@media(max-width:700px){
+  .layout.football-mode{padding:16px 12px 100px}
+  .football-mode .section-heading{align-items:flex-start;margin-bottom:14px}
+  .football-mode .section-heading h2{font-size:23px}
+  .football-mode .section-heading p{font-size:11px}
+  .competition-browser{padding:12px;margin:14px 0 18px;border-radius:14px}
+  .competition-browser-top{align-items:flex-start;flex-direction:column;gap:4px;font-size:14px}
+  .football-date-panel{padding:11px}
+  .football-date-fields{grid-template-columns:1fr 1fr}
+  .football-date-field:first-child{grid-column:1/-1}
+  .football-date-actions{gap:6px}
+  .football-date-actions button{flex:1}
+  .football-date-actions .football-clear-filters{margin-inline-start:0}
+  .competition-chip-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .competition-chip{min-height:40px;padding:7px;font-size:10px;gap:6px}
+  .competition-chip b{min-width:19px;padding:2px 5px}
+}
+@media(max-width:390px){
+  .football-date-fields{grid-template-columns:1fr}
+  .football-date-field:first-child{grid-column:auto}
+  .competition-chip-list{grid-template-columns:1fr}
+  .competition-browser-top small{font-size:9px}
+}
+/* Reduce decorative paint cost on mobile and avoid expensive oversized blur layers. */
+.ambient{filter:blur(48px);opacity:.28}
+@media(max-width:700px){.ambient{filter:blur(34px);opacity:.18}.match-card{transition:none}.competition-chip{transition:none}}
