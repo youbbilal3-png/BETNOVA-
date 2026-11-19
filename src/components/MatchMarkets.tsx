@@ -37,27 +37,6 @@ const isBothTeamsScoreMarket = (market: Market) => {
     /both teams? to score|both teams score|btts/.test(name)
 }
 
-const categoryFor = (market: Market, t: (key: any) => string, language: string) => {
-  const key = (market.market_key || market.market_type || '').toLowerCase()
-  const name = market.name.toLowerCase()
-  const value = key + ' ' + name
-  const labels: Record<string, Record<string, string>> = {
-    btts: {en:'Both Teams To Score',ar:'كلا الفريقين يسجلان',fr:'Les deux équipes marquent',es:'Ambos equipos marcan',pt:'Ambas as equipas marcam',de:'Beide Teams treffen',it:'Entrambe le squadre segnano',tr:'İki takım da gol atar',nl:'Beide teams scoren',ru:'Обе команды забьют',zh:'双方均进球',ja:'両チーム得点',ko:'양 팀 득점',id:'Kedua tim mencetak gol',hi:'दोनों टीमें स्कोर करेंगी',ur:'دونوں ٹیمیں گول کریں'},
-    double: {en:'Double Chance',ar:'الفرصة المزدوجة',fr:'Double chance',es:'Doble oportunidad',pt:'Dupla hipótese',de:'Doppelte Chance',it:'Doppia chance',tr:'Çifte şans',nl:'Dubbele kans',ru:'Двойной шанс',zh:'双重机会',ja:'ダブルチャンス',ko:'더블 찬스',id:'Peluang ganda',hi:'डबल चांस',ur:'ڈبل چانس'},
-    events: {en:'Match Events',ar:'أحداث المباراة',fr:'Événements du match',es:'Eventos del partido',pt:'Eventos da partida',de:'Spielereignisse',it:'Eventi della partita',tr:'Maç olayları',nl:'Wedstrijdgebeurtenissen',ru:'События матча',zh:'比赛事件',ja:'試合イベント',ko:'경기 이벤트',id:'Peristiwa pertandingan',hi:'मैच की घटनाएँ',ur:'میچ کے واقعات'}
-  }
-  const label = (group: keyof typeof labels) => labels[group][language] || labels[group].en
-  if (/both.?teams?.?to?.?score|btts/.test(value)) return label('btts')
-  if (/double.?chance|double_chance/.test(value)) return label('double')
-  if (/corner/.test(value)) return t('corners')
-  if (/yellow.?card|red.?card|card|booking/.test(value)) return t('cards_fouls')
-  if (/shot|player|assist/.test(value)) return t('player_markets')
-  if (/offside|foul|penalt|var|substitution/.test(value)) return label('events')
-  if (/goal|scorer|total_score|over.?under/.test(value)) return t('goals')
-  if (/half|period|result|winner|handicap|match.?outcome/.test(value)) return t('match_result')
-  return t('match_markets')
-}
-
 export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }: Props) {
   const { t, language } = useLanguage()
   const [markets, setMarkets] = useState<Market[]>([])
