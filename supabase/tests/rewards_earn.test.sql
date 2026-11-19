@@ -60,8 +60,8 @@ begin
   values(v_user,'authenticated','authenticated','cashback-four-test@example.invalid','',now(),now(),now());
 
   insert into public.deposit_requests(id,user_id,payment_method,amount,currency,status,created_at)
-  select gen_random_uuid(),v_user,'baridimob',1000,'DZD','pending',now()+make_interval(secs=>n)
-  from generate_series(1,4) n;
+  select gen_random_uuid(),v_user,'baridimob',1000,'DZD','pending',now()+make_interval(secs=>g.n)
+  from generate_series(1,4) as g(n);
 
   for v_id in select id from public.deposit_requests where user_id=v_user order by created_at,id loop
     update public.deposit_requests set status='approved' where id=v_id;
@@ -83,8 +83,8 @@ begin
   values(v_user,'authenticated','authenticated','cashback-five-test@example.invalid','',now(),now(),now());
 
   insert into public.deposit_requests(id,user_id,payment_method,amount,currency,status,created_at)
-  select gen_random_uuid(),v_user,'baridimob',1000,'DZD','pending',now()+make_interval(secs=>n)
-  from generate_series(1,5) n;
+  select gen_random_uuid(),v_user,'baridimob',1000,'DZD','pending',now()+make_interval(secs=>g.n)
+  from generate_series(1,5) as g(n);
 
   for v_id in select id from public.deposit_requests where user_id=v_user order by created_at,id loop
     update public.deposit_requests set status='approved' where id=v_id;
