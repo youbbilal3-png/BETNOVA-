@@ -41,19 +41,22 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     if (authError) throw authError
     if (!user) throw new Error(t('sign_in_wallet'))
     setUserId(user.id)
-    const [a, m, d, w, b] = await Promise.all([
+    const [a, m, d, w, b, profile] = await Promise.all([
       supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance,recovery_balance').eq('user_id', user.id),
       supabase.from('payment_methods').select('code,display_name,is_enabled,is_withdrawal_enabled,supported_currencies,instructions').order('sort_order'),
       supabase.from('deposit_requests').select('id,payment_method,amount,currency,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
       supabase.from('withdrawal_requests').select('id,payment_method,amount,currency,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
-      supabase.from('bonus_wallet_accounts').select('available_balance,reserved_balance').eq('user_id', user.id).maybeSingle()
+      supabase.from('bonus_wallet_accounts').select('available_balance,reserved_balance').eq('user_id', user.id).maybeSingle(),
+      supabase.from('profiles').select('preferred_currency').eq('id', user.id).maybeSingle()
     ])
-    for (const result of [a,m,d,w,b]) if (result.error) throw result.error
+    for (const result of [a,m,d,w,b,profile]) if (result.error) throw result.error
     setAccounts((a.data ?? []) as Account[])
     setMethods((m.data ?? []) as Method[])
     setDeposits((d.data ?? []) as RequestRow[])
     setWithdrawals((w.data ?? []) as RequestRow[])
     setBonus({available_balance:Number(b.data?.available_balance ?? 0),reserved_balance:Number(b.data?.reserved_balance ?? 0)})
+    const preferred = profile.data?.preferred_currency
+    if (preferred === 'DZD' || preferred === 'USD' || preferred === 'EUR') setCurrency(preferred)
   }
 
   useEffect(() => { void refresh().catch(caught => setError(caught instanceof Error ? caught.message : t('could_not_load_wallet'))) }, [])

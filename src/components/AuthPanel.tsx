@@ -13,6 +13,7 @@ type AuthPanelProps = {
 export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPanelProps) {
   const { t } = useLanguage()
   const [displayName, setDisplayName] = useState('')
+  const [preferredCurrency, setPreferredCurrency] = useState<'DZD' | 'USD' | 'EUR'>('DZD')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -65,6 +66,7 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
             data: {
               display_name: displayName.trim(),
               country_code: 'DZ',
+              preferred_currency: preferredCurrency,
             },
             emailRedirectTo: 'https://betnova-8daa3.web.app/',
           },
@@ -100,6 +102,7 @@ export default function AuthPanel({ open, mode, onClose, onModeChange }: AuthPan
         <p className="auth-subtitle">{mode === 'signup' ? t('join_experience') : t('sign_in_continue')}</p>
         <form onSubmit={handleSubmit} className="auth-form">
           {mode === 'signup' && <label>{t('your_name')}<input autoComplete="name" value={displayName} onChange={event => setDisplayName(event.target.value)} placeholder={t('name_prompt')} required maxLength={60}/></label>}
+          {mode === 'signup' && <label>{t('preferred_currency')}<select value={preferredCurrency} onChange={event => setPreferredCurrency(event.target.value as 'DZD' | 'USD' | 'EUR')}><option value="DZD">DZD · 25,000 DA welcome bonus</option><option value="USD">USD · $100 welcome bonus</option><option value="EUR">EUR · €90 welcome bonus</option></select></label>}
           <label>{t('email_address')}<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" required/></label>
           <label>{t('password')}<span className="password-wrap"><input type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={event => setPassword(event.target.value)} placeholder={t('password_minimum')} minLength={8} required/><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t('hide_password') : t('show_password')}>{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></span></label>
           {error && <div className="auth-message error" role="alert">{error}</div>}
