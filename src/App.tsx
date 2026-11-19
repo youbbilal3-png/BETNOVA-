@@ -271,6 +271,7 @@ export default function App() {
     setShowFavorites(false)
     setLeague('All matches')
     setActivePage('football')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   useEffect(() => {
     const handleBack = (event: PopStateEvent) => {
