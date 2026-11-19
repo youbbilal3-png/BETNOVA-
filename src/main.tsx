@@ -13,6 +13,7 @@ import './nova-arena-home.css'
 import './install-app.css'
 import InstallAppPrompt from './components/InstallAppPrompt'
 import NativeAppGate from './native/NativeAppGate'
+import PushNotificationRegistrar from './native/PushNotificationRegistrar'
 import './native/native-app-gate.css'
 import { LanguageProvider } from './i18n'
 
@@ -24,6 +25,6 @@ if ('serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <LanguageProvider><App /><InstallAppPrompt /><NativeAppGate /></LanguageProvider>
+    <LanguageProvider><App /><InstallAppPrompt /><NativeAppGate /><PushNotificationRegistrar /></LanguageProvider>
   </React.StrictMode>,
 )
