@@ -14,7 +14,7 @@ import { languages, useLanguage } from './i18n'
 import { supabase } from './lib/supabase'
 
 const cleanMarketDisplayName = (raw: string) => String(raw ?? '')
-  .replace(/\b(oddspapi|oddsapi|5dollarfootballapi|pinnacle|bet\s?365|1xbet|unibet|leovegas|pmu|winamax|marathon\s?bet|nordic\s?bet|bwin|betfair|william\s?hill|betway|888sport|stake|betano|parimatch|dafabet|10bet|sportingbet)\b/gi, '')
+  .replace(/\b(oddspapi|oddsapi|apifootball|5dollarfootballapi|pinnacle|bet\s?365|1xbet|unibet|leovegas|pmu|winamax|marathon\s?bet|nordic\s?bet|bwin|betfair|william\s?hill|betway|888sport|stake|betano|parimatch|dafabet|10bet|sportingbet)\b/gi, '')
   .replace(/\s*[·|–—-]\s*/g, ' ')
   .replace(/\s{2,}/g, ' ')
   .trim() || 'BETNOVA Markets';
