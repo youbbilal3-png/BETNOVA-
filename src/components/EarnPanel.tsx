@@ -36,7 +36,7 @@ export default function EarnPanel({ onClose, language = 'en' }: Props) {
     let parsed: URL
     try { parsed = new URL(postUrl.trim()) } catch { setMessage(ar ? 'أدخل رابط منشور صحيحًا.' : 'Enter a valid post URL.'); return }
     if (!['http:','https:'].includes(parsed.protocol)) { setMessage(ar ? 'الرابط غير صالح.' : 'Invalid post URL.'); return }
-    const host = parsed.hostname.toLowerCase().replace(/^www\\./, '')
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
     const allowedHosts: Record<string,string[]> = {
       facebook: ['facebook.com','fb.watch'],
       instagram: ['instagram.com'],
