@@ -294,12 +294,15 @@ set search_path = ''
 as $$
 declare
   v_run_count integer;
+  v_cycle integer;
   v_recent_count integer;
   v_currency text;
   v_total numeric(20,2);
+  v_reward numeric(20,2);
   v_anchor uuid;
-  v_claim uuid := gen_random_uuid();
+  v_claim uuid;
   v_ledger uuid;
+  v_anchor_rank integer;
 begin
   if old.status <> 'pending' or new.status <> 'approved' then return new; end if;
 
@@ -314,37 +317,62 @@ begin
   )
   select greatest(first_bad-1,0) into v_run_count from boundary;
 
-  if v_run_count < 5 or mod(v_run_count,5) <> 0 then return new; end if;
+  if v_run_count < 5 then return new; end if;
 
-  with recent as (
-    select d.id,d.currency,d.amount,
-      row_number() over(order by d.created_at desc,d.id desc) as rn
-    from public.deposit_requests d where d.user_id=new.user_id
-    order by d.created_at desc,d.id desc limit 5
-  )
-  select count(*),min(currency),round(sum(amount),2),min(id) filter(where rn=1)
-    into v_recent_count,v_currency,v_total,v_anchor
-  from recent;
+  -- Pay once for each completed block of five consecutive approved deposits.
+  -- This also catches a block if a later pending deposit existed before the fifth
+  -- deposit was approved and delayed the trigger's first opportunity to process it.
+  for v_cycle in 1..floor(v_run_count::numeric / 5)::integer loop
+    v_anchor_rank := v_run_count - ((v_cycle - 1) * 5) - 4;
+    with ordered as (
+      select d.id,d.currency,d.amount,
+        row_number() over(order by d.created_at desc,d.id desc) as rn
+      from public.deposit_requests d
+      where d.user_id=new.user_id
+    ), block as (
+      select * from ordered
+      where rn between v_anchor_rank and v_anchor_rank + 4
+    )
+    select count(*),min(currency),round(sum(amount),2)
+      into v_recent_count,v_currency,v_total
+    from block;
 
-  if v_recent_count <> 5 or (select count(distinct currency) from public.deposit_requests
-      where user_id=new.user_id and id in (
-        select id from public.deposit_requests where user_id=new.user_id
-        order by created_at desc,id desc limit 5
-      )) <> 1 then
-    return new;
-  end if;
+    if v_recent_count <> 5 or (
+      select count(distinct currency) from (
+        select d.currency
+        from public.deposit_requests d
+        where d.user_id=new.user_id
+        order by d.created_at desc,d.id desc
+        offset v_anchor_rank - 1 limit 5
+      ) currencies
+    ) <> 1 then
+      continue;
+    end if;
 
-  insert into public.deposit_streak_claims(
-    id,user_id,cycle_anchor_deposit_id,currency,total_deposited,reward_amount
-  ) values (v_claim,new.user_id,v_anchor,v_currency,v_total,round(v_total*0.05,2))
-  on conflict(cycle_anchor_deposit_id) do nothing;
-  if not found then return new; end if;
+    select id into v_anchor
+    from (
+      select d.id,row_number() over(order by d.created_at desc,d.id desc) as rn
+      from public.deposit_requests d where d.user_id=new.user_id
+    ) ordered
+    where rn=v_anchor_rank;
 
-  v_ledger := private.betnova_credit_cash_reward(
-    new.user_id,round(v_total*0.05,2),v_currency,'deposit_streak',v_anchor,
-    'Five consecutive approved deposits · 5% reward'
-  );
-  update public.deposit_streak_claims set wallet_ledger_id=v_ledger where id=v_claim;
+    v_reward := round(v_total * 0.05, 2);
+    if v_reward <= 0 then continue; end if;
+
+    v_claim := gen_random_uuid();
+    insert into public.deposit_streak_claims(
+      id,user_id,cycle_anchor_deposit_id,currency,total_deposited,reward_amount
+    ) values (v_claim,new.user_id,v_anchor,v_currency,v_total,v_reward)
+    on conflict(cycle_anchor_deposit_id) do nothing;
+    if not found then continue; end if;
+
+    v_ledger := private.betnova_credit_cash_reward(
+      new.user_id,v_reward,v_currency,'deposit_streak',v_anchor,
+      'Five consecutive approved deposits · 5% reward'
+    );
+    update public.deposit_streak_claims set wallet_ledger_id=v_ledger where id=v_claim;
+  end loop;
+
   return new;
 end;
 $$;
