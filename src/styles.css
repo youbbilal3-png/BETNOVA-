@@ -696,6 +696,10 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 }
 
 
+/* Show football fixtures directly beneath the competition selector. */
+.football-mode .competition-browser{min-height:0}
+.football-mode .match-list{margin-top:18px}
+
 /* BETNOVA support center */
 .support-backdrop{position:fixed;inset:0;z-index:11000;background:#071b17ed;overflow-y:auto;padding:0;animation:authFade .18s ease-out}
 .support-page{width:100%;min-height:100%;background:#f5faf6;color:#183c2d}
