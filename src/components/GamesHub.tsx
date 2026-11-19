@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { ArrowRight, Crown, Gem, Grid3X3, Play, Sparkles, Spade, X, Zap } from 'lucide-react'
 
 type Category = 'all' | 'games' | 'slots' | 'casino'
@@ -32,7 +32,7 @@ export default function GamesHub(){
       {(['all','games','slots','casino'] as Category[]).map(key=>{const Icon=categoryIcons[key];return <button key={key} type="button" role="tab" aria-selected={category===key} className={category===key?'active':''} onClick={()=>setCategory(key)}><Icon size={15}/>{categoryLabels[key]}<span>{key==='all'?games.length:games.filter(game=>game.category===key).length}</span></button>})}
     </div>
     <div className="games-grid">
-      {visible.map((game,index)=><article className={`game-tile game-${game.accent}`} key={game.id} style={{'--game-index':index} as React.CSSProperties}>
+      {visible.map((game,index)=><article className={`game-tile game-${game.accent}`} key={game.id} style={{'--game-index':index} as CSSProperties}>
         <div className={`game-art art-${game.art}`} aria-hidden="true">
           <div className="game-art-glow"/>
           <div className="game-art-object">{game.mark}</div>
