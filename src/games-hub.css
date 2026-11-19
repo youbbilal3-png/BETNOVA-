@@ -326,3 +326,5 @@
 .apple-odds-fruits button.picked{border-color:#5ce8b4;background:#45d6a32a;box-shadow:0 0 10px #45d6a333}
 .apple-row-multiplier{color:#b9f77d;text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
 .apple-cashout-button{width:100%;min-height:42px;margin-top:8px;border:1px solid #f4c66a;border-radius:10px;background:linear-gradient(110deg,#9d641b,#d99a2d);color:#fff;font-weight:950}
+
+.apple-odds-row.failed{border-color:#fb7185;background:#fb71851a}.apple-odds-fruits button.trap{border-color:#fb7185;background:#fb71852e}
