@@ -14,3 +14,15 @@
 .bn-match-follow-message{margin:8px 0 0;color:#f3c2a9}
 
 .bn-match-follow-state{margin:8px 0;padding:10px 11px;border:1px solid #ffffff12;border-radius:9px;background:#ffffff06;color:#b8cbbf;font-size:11px;line-height:1.6}
+
+.bn-match-follow-events{margin-top:14px;padding-top:12px;border-top:1px solid #ffffff1a}
+.bn-match-follow-events> b{display:block;margin-bottom:4px;color:#d8f7e6;font-size:11px}
+.bn-match-follow-event{display:grid;grid-template-columns:20px minmax(0,1fr) 42px;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid #ffffff10;color:#b9d2c5}
+.bn-match-follow-event>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.bn-match-follow-event b{font-size:11px;color:#edf8f1}
+.bn-match-follow-event small{font-size:9px;line-height:1.45;color:#aebed0}
+.bn-match-follow-event button{width:38px;height:22px;padding:2px;border:0;border-radius:20px;background:#3b4943;display:flex;align-items:center;justify-content:flex-start;flex-shrink:0;cursor:pointer}
+.bn-match-follow-event button>span{display:block;width:18px;height:18px;border-radius:50%;background:#dce6e0;transition:transform .18s ease}
+.bn-match-follow-event button.is-on{background:#13a66a}
+.bn-match-follow-event button.is-on>span{transform:translateX(16px)}
+.bn-match-follow-event button:disabled{opacity:.5;cursor:wait}
