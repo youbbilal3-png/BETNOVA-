@@ -9,7 +9,8 @@ export default function PushNotificationRegistrar() {
 
     let active = true
     let userId: string | null = null
-    let preferenceChannel: ReturnType<typeof supabase.channel> | null = null
+    type SupabaseClient = NonNullable<typeof supabase>
+    let preferenceChannel: ReturnType<SupabaseClient['channel']> | null = null
     let registrationHandle: { remove: () => Promise<void> } | undefined
     let errorHandle: { remove: () => Promise<void> } | undefined
 
