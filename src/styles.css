@@ -243,8 +243,10 @@
 
 
 /* BETNOVA mobile controls and Arabic layout */
-.mobile-more-backdrop,.notification-backdrop{position:fixed;inset:0;z-index:60;background:#102c2380;backdrop-filter:blur(6px);display:flex;justify-content:flex-end}
-.mobile-more-panel{position:relative;z-index:61;width:min(88vw,360px);height:100%;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;background:#f8fbf7;padding:22px 18px calc(24px + env(safe-area-inset-bottom));box-shadow:-18px 0 55px #163c2c30;display:flex;flex-direction:column;gap:7px;animation:wallet-in .2s ease-out}
+.mobile-more-backdrop{position:fixed;inset:0 0 calc(65px + env(safe-area-inset-bottom));z-index:60;background:#102c2380;backdrop-filter:blur(6px);display:flex;justify-content:flex-end}
+.notification-backdrop{position:fixed;inset:0;z-index:60;background:#102c2380;backdrop-filter:blur(6px);display:flex;justify-content:flex-end}
+.mobile-more-panel{position:relative;z-index:61;width:min(88vw,360px);height:100%;max-height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#f8fbf7;padding:22px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:-18px 0 55px #163c2c30;display:flex;flex-direction:column;gap:7px;animation:wallet-in .2s ease-out}
+@media(max-width:760px){.mobile-more-backdrop{bottom:calc(65px + env(safe-area-inset-bottom))}.mobile-more-panel{padding-bottom:calc(20px + env(safe-area-inset-bottom))}}
 .mobile-more-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;margin-bottom:8px;border-bottom:1px solid #e4ece3;color:#1b4936}
 .mobile-more-header b{font:700 18px 'Space Grotesk',sans-serif}
 .mobile-more-header small{display:block;margin-top:3px;color:#91a397;font-size:9px}
