@@ -87,6 +87,46 @@ Deno.serve(async (req: Request) => {
   const apiKey = String(config.api_key ?? "");
   if (!apiKey) return json({ error: "Add sportsapi_live_api_key to Supabase Vault to activate live scores" }, 503);
 
+  const notificationDispatchSecret = Deno.env.get("BETNOVA_NOTIFICATION_DISPATCH_SECRET") ?? "";
+  async function dispatchVerifiedPush(eventId: string, verified = false) {
+    if (!notificationDispatchSecret) return;
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/dispatch-push-notifications`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${serviceKey}`,
+          "apikey": serviceKey,
+          "Content-Type": "application/json",
+          "x-betnova-notification-secret": notificationDispatchSecret,
+        },
+        body: JSON.stringify({ event_id: eventId, verified }),
+        signal: AbortSignal.timeout(7000),
+      });
+      if (!response.ok) console.error("Push dispatch returned", response.status);
+    } catch (error) {
+      console.error("Push dispatch failed without affecting live sync", error);
+    }
+  }
+
+  async function recordMatchStart(fixtureId: string, providerFixtureId: number, occurredAt: string) {
+    const { data: event, error } = await supabase.from("fixture_events")
+      .upsert({
+        fixture_id: fixtureId,
+        provider: PROVIDER,
+        provider_event_id: providerFixtureId + ":match_start",
+        event_type: "match_start",
+        period: "match_start",
+        event_data: { source: PROVIDER, confirmed: true },
+        occurred_at: occurredAt,
+      }, { onConflict: "provider,provider_event_id", ignoreDuplicates: true })
+      .select("id").maybeSingle();
+    if (error) {
+      console.error("Could not store match-start event", error.message);
+      return;
+    }
+    if (event?.id) await dispatchVerifiedPush(event.id);
+  }
+
   let requestsMade = 0;
   let quotaLimited = false;
   let providerLimited = false;
@@ -330,6 +370,11 @@ Deno.serve(async (req: Request) => {
       }
       inserted++;
       storedEvents.push({ id: stored.id });
+      // Only newly observed goals after a trusted zero-score baseline can alert.
+      // Historical baseline goals and provider correction replays never generate a fresh alert.
+      if (!baselineOnly && baselineReady && !isCorrection) {
+        await dispatchVerifiedPush(stored.id, true);
+      }
     }
 
     if (!(baselineOnly || !baselineReady)) {
@@ -416,6 +461,7 @@ Deno.serve(async (req: Request) => {
         await holdSportsApiFixture(providerFixtureId, "full-time event could not be stored");
         return false;
       }
+      await dispatchVerifiedPush(fullTimeEvent.id);
       const { error: fullTimeSettleError } = await supabase.rpc(
         "betnova_process_live_event", { p_event_id: fullTimeEvent.id },
       );
@@ -494,6 +540,9 @@ Deno.serve(async (req: Request) => {
       }
       link = insertedLink;
       fixturesMatched++;
+      if (fixture.status === "scheduled") {
+        await recordMatchStart(targetFixtureId, providerFixtureId, new Date().toISOString());
+      }
       await supabase.from("fixtures").update({
         status: "live", home_score: homeScore, away_score: awayScore, updated_at: new Date().toISOString(),
       }).eq("id", targetFixtureId);
@@ -509,6 +558,9 @@ Deno.serve(async (req: Request) => {
 
     const fixture = await getFixture(link.fixture_id);
     if (!fixture) continue;
+    if (fixture.status === "scheduled") {
+      await recordMatchStart(link.fixture_id, providerFixtureId, new Date().toISOString());
+    }
     const previousHome = Number(link.last_home_score ?? homeScore);
     const previousAway = Number(link.last_away_score ?? awayScore);
     const changed = previousHome !== homeScore || previousAway !== awayScore;
@@ -610,6 +662,8 @@ Deno.serve(async (req: Request) => {
             }, { onConflict: "provider,provider_event_id" })
             .select("id").maybeSingle();
           if (!fullTimeError && fullTimeEvent?.id) {
+            // Final whistle is authoritative here; notification failures are isolated from settlement.
+            await dispatchVerifiedPush(fullTimeEvent.id);
             const { error: settleError } = await supabase.rpc(
               "betnova_process_live_event", { p_event_id: fullTimeEvent.id },
             );
