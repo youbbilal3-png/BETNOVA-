@@ -120,9 +120,9 @@ Deno.serve(async (req: Request) => {
     .from("fixtures").select("id,home_team_id,away_team_id").eq("id", event.fixture_id).maybeSingle();
   if (fixtureError || !fixture) return json({ error: "Fixture not found" }, 404);
 
-  const followedTeamIds = event.event_type === "match_start" || !event.team_id
+  const followedTeamIds = ["match_start", "half_time", "full_time"].includes(event.event_type)
     ? [fixture.home_team_id, fixture.away_team_id]
-    : [event.team_id];
+    : event.team_id ? [event.team_id] : [];
   const targetIds = [event.fixture_id, ...followedTeamIds].filter(Boolean);
   const { data: follows, error: followsError } = await supabase
     .from("notification_subscriptions").select("user_id,target_type,target_id")
