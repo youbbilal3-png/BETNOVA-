@@ -94,6 +94,9 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Configure Firebase Cloud Messaging
+        run: node scripts/configure-android-firebase.mjs
+
       - name: Set Android version from update policy
         run: node scripts/set-android-version.mjs
 
