@@ -853,3 +853,21 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
  .responsible-request{grid-template-columns:1fr;gap:12px;padding:18px 14px}
  .responsible-request h2{font-size:22px}
 }
+
+
+/* Mobile bet slip: centered, fully readable dialog with an unobstructed action. */
+@media(max-width:760px){
+  .mobile-sheet-backdrop{position:fixed!important;inset:0!important;z-index:10060!important;display:grid!important;place-items:center!important;padding:16px 12px calc(16px + env(safe-area-inset-bottom))!important;background:rgba(8,25,19,.76)!important;backdrop-filter:blur(6px)!important;}
+  .mobile-sheet{position:relative!important;inset:auto!important;bottom:auto!important;left:auto!important;right:auto!important;width:min(100%,560px)!important;max-height:calc(100dvh - 32px - env(safe-area-inset-bottom))!important;overflow-y:auto!important;overscroll-behavior:contain!important;border:1px solid #dce9de!important;border-radius:22px!important;padding:16px 18px calc(18px + env(safe-area-inset-bottom))!important;background:#f8fbf6!important;box-shadow:0 24px 80px rgba(0,0,0,.38)!important;}
+  .mobile-sheet .sheet-handle{margin:0 auto 14px!important;}
+  .mobile-sheet .slip-head{position:sticky;top:-16px;z-index:2;background:#f8fbf6;padding:8px 0 12px;margin:0 0 8px!important;border-bottom:1px solid #e5eee5;}
+  .mobile-sheet .slip-selection{padding:13px 2px;gap:10px;}
+  .mobile-sheet .slip-selection b{font-size:12px;line-height:1.4;}
+  .mobile-sheet .slip-selection small{font-size:10px;line-height:1.4;}
+  .mobile-sheet .slip-selection strong{font-size:13px;}
+  .mobile-sheet .bet-slip-stake{margin:14px 0;padding:13px;border:1px solid #e1ece2;border-radius:13px;background:#fff;}
+  .mobile-sheet .bet-slip-stake label{display:grid;gap:8px;}
+  .mobile-sheet .bet-slip-stake input,.mobile-sheet .bet-slip-stake select{width:100%;min-height:42px;}
+  .mobile-sheet .slip-cta{position:sticky;bottom:0;z-index:3;min-height:48px;margin-top:14px;font-size:13px;box-shadow:0 -8px 18px rgba(248,251,246,.92);}
+  .mobile-sheet .bet-slip-message,.mobile-sheet .guest-slip-note{font-size:11px;line-height:1.5;}
+}
