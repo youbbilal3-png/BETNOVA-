@@ -83,7 +83,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     let active=true
     supabase.auth.getUser().then(async({data,error})=>{
       if(error)throw error
-      if(!data.user){if(active)setRealBalance(0);return}
+      if(!data.user){if(active){setRealBalance(null);setRealBetMessage(arabic?'سجّل الدخول أولاً للمراهنة.':'Sign in to place a real-money bet.')}return}
       const {data:wallet,error:walletError}=await supabase.from('wallet_accounts').select('available_balance').eq('user_id',data.user.id).eq('currency','DZD').maybeSingle()
       if(walletError)throw walletError
       if(active)setRealBalance(Number(wallet?.available_balance??0))
