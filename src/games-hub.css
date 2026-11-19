@@ -219,3 +219,12 @@
 @keyframes bn-heli-hover{from{transform:translateY(-50%) translateY(0)}to{transform:translateY(-50%) translateY(-5px)}}
 @media(max-width:600px){.crash-flight-stage{height:210px;min-height:200px}.crash-helicopter{width:70px;height:51px}.crash-explosion{left:70%;width:68px;height:68px}.crash-countdown strong{font-size:42px}}
 @media(prefers-reduced-motion:reduce){.crash-helicopter,.heli-rotor,.crash-explosion{animation:none!important}.crash-flight-stage.is-flying .crash-helicopter{left:42%;top:42%}.crash-countdown{backdrop-filter:none}}
+
+
+/* Always-visible game dialog close bar, including the compact Crash dialog */
+.game-detail-close-row{position:sticky;top:0;z-index:80;display:flex;justify-content:flex-end;direction:ltr;margin:-15px -15px 8px;padding:7px 8px 6px;background:linear-gradient(180deg,#152640 76%,#15264000);pointer-events:none}
+.game-detail-close-row .game-detail-close{position:static;display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;margin:0;transform:none;border:2px solid #57e7c4;border-radius:11px;background:#102d3d;color:#fff;box-shadow:0 4px 16px #0009;pointer-events:auto}
+.game-detail-close-row .game-detail-close:focus-visible{outline:3px solid #d8fff3;outline-offset:3px}
+@media(max-width:600px){.game-detail-close-row{margin:-15px -15px 8px;padding:6px 7px;background:linear-gradient(180deg,#152640 80%,#15264000)}.game-detail-close-row .game-detail-close{flex-basis:42px;width:42px;height:42px}}
+/* Reduce expensive blur and pulsing effects on smaller/mobile GPUs */
+@media(max-width:700px){.game-detail-backdrop{backdrop-filter:none}.crash-countdown{backdrop-filter:none}.crash-multiplier.rising{animation:none;filter:none;text-shadow:0 0 14px var(--game-glow)}.game-detail-modal{box-shadow:0 12px 34px #000a,inset 0 1px #ffffff18}}
