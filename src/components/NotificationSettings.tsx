@@ -133,6 +133,15 @@ export default function NotificationSettings({ language = 'en' }: { language?: s
           setMessage(isArabic ? 'لم تسمح بإرسال الإشعارات. يمكنك تفعيلها من إعدادات الهاتف.' : 'Notification permission was not granted. You can enable it in Android settings.')
           return
         }
+        await PushNotifications.createChannel({
+          id: 'betnova_alerts',
+          name: 'BETNOVA Alerts',
+          description: 'Match events and account notifications',
+          importance: 4,
+          visibility: 1,
+          sound: 'default',
+          vibration: true,
+        })
         await PushNotifications.register()
       } catch {
         setMessage(isArabic ? 'تعذر تفعيل الإشعارات على هذا الجهاز.' : 'Could not enable notifications on this device.')
