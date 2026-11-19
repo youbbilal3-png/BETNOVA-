@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, Clock3, LoaderCircle, Radio } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
@@ -62,7 +62,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
   const [hasLoaded, setHasLoaded] = useState(false)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState('')
-  const [clock, setClock] = useState(Date.now())
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
 
   const outcomeWords: Record<string, string[]> = {
@@ -96,11 +96,6 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
     if (normalized === 'no') return ow[6]
     return value
   }
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setClock(Date.now()), 15000)
-    return () => window.clearInterval(timer)
-  }, [])
 
   async function loadMarkets() {
     if (!supabase) { setMarkets([]); setLoading(false); return }
@@ -156,8 +151,19 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
       setLoading(true)
       void loadMarkets().then(() => setHasLoaded(true))
       void loadEvents()
+      return
     }
-  }, [fixtureId, deferLoad])
+    const node = containerRef.current
+    if (!node || hasLoaded || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return
+      observer.disconnect()
+      setLoading(true)
+      void loadMarkets().then(() => setHasLoaded(true))
+    }, { rootMargin: '140px 0px' })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [fixtureId, deferLoad, hasLoaded])
 
   useEffect(() => {
     if (!supabase || !hasLoaded) return
@@ -184,7 +190,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
   }, [markets, t, language])
 
   const defaultCategories = [t('goals'), t('match_result'), t('corners'), t('cards_fouls'), t('player_markets'), t('match_markets')]
-  const categoryNames = grouped.length ? grouped.map(group => group.category) : defaultCategories
+  const categoryNames = grouped.map(group => group.category)
   async function toggleCategory(category: string) {
     const opening = expanded !== category
     setExpanded(opening ? category : '')
@@ -198,9 +204,9 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
 
   if (error && !hasLoaded) return <div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets().then(() => setHasLoaded(true)) }}>{t('try_again')}</button></div>
 
-  return <div className="match-markets match-markets-card">
+  return <div ref={containerRef} className="match-markets match-markets-card">
     {live && events.length > 0 && <section className="match-event-feed"><div className="match-event-feed-head"><span><Radio size={12}/> {t('live_match_events')}</span><small>{events.length} {t('recent_updates')}</small></div>{events.map(event=><div className="match-event-row" key={event.id}><b>{event.minute !== null ? event.minute + (event.added_time ? '+' + event.added_time : '') + "'" : '•'}</b><span className={'event-dot '+event.event_type}>{event.event_type==='goal'?'⚽':event.event_type==='yellow_card'?'🟨':event.event_type==='red_card'?'🟥':event.event_type==='corner'?'◉':event.event_type==='substitution'?'↔':'•'}</span><span>{event.player_name || t(event.event_type === 'goal' ? 'goal_event' : event.event_type === 'yellow_card' ? 'yellow_card_event' : event.event_type === 'red_card' ? 'red_card_event' : event.event_type === 'corner' ? 'corner_event' : event.event_type === 'substitution' ? 'substitution_event' : 'other_event')}{event.team?.name ? ' · '+event.team.name : ''}</span></div>)}</section>}
-    <div className="match-card-market-heading"><span>{language === 'ar' ? 'أسواق المباراة' : 'Match markets'}</span><small>{hasLoaded ? markets.length + ' ' + t('available_markets') : (language === 'ar' ? 'اضغط لعرض الأسعار' : 'Tap a market to load odds')}</small></div>
+    {hasLoaded && markets.length > 0 && <div className="match-card-market-heading"><span>{language === 'ar' ? 'أسواق المباراة' : 'Match markets'}</span><small>{markets.length + ' ' + t('available_markets')}</small></div>}
     {categoryNames.map(category => {
       const isOpen = expanded === category
       const items = grouped.find(group => group.category === category)?.items ?? []
@@ -227,6 +233,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
         </div>}
       </section>
     })}
+    {hasLoaded && markets.length === 0 && <div className="match-card-market-empty">{language === 'ar' ? 'لا توجد أسعار متاحة لهذه المباراة حاليًا' : 'No markets available for this match right now'}</div>}
     {live && <div className="markets-live-note"><Clock3 size={13}/> {t('live_prices_warning')}</div>}
   </div>
 }
