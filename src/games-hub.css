@@ -313,3 +313,18 @@
 
 .crash-inline-cashout{margin-top:7px;min-height:43px}
 .game-detail-modal.game-coral .crash-inline-cashout{margin:5px 0 0;min-height:41px}
+
+/* Crash aircraft position follows the live multiplier directly. */
+.crash-flight-stage.is-flying .crash-helicopter{animation:none!important;transition:left .08s linear,top .08s linear}
+.crash-flight-stage.is-flying .crash-flight-trail{animation:none!important;transition:width .08s linear}
+.apple-odds-row{grid-template-columns:minmax(0,1fr) 48px;gap:8px}
+.apple-odds-row.cleared{border-color:#45d6a3;background:#45d6a31a}
+.apple-odds-row.current{border-color:#b3f77d;background:#b3f77d12}
+.apple-odds-fruits button{display:grid;place-items:center;min-width:0;width:100%;min-height:38px;padding:2px;border:1px solid #ffffff18;border-radius:8px;background:#ffffff08;font-size:20px;line-height:1;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+.apple-odds-fruits button:disabled{cursor:default;opacity:.68}
+.apple-odds-fruits button:not(:disabled):active{transform:scale(.9)}
+.apple-odds-fruits button.picked{border-color:#5ce8b4;background:#45d6a32a;box-shadow:0 0 10px #45d6a333}
+.apple-row-multiplier{color:#b9f77d;text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
+.apple-cashout-button{width:100%;min-height:42px;margin-top:8px;border:1px solid #f4c66a;border-radius:10px;background:linear-gradient(110deg,#9d641b,#d99a2d);color:#fff;font-weight:950}
+
+.apple-odds-row.failed{border-color:#fb7185;background:#fb71851a}.apple-odds-fruits button.trap{border-color:#fb7185;background:#fb71852e}
