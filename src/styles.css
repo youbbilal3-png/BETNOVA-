@@ -239,15 +239,18 @@
 
 
 /* BETNOVA mobile controls and Arabic layout */
-.mobile-more-backdrop,.notification-backdrop{position:fixed;inset:0;z-index:40;background:#102c2380;backdrop-filter:blur(6px);display:flex;justify-content:flex-end}
-.mobile-more-panel{width:min(88vw,360px);height:100%;overflow:auto;background:#f8fbf7;padding:22px 18px calc(28px + env(safe-area-inset-bottom));box-shadow:-18px 0 55px #163c2c30;display:flex;flex-direction:column;gap:7px;animation:wallet-in .2s ease-out}
+.mobile-more-backdrop,.notification-backdrop{position:fixed;inset:0;z-index:60;background:#102c2380;backdrop-filter:blur(6px);display:flex;justify-content:flex-end}
+.mobile-more-panel{position:relative;z-index:61;width:min(88vw,360px);height:100%;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;background:#f8fbf7;padding:22px 18px calc(24px + env(safe-area-inset-bottom));box-shadow:-18px 0 55px #163c2c30;display:flex;flex-direction:column;gap:7px;animation:wallet-in .2s ease-out}
 .mobile-more-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;margin-bottom:8px;border-bottom:1px solid #e4ece3;color:#1b4936}
 .mobile-more-header b{font:700 18px 'Space Grotesk',sans-serif}
 .mobile-more-header small{display:block;margin-top:3px;color:#91a397;font-size:9px}
 .mobile-more-panel>button{width:100%;min-height:45px;display:flex;align-items:center;gap:12px;border:1px solid #e7eee6;border-radius:11px;background:#fff;color:#456b58;padding:0 13px;text-align:start;font-size:12px;font-weight:800}
 .mobile-more-panel>button:active{background:#e5f4e9;color:#16845f}
-.mobile-more-language{display:flex;align-items:center;gap:9px;margin-top:12px;padding:12px;border:1px solid #e4ece3;border-radius:11px;background:#fff;color:#567565;font-size:11px}
-.mobile-more-language select{margin-left:auto;max-width:150px;border:0;background:transparent;color:#285b43;font-size:11px;font-weight:800}
+.mobile-more-language{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;gap:9px;margin-top:auto;padding:13px;border:1px solid #167c5d;border-radius:13px;background:linear-gradient(135deg,#0e624b,#138361);color:#eafff3;font-size:12px;font-weight:800;box-shadow:0 -8px 22px #163c2c12}
+.mobile-more-language svg{flex:none;color:#c5f16d}
+.mobile-more-language select{margin-left:auto;max-width:150px;min-width:112px;min-height:38px;padding:0 10px;border:1px solid #46b88b;border-radius:9px;outline:0;background:#0b4e3c;color:#fff;color-scheme:dark;font-size:12px;font-weight:800;cursor:pointer}
+.mobile-more-language select option{background:#0b4e3c;color:#fff}
+.mobile-more-language select:focus-visible{outline:2px solid #c5f16d;outline-offset:2px}
 .notification-backdrop{z-index:41;justify-content:center;align-items:center;padding:20px}
 .notification-panel{width:min(100%,360px);padding:20px;border-radius:20px;background:#f8fbf7;box-shadow:0 20px 70px #163c2c40}
 .notification-panel .mobile-more-header{margin:0}
