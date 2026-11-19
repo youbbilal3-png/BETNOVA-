@@ -136,3 +136,13 @@
 .crash-multiplier.rising{animation:crash-pulse .55s ease-in-out infinite alternate}
 @keyframes crash-pulse{from{text-shadow:0 0 14px var(--game-glow);filter:brightness(1)}to{text-shadow:0 0 30px var(--game-glow),0 0 48px color-mix(in srgb,var(--game-glow) 35%,transparent);filter:brightness(1.22)}}
 @media(prefers-reduced-motion:reduce){.crash-multiplier.rising{animation:none!important}}
+
+.apple-board{display:grid;gap:8px;padding:12px;border:1px solid color-mix(in srgb,var(--game-glow) 38%,transparent);border-radius:15px;background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--game-glow) 16%,transparent),#081326 78%)}
+.apple-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.apple-row button{display:grid;place-items:center;min-height:49px;border:1px solid #ffffff20;border-radius:11px;background:linear-gradient(145deg,#20394a,#11283a);color:#efffe9;font-size:22px;box-shadow:inset 0 1px #ffffff18,0 4px 10px #0004;cursor:pointer;transition:transform .18s,border-color .18s,background .18s}
+.apple-row button:not(:disabled):hover{transform:translateY(-2px);border-color:#b3f77d;background:linear-gradient(145deg,#345b3e,#183c32)}
+.apple-row button.safe{border-color:#aef77c99;background:linear-gradient(145deg,#315b3c,#173a30)}
+.apple-row button.trap{border-color:#ff8c8c99;background:linear-gradient(145deg,#5c2937,#321b2c)}
+.apple-row button.locked{opacity:.5;cursor:not-allowed}
+.apple-row button:disabled{cursor:default}
+@media(prefers-reduced-motion:reduce){.apple-row button{transition:none!important}}
