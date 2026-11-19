@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const cors = {
   "Access-Control-Allow-Origin": "null",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-betnova-notification-secret",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
 };
@@ -82,13 +82,6 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const expectedSecret = Deno.env.get("BETNOVA_NOTIFICATION_DISPATCH_SECRET") ?? "";
-  const suppliedSecret = req.headers.get("x-betnova-notification-secret") ?? "";
-  if (!expectedSecret || suppliedSecret.length !== expectedSecret.length) return json({ error: "Unauthorized" }, 401);
-  let diff = 0;
-  for (let i = 0; i < expectedSecret.length; i++) diff |= expectedSecret.charCodeAt(i) ^ suppliedSecret.charCodeAt(i);
-  if (diff !== 0) return json({ error: "Unauthorized" }, 401);
-
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const firebaseProjectId = Deno.env.get("FIREBASE_PROJECT_ID");
@@ -97,6 +90,15 @@ Deno.serve(async (req: Request) => {
   if (!supabaseUrl || !serviceKey || !firebaseProjectId || !firebaseClientEmail || !firebasePrivateKey) {
     return json({ error: "Push delivery is not configured" }, 503);
   }
+
+  // The Supabase gateway verifies the JWT; require the exact server-only service-role
+  // credential as an additional guard so authenticated app users cannot dispatch alerts.
+  const authorization = req.headers.get("authorization") ?? "";
+  const suppliedToken = authorization.replace(/^Bearer\\s+/i, "");
+  if (!suppliedToken || suppliedToken.length !== serviceKey.length) return json({ error: "Unauthorized" }, 401);
+  let authDiff = 0;
+  for (let i = 0; i < serviceKey.length; i++) authDiff |= serviceKey.charCodeAt(i) ^ suppliedToken.charCodeAt(i);
+  if (authDiff !== 0) return json({ error: "Unauthorized" }, 401);
 
   let payload: { event_id?: string; verified?: boolean };
   try { payload = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
