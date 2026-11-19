@@ -170,7 +170,6 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
     const client = supabase
     const channel = client.channel('match-markets-' + fixtureId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'markets', filter: 'fixture_id=eq.' + fixtureId }, () => { void loadMarkets() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'market_selections' }, () => { void loadMarkets() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fixture_events', filter: 'fixture_id=eq.' + fixtureId }, () => { void loadEvents() })
       .subscribe()
     return () => { void client.removeChannel(channel) }
