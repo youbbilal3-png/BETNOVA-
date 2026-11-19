@@ -63,7 +63,7 @@ declare
 begin
   if v_user is null then raise exception 'Authentication required'; end if;
   if p_round_id is null or p_idempotency_key is null then raise exception 'Round and request key are required'; end if;
-  if p_column not between 0 and 4 then raise exception 'Choose one of the five apples'; end if;
+  if p_column is null or p_column not between 0 and 4 then raise exception 'Choose one of the five apples'; end if;
   select * into v_wallet from public.wallet_accounts where user_id=v_user and currency='DZD' for update;
   if not found then raise exception 'Wallet not found'; end if;
   select * into v_round from public.game_rounds where id=p_round_id and user_id=v_user and game_id='apple' for update;
