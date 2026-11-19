@@ -79,12 +79,13 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     if(!selected)return
     setRealBetResult(null);setRealBetMessage('');setRealBalance(null)
     setRealChoice(selected.id==='crash'?'2.00':selected.id==='apple'?'1':selected.id==='plinko'?'medium':selected.id==='roulette'?'red':'standard')
-    if(!supabase){setRealBetMessage(arabic?'خدمة الرهان غير متاحة حالياً.':'Betting service is unavailable.');return}
+    const client=supabase
+    if(!client){setRealBetMessage(arabic?'خدمة الرهان غير متاحة حالياً.':'Betting service is unavailable.');return}
     let active=true
-    supabase.auth.getUser().then(async({data,error})=>{
+    client.auth.getUser().then(async({data,error})=>{
       if(error)throw error
       if(!data.user){if(active){setRealBalance(null);setRealBetMessage(arabic?'سجّل الدخول أولاً للمراهنة.':'Sign in to place a real-money bet.')}return}
-      const {data:wallet,error:walletError}=await supabase.from('wallet_accounts').select('available_balance').eq('user_id',data.user.id).eq('currency','DZD').maybeSingle()
+      const {data:wallet,error:walletError}=await client.from('wallet_accounts').select('available_balance').eq('user_id',data.user.id).eq('currency','DZD').maybeSingle()
       if(walletError)throw walletError
       if(active)setRealBalance(Number(wallet?.available_balance??0))
     }).catch(error=>{if(active)setRealBetMessage(error instanceof Error?error.message:'Could not load wallet balance.')})
