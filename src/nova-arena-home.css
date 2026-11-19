@@ -1357,3 +1357,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#24375a 0%,transparent 42%),
 @media(max-width:760px){#root .app-shell .featured-game-card{min-height:99px!important;padding:6px 4px 7px!important}#root .app-shell .featured-game-art{height:56px!important}#root .app-shell .featured-game-name{font-size:8px!important}#root .app-shell .featured-game-action{font-size:6px!important}}
 @media(max-width:360px){#root .app-shell .featured-game-card{min-height:91px!important}#root .app-shell .featured-game-art{height:49px!important}}
 @media(prefers-reduced-motion:reduce){#root .app-shell .crash-speed,#root .app-shell .crash-art svg,#root .app-shell .apple-art svg,#root .app-shell .plinko-art svg{animation:none!important}}
+
+/* Keep the return-to-sports control in the top navigation, never over game content. */
+.games-page-back-top{min-height:38px!important;margin:0!important;padding:0 11px!important;gap:6px!important;font-size:10px!important;white-space:nowrap!important;box-shadow:0 4px 12px #0003!important}
+.games-page-back-top svg{width:15px!important;height:15px!important}
+@media(max-width:760px){.games-page-back-top{min-height:36px!important;padding:0 9px!important;font-size:9px!important;gap:5px!important}}
