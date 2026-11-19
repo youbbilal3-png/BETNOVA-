@@ -60,16 +60,17 @@ export default function MyBetsPanel({onClose}:Props) {
   void load()
   if(!supabase)return
   let userId:string|undefined
-  let channel:ReturnType<typeof supabase.channel>|undefined
+  let removeChannel:(()=>void)|undefined
   let active=true
   void supabase.auth.getUser().then(({data})=>{
    if(!active||!data.user)return
    userId=data.user.id
-   channel=supabase!.channel('my-bets-updates-'+userId)
+   const channel=supabase!.channel('my-bets-updates-'+userId)
     .on('postgres_changes',{event:'*',schema:'public',table:'bets',filter:'user_id=eq.'+userId},()=>{void load(false)})
     .subscribe()
+   removeChannel=()=>{void supabase!.removeChannel(channel)}
   })
-  return ()=>{active=false;if(channel)void supabase!.removeChannel(channel)}
+  return ()=>{active=false;removeChannel?.()}
  },[load])
 
  const visible=bets.filter(b=>filter==='all'||b.status===filter)
