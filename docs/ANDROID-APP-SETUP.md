@@ -45,7 +45,7 @@ The native app checks the HTTPS policy at:
 
 `https://betnova-8daa3.web.app/app-version.json`
 
-The policy currently has an empty download URL. Do not enable a mandatory update until a signed APK has been built and uploaded to a stable HTTPS download location. Set `minimumSupportedVersion` to the minimum version allowed to continue and `latestVersion` to the newest release.
+The policy currently has an empty download URL. Do not enable a mandatory update until a signed APK has been built and uploaded to a stable HTTPS download location. Set `minimumSupportedVersion` to the minimum version allowed to continue and `latestVersion` to the newest release. The Android workflow reads `latestVersion` to set the APK version name and a monotonically increasing Android version code, so increment it for every release.
 
 ## Production signing and release
 
