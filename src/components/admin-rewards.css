@@ -1,0 +1,20 @@
+.admin-rewards-backdrop{position:fixed;inset:0;z-index:10120;background:#06170fcf;backdrop-filter:blur(7px);display:flex;justify-content:flex-end}
+.admin-rewards-panel{position:relative;width:min(100%,620px);height:100%;overflow:auto;background:#f7faf7;padding:28px 22px 36px;color:#173c2c}
+.admin-rewards-close{position:absolute;right:17px;top:17px;width:38px;height:38px;border:1px solid #dce8df;border-radius:10px;background:#fff;color:#234b36;display:grid;place-items:center}
+.admin-rewards-kicker{display:flex;align-items:center;gap:7px;color:#168052;font-size:10px;font-weight:900;letter-spacing:1.2px;margin:5px 50px 12px 0}
+.admin-rewards-panel h2{margin:0 0 7px;font:700 26px 'Space Grotesk';color:#173d2c}
+.admin-rewards-panel>p{font-size:11px;line-height:1.6;color:#6a7c70}
+.admin-rewards-message{padding:10px;border-radius:9px;background:#fff6e5;color:#76551b;font-size:11px;margin:12px 0}
+.admin-rewards-section-title{display:flex;align-items:center;gap:10px;margin:19px 0 8px;padding-top:13px;border-top:1px solid #dce8df}
+.admin-rewards-section-title b{font-size:13px}.admin-rewards-section-title span{margin-left:auto;color:#168052;font-size:10px}.admin-rewards-section-title button{border:0;background:transparent;color:#168052}
+.admin-rewards-item{padding:13px;margin:9px 0;border:1px solid #e0e9e2;border-radius:12px;background:#fff;display:grid;gap:8px}
+.admin-rewards-item>b{display:flex;align-items:center;gap:6px;color:#1c5639;font-size:12px}
+.admin-rewards-item small{color:#74857a;font-size:10px}
+.admin-rewards-item a{display:flex;align-items:center;gap:5px;color:#176d48;font-size:11px;text-decoration:none}
+.admin-rewards-proof{justify-self:start;padding:7px 10px;border:1px solid #cfe3d5;border-radius:8px;background:#f2faf5;color:#176d48;font-size:10px;font-weight:800}
+.admin-rewards-item textarea{width:100%;padding:9px;border:1px solid #dce8df;border-radius:8px;font:inherit;font-size:11px;resize:vertical}
+.admin-rewards-item>div{display:flex;gap:8px;flex-wrap:wrap}
+.admin-rewards-item>div button{display:flex;align-items:center;gap:5px;padding:9px 11px;border:0;border-radius:8px;background:#177a4d;color:#fff;font-size:10px;font-weight:800}
+.admin-rewards-item>div button.reject{background:#fff0ed;color:#a34435}
+.admin-rewards-item>div button:disabled{opacity:.5}
+.admin-rewards-empty{color:#7c8c82;font-size:11px}
