@@ -1,8 +1,10 @@
 begin;
 
-select plan(12);
+select plan(14);
 
 select has_table('public','earn_post_submissions','social earn submissions table exists');
+select has_column('public','earn_post_submissions','proof_sha256','screenshot SHA-256 is recorded');
+select ok(to_regclass('public.earn_post_submissions_proof_hash_unique') is not null,'screenshot hashes cannot be reused');
 select has_table('public','referral_codes','referral code table exists');
 select has_table('public','referrals','referral attribution table exists');
 select has_table('public','deposit_streak_claims','deposit streak claims table exists');
