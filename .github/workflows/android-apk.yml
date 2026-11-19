@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - feature/android-capacitor-foundation
+      - feature/push-notification-delivery
       - firebase/android-config
     paths:
       - 'src/**'
