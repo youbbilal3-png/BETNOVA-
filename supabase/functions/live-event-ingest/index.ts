@@ -23,7 +23,7 @@ function safeEqual(a: string, b: string) {
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const allowedEvents = new Set(["goal", "full_time", "corner", "yellow_card", "red_card", "penalty_awarded", "goal_cancelled", "half_time"]);
+const allowedEvents = new Set(["match_start", "goal", "full_time", "corner", "yellow_card", "red_card", "penalty_awarded", "goal_cancelled", "half_time"]);
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
 
   // Push alerts are independent of wallet and bet settlement. A failure here must never block event ingestion.
   const dispatchSecret = Deno.env.get("BETNOVA_NOTIFICATION_DISPATCH_SECRET");
-  if (dispatchSecret && ["goal", "red_card", "half_time", "full_time"].includes(eventType)) {
+  if (dispatchSecret && ["match_start", "goal", "red_card", "half_time", "full_time"].includes(eventType)) {
     try {
       const response = await fetch(`${supabaseUrl}/functions/v1/dispatch-push-notifications`, {
         method: "POST",
