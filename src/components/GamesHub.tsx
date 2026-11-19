@@ -33,7 +33,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const {language,t}=useLanguage()
   const arabic=language==='ar'
   const translatedGameTag=(id:string)=>{switch(id){case 'crash':case 'plinko':return t('game_tag_instant');case 'apple':return t('game_tag_skill');case 'lucky-fruits':return t('game_tag_classic');case 'pharaoh':return t('game_tag_adventure');case 'space-spin':return t('game_tag_cosmic');case 'roulette':return t('game_tag_table');case 'blackjack':case 'baccarat':return t('game_tag_cards');default:return id}}
-  const translatedGameDescription=(id:string)=>{switch(id){case 'crash':return t('game_desc_crash');case 'apple':return t('game_desc_apple');case 'plinko':return t('game_desc_plinko');case 'lucky-fruits':return t('game_desc_fruits');case 'pharaoh':return t('game_desc_pharaoh');case 'space-spin':return t('game_desc_space');case 'roulette':return t('game_desc_roulette');case 'blackjack':return t('game_desc_blackjack');case 'baccarat':return t('game_desc_baccarat');default:return ''}}
+  const translatedGameDescription=(id:string)=>{switch(id){case 'crash':return arabic?'أدخل مبلغ الرهان وابدأ اللعبة. اسحب أرباحك قبل انفجار الطائرة.':'Enter your stake and start. Cash out before the plane crashes.';case 'apple':return t('game_desc_apple');case 'plinko':return t('game_desc_plinko');case 'lucky-fruits':return t('game_desc_fruits');case 'pharaoh':return t('game_desc_pharaoh');case 'space-spin':return t('game_desc_space');case 'roulette':return t('game_desc_roulette');case 'blackjack':return t('game_desc_blackjack');case 'baccarat':return t('game_desc_baccarat');default:return ''}}
   const labels={all:t('all_games'),games:t('games'),slots:t('slots'),casino:t('casino'),heading:t('arcade_heading'),zone:t('game_zone'),subtitle:t('arcade_subtitle'),explore:t('explore_game'),safety:t('arcade_safety'),practice:t('free_practice'),demo:t('demo_mode'),start:t('start_practice'),next:t('next_step'),stop:t('stop_now'),pick:t('pick_apple'),drop:t('drop_ball'),tryDemo:t('try_demo'),reset:t('reset_practice'),close:t('close')}
   const [category,setCategory]=useState<Category>('all')
   const [selected,setSelected]=useState<Game|null>(null)
@@ -93,6 +93,32 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     }).catch(error=>{if(active)setRealBetMessage(error instanceof Error?error.message:'Could not load wallet balance.')})
     return()=>{active=false}
   },[selected?.id,arabic])
+  useEffect(()=>{
+    if(selected?.id!=='crash'||!realCrashRound||!supabase||realBetBusy)return
+    let active=true
+    let pending=false
+    const poll=async()=>{
+      if(pending)return
+      pending=true
+      try{
+        const {data,error}=await supabase.rpc('betnova_resume_crash_round')
+        if(error)throw error
+        if(!active||!data)return
+        const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
+        if(result.status==='crashed'){
+          setRealCrashRound(null);setCrashActive(false);setCrashExploding(true)
+          setMultiplier(Number(result.multiplier??multiplier))
+          setRealBalance(Number(result.balance_after??realBalance??0))
+          setRealBetResult({round_id:result.round_id,result:'CRASHED',stake:result.stake,payout:0,net_result:-Number(result.stake??0)})
+          setRealRoundKey(crypto.randomUUID());setRealCrashCashoutKey(null)
+          setPracticeResult(arabic?'انفجرت الطائرة. انتهت الجولة وخسر الرهان.':'The plane crashed. The round ended and the stake was lost.')
+        }
+      }catch(error){if(active)setRealBetMessage(error instanceof Error?error.message:'Could not synchronize the Crash round.')}
+      finally{pending=false}
+    }
+    const timer=window.setInterval(poll,1000)
+    return()=>{active=false;window.clearInterval(timer)}
+  },[selected?.id,realCrashRound?.id,realBetBusy])
   const closeGame=()=>{const modalHistory=Boolean(window.history.state?.betnovaGameModal);setSelected(null);resetDemo();if(modalHistory)window.history.back()}
   useEffect(()=>{if(!selected)return;const current=window.history.state;if(!current?.betnovaGameModal)window.history.pushState({...current,betnovaPage:'games',betnovaGameModal:true},'', '#game');const onPop=()=>{setSelected(null);resetDemo()};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[selected])
   useEffect(()=>{if(!selected)return;const previous=document.activeElement as HTMLElement|null;modalRef.current?.focus();const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape'){closeGame();return}if(event.key==='Tab'){const nodes=modalRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])');if(!nodes?.length){event.preventDefault();modalRef.current?.focus();return}const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}};window.addEventListener('keydown',onKeyDown);return()=>{window.removeEventListener('keydown',onKeyDown);if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;previous?.focus()}},[selected])
