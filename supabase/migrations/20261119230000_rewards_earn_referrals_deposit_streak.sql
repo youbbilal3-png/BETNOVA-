@@ -20,7 +20,7 @@ create table public.earn_post_submissions (
     (platform='facebook' and post_url ~* '^https?://([a-z0-9-]+\.)*(facebook\.com|fb\.watch)(/|[?#]|$)') or
     (platform='instagram' and post_url ~* '^https?://([a-z0-9-]+\.)*instagram\.com(/|[?#]|$)') or
     (platform='tiktok' and post_url ~* '^https?://([a-z0-9-]+\.)*tiktok\.com(/|[?#]|$)') or
-    (platform='youtube' and (post_url ~* '^https?://([a-z0-9-]+\\.)*youtube\\.com(/|[?#]|$)' or post_url ~* '^https?://youtu\\.be(/|[?#]|$)'))
+    (platform='youtube' and (post_url ~* '^https?://([a-z0-9-]+\.)*youtube\.com(/|[?#]|$)' or post_url ~* '^https?://youtu\.be(/|[?#]|$)'))
   ),
   constraint earn_post_pending_fields check (
     (status='pending' and reviewed_by is null and reviewed_at is null and wallet_ledger_id is null)
