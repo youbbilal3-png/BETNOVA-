@@ -40,12 +40,14 @@ export default function GamesHub(){
   const [slotSymbols,setSlotSymbols]=useState<string[]>(['🍒','⭐','🍋'])
   const [rouletteNumber,setRouletteNumber]=useState<number|null>(null)
   const [cardHand,setCardHand]=useState<number[]>([])
+  const [dealerHand,setDealerHand]=useState<number[]>([])
+  const [blackjackDone,setBlackjackDone]=useState(false)
   const [baccaratHand,setBaccaratHand]=useState<{player:number;banker:number}|null>(null)
   const visible=games.filter(game=>category==='all'||game.category===category)
   const resetDemo=()=>{
     setPracticeResult('');setPracticeCount(0);setCrashAt(0);setMultiplier(1)
     setCrashActive(false);setAppleLevel(0);setAppleDone(false);setPlinkoSlot(null)
-    setSlotSymbols(['🍒','⭐','🍋']);setRouletteNumber(null);setCardHand([]);setBaccaratHand(null)
+    setSlotSymbols(['🍒','⭐','🍋']);setRouletteNumber(null);setCardHand([]);setDealerHand([]);setBlackjackDone(false);setBaccaratHand(null)
   }
   const closeGame=()=>{setSelected(null);resetDemo()}
   useEffect(()=>{if(!selected)return;const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape')closeGame()};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown)},[selected])
@@ -83,6 +85,9 @@ export default function GamesHub(){
     setPlinkoSlot(slot);setPracticeCount(value=>value+1)
     setPracticeResult(arabic?`استقرت الكرة في الخانة ${slot} من أصل 9. لا توجد جائزة أو إضافة رصيد.`:`The practice ball landed in slot ${slot} of 9. No prize or balance was awarded.`)
   }
+  const blackjackTotal=(hand:number[])=>hand.reduce((sum,value)=>sum+(value===11?1:value),0)
+  const blackjackHit=()=>{if(blackjackDone)return;const card=Math.floor(Math.random()*10)+2;const next=[...cardHand,card];setCardHand(next);const total=blackjackTotal(next);if(total>=21){setBlackjackDone(true);setPracticeResult(arabic?`مجموع أوراقك ${total}. ${total>21?'تجاوزت 21!':'وصلت إلى 21.'} انتهت الجولة التدريبية.`:`Your hand totals ${total}. ${total>21?'Bust!':'21 reached.'} Practice round complete.`)}else setPracticeResult(arabic?`أضفت ورقة. مجموعك الآن ${total}.`:`Card drawn. Your total is ${total}.`);setPracticeCount(value=>value+1)}
+  const blackjackStand=()=>{if(blackjackDone||cardHand.length===0)return;let dealer=[...dealerHand];while(blackjackTotal(dealer)<17)dealer.push(Math.floor(Math.random()*10)+2);setDealerHand(dealer);setBlackjackDone(true);const player=blackjackTotal(cardHand),banker=blackjackTotal(dealer);const outcome=player>21?'bust':banker>21||player>banker?'win':player===banker?'tie':'lose';setPracticeResult(arabic?`مجموعك ${player} · الموزع ${banker} · ${outcome==='win'?'فزت في التدريب':outcome==='tie'?'تعادل':'انتهت الجولة'}. دون أموال أو جوائز.`:`You ${player} · Dealer ${banker} · ${outcome.toUpperCase()}. Practice only; no money or prizes.`);setPracticeCount(value=>value+1)}
   const runOtherDemo=()=>{
     if(!selected)return
     let result=''
@@ -91,7 +96,7 @@ export default function GamesHub(){
       case 'pharaoh':
       case 'space-spin': {const symbols=selected.id==='lucky-fruits'?['🍒','🍋','🍉','🍇','⭐','7️⃣']:selected.id==='pharaoh'?['𓂀','👑','⚱️','🐪','💎','☀️']:['🪐','🌟','🚀','🌙','💫','👾'];const reels=[choose(symbols),choose(symbols),choose(symbols)];setSlotSymbols(reels);const match=reels.every(s=>s===reels[0]);result=arabic?`نتيجة اللف: ${reels.join('  ')}. ${match?'تطابق رمزي في العرض التجريبي!':'لا يوجد تطابق هذه المرة.'} لا توجد أرباح أو جوائز.`:`Practice spin: ${reels.join('  ')}. ${match?'Three matching symbols!':'No match this time.'} Display-only; no payout.`;break}
       case 'roulette': {const n=Math.floor(Math.random()*37);setRouletteNumber(n);const color=n===0?'GREEN':rouletteReds.has(n)?'RED':'BLACK';result=arabic?`نتيجة العجلة التدريبية: ${n} · ${color==='GREEN'?'أخضر':color==='RED'?'أحمر':'أسود'}. ليست نتيجة رهان حقيقي.`:`Practice wheel: ${n} · ${color}. No real roulette result.`;break}
-      case 'blackjack': {const cards=[Math.floor(Math.random()*10)+2,Math.floor(Math.random()*10)+2];setCardHand(cards);const total=cards.reduce((sum,n)=>sum+n,0);result=arabic?`أوراق التدريب: ${cards.map(cardLabel).join(' + ')} = ${total}. عرض مبسط فقط.`:`Practice hand: ${cards.map(cardLabel).join(' + ')} = ${total}. Simplified preview only.`;break}
+      case 'blackjack': {const cards=[Math.floor(Math.random()*10)+2,Math.floor(Math.random()*10)+2];setCardHand(cards);setDealerHand([Math.floor(Math.random()*10)+2]);setBlackjackDone(false);const total=blackjackTotal(cards);result=arabic?`بدأت الجولة. مجموع أوراقك ${total}. اسحب ورقة أو قف.`:`New practice hand. Your total is ${total}. Hit or stand.`;break}
       case 'baccarat': {const p=Math.floor(Math.random()*10),b=Math.floor(Math.random()*10);setBaccaratHand({player:p,banker:b});result=arabic?`توزيع تدريبي · اللاعب: ${p} · المصرف: ${b}. عرض مبسط فقط.`:`Practice deal · Player: ${p} · Banker: ${b}. Simplified preview only.`;break}
     }
     setPracticeResult(result);setPracticeCount(value=>value+1)
