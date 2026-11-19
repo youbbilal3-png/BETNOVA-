@@ -1007,3 +1007,18 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
   .mobile-slip-place:disabled{background:#315744;color:#9bb9a5;box-shadow:none}
   .mobile-slip-footer>small{display:block;margin-top:8px;color:#82aa91;font-size:8px;line-height:1.4;text-align:center}
 }
+
+/* Inline verified odds on match cards */
+.match-footer-actions{display:flex;align-items:center;gap:12px}
+.match-footer .match-markets-toggle{display:inline-flex;align-items:center;gap:6px;color:#0d7957;background:#eaf6ee;border:1px solid #d5eadc;border-radius:8px;padding:7px 10px;font-size:9px;font-weight:900}
+.match-footer .match-markets-toggle:hover{background:#dcf1e3;border-color:#a8d8ba}
+.match-card-markets{margin-top:12px;padding:12px;border:1px solid #dcebe0;border-radius:13px;background:linear-gradient(180deg,#f8fcf8,#f1f8f2);cursor:default}
+.match-card-markets .match-markets{gap:10px}
+.match-card-markets .markets-toolbar{position:sticky;top:0;z-index:1;background:#f5faf5;padding:6px 0}
+.match-card-markets .market-outcomes{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:7px}
+.match-card-markets .market-outcome{min-height:42px}
+.match-card-markets .market-group{border-color:#dcebe0;box-shadow:0 2px 8px #244b3108}
+.match-card-markets .market-group-head{background:#edf6ee}
+.match-card-markets .market-item{padding:8px 0}
+.match-card-markets .market-item-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+@media(max-width:760px){.match-footer-actions{gap:7px}.match-footer .match-markets-toggle{padding:7px 8px}.match-card-markets{margin:10px -2px 0;padding:9px}.match-card-markets .market-outcomes{grid-template-columns:repeat(2,minmax(0,1fr))}}
