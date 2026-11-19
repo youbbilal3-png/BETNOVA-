@@ -215,8 +215,8 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
     <div className="market-category-filters" role="list" aria-label={t('market_categories')}>
       {grouped.map((group, index) => <div className="market-category-control" role="listitem" key={group.id}>
         <div className="market-category-reorder">
-          <button type="button" className="market-category-move" aria-label={'Move ' + group.category + ' up'} title="Move up" disabled={index === 0} onClick={() => moveCategory(group.id, -1)}><ArrowUp size={12}/></button>
-          <button type="button" className="market-category-move" aria-label={'Move ' + group.category + ' down'} title="Move down" disabled={index === grouped.length - 1} onClick={() => moveCategory(group.id, 1)}><ArrowDown size={12}/></button>
+          <button type="button" className="market-category-move" aria-label={t('move_up') + ': ' + group.category} title={t('move_up')} disabled={index === 0} onClick={() => moveCategory(group.id, -1)}><ArrowUp size={12}/></button>
+          <button type="button" className="market-category-move" aria-label={t('move_down') + ': ' + group.category} title={t('move_down')} disabled={index === grouped.length - 1} onClick={() => moveCategory(group.id, 1)}><ArrowDown size={12}/></button>
         </div>
         <button className={'market-category-button' + (activeCategory === group.category ? ' active' : '')} aria-expanded={activeCategory === group.category || activeCategory === 'all'} onClick={() => { setActiveCategory(activeCategory === group.category ? '' : group.category); setExpanded(group.category) }}>
           <span>{group.category}</span><small>{group.items.length} {t('markets_count')}</small><ChevronDown size={15}/>
@@ -233,7 +233,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live }:
           const priceFresh = Number.isFinite(updatedMs) && clock - updatedMs <= maxAgeMs && updatedMs <= clock + 30000
           const canBet = market.status === "open" && priceFresh && (live ? market.is_live : !market.is_live)
           return <article className="market-item" data-market-key={(market.market_key || market.market_type || "").toLowerCase()} key={market.id}>
-          <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> LIVE</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">Price expired</span>}</div>
+          <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> {t('live')}</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">{t('price_expired')}</span>}</div>
           <div className="market-outcomes">{market.market_selections.map(selection => {
             const picked = selectedIds.includes(selection.id)
             return <button key={selection.id} disabled={!canBet && !picked} aria-pressed={picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketKey:market.market_key || market.market_type,marketLabel:cleanMarketName(market.name),selectionLabel:selection.name,odds:String(selection.odds)})}>
