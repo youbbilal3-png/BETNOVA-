@@ -950,8 +950,8 @@ export default function App() {
               {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { closeOverlay('mobileMore'); void signOutCurrentUser() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
-            <button onClick={() => { setAuthMode("login"); openOverlay('auth') }}><ArrowRight size={17}/>{t("login")}</button>
-            <button onClick={() => { setAuthMode("signup"); openOverlay('auth') }}><ShieldCheck size={17}/>{t("join")}</button>
+            <button onClick={() => { closeMobileMenuToPage(); setAuthMode("login"); openOverlay('auth') }}><ArrowRight size={17}/>{t("login")}</button>
+            <button onClick={() => { closeMobileMenuToPage(); setAuthMode("signup"); openOverlay('auth') }}><ShieldCheck size={17}/>{t("join")}</button>
           </>}
           <button onClick={() => { openOverlay('settings') }}><Settings size={17}/>{t("settings")}</button>
           </section>
@@ -1022,7 +1022,7 @@ export default function App() {
       {walletOpen && <WalletPanel onClose={() => closeOverlay('wallet')} initialTab={walletInitialTab} />}
       {betsOpen && <MyBetsPanel onClose={() => closeOverlay('bets')} />}
       <AuthPanel open={authOpen} mode={authMode} onClose={() => closeOverlay('auth')} onModeChange={setAuthMode} />
-      {(activePage !== 'sports' || (Array.isArray(window.history.state?.betnovaOverlays) && window.history.state.betnovaOverlays.length > 0)) && !(Array.isArray(window.history.state?.betnovaOverlays) && window.history.state.betnovaOverlays.includes('mobileSlip')) && <button type="button" className="global-home-button" onClick={goHome} aria-label={t('home_label')}><Home size={17}/> {t('home_label')}</button>}
+      {(activePage !== 'sports' || (Array.isArray(window.history.state?.betnovaOverlays) && window.history.state.betnovaOverlays.length > 0)) && !(Array.isArray(window.history.state?.betnovaOverlays) && window.history.state.betnovaOverlays.includes('mobileSlip')) && !authOpen && !detailMatch && <button type="button" className="global-home-button" onClick={goHome} aria-label={t('home_label')}><Home size={17}/> {t('home_label')}</button>}
       <footer className="footer"><span>© 2026 BETNOVA</span><span>A NEW WORLD OF SPORTS</span><span>Designed for the next generation <span className="footer-star">✳</span></span></footer>
     </div>
   )
