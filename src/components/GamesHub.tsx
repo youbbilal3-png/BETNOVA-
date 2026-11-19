@@ -40,6 +40,7 @@ export default function GamesHub(){
   const [appleLevel,setAppleLevel]=useState(0)
   const [appleDone,setAppleDone]=useState(false)
   const [plinkoSlot,setPlinkoSlot]=useState<number|null>(null)
+  const [plinkoDropping,setPlinkoDropping]=useState(false)
   const [slotSymbols,setSlotSymbols]=useState<string[]>(['🍒','⭐','🍋'])
   const [slotSpinning,setSlotSpinning]=useState(false)
   const slotTimer=useRef<ReturnType<typeof setTimeout>|null>(null)
@@ -52,7 +53,7 @@ export default function GamesHub(){
   const resetDemo=()=>{
     if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;setSlotSpinning(false)
     setPracticeResult('');setPracticeCount(0);setCrashAt(0);setMultiplier(1)
-    setCrashActive(false);setAppleLevel(0);setAppleDone(false);setPlinkoSlot(null)
+    setCrashActive(false);setAppleLevel(0);setAppleDone(false);setPlinkoSlot(null);setPlinkoDropping(false)
     setSlotSymbols(['🍒','⭐','🍋']);setRouletteNumber(null);setCardHand([]);setDealerHand([]);setBlackjackDone(false);setBaccaratHand(null)
   }
   const closeGame=()=>{setSelected(null);resetDemo()}
@@ -87,9 +88,10 @@ export default function GamesHub(){
     setPracticeCount(value=>value+1)
   }
   const dropPlinko=()=>{
+    if(plinkoDropping)return
     const slot=Math.floor(Math.random()*9)+1
-    setPlinkoSlot(slot);setPracticeCount(value=>value+1)
-    setPracticeResult(arabic?`استقرت الكرة في الخانة ${slot} من أصل 9. لا توجد جائزة أو إضافة رصيد.`:`The practice ball landed in slot ${slot} of 9. No prize or balance was awarded.`)
+    setPlinkoDropping(true);setPlinkoSlot(null);setPracticeResult(arabic?'الكرة تهبط عبر المسامير...':'Ball dropping through the pegs...')
+    slotTimer.current=setTimeout(()=>{setPlinkoSlot(slot);setPlinkoDropping(false);setPracticeCount(value=>value+1);setPracticeResult(arabic?`استقرت الكرة في الخانة ${slot} من أصل 9. لا توجد جائزة أو إضافة رصيد.`:`The practice ball landed in slot ${slot} of 9. No prize or balance was awarded.`);slotTimer.current=null},950)
   }
   const blackjackTotal=(hand:number[])=>{let total=hand.reduce((sum,value)=>sum+(value===11?1:value),0);if(hand.includes(11)&&total+10<=21)total+=10;return total}
   const blackjackHit=()=>{if(blackjackDone)return;const card=drawCard();const next=[...cardHand,card];setCardHand(next);const total=blackjackTotal(next);if(total>=21){setBlackjackDone(true);setPracticeResult(arabic?`مجموع أوراقك ${total}. ${total>21?'تجاوزت 21!':'وصلت إلى 21.'} انتهت الجولة التدريبية.`:`Your hand totals ${total}. ${total>21?'Bust!':'21 reached.'} Practice round complete.`)}else setPracticeResult(arabic?`أضفت ورقة. مجموعك الآن ${total}.`:`Card drawn. Your total is ${total}.`);setPracticeCount(value=>value+1)}
@@ -140,8 +142,8 @@ export default function GamesHub(){
           <button className="game-detail-done" type="button" disabled={appleDone} onClick={pickApple}>{labels.pick} · LEVEL {Math.min(appleLevel+1,3)}</button>
         </div>}
         {selected.id==='plinko'&&<div className="game-practice-controls">
-          <div className="plinko-board"><div className="plinko-pegs">{Array.from({length:6},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:9},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div></div>
-          <button className="game-detail-done" type="button" onClick={dropPlinko}><Play size={15}/> {labels.drop}</button>
+          <div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:6},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:9},(_,i)=><span key={i} className={plinkoSlot===i+1?'landed':''}>{plinkoSlot===i+1?'●':i+1}</span>)}</div></div>
+          <button className="game-detail-done" type="button" onClick={dropPlinko} disabled={plinkoDropping}><Play size={15}/> {plinkoDropping?(arabic?'الكرة تهبط...':'BALL DROPPING...'):labels.drop}</button>
         </div>}
         {['lucky-fruits','pharaoh','space-spin'].includes(selected.id)&&<div className="game-practice-controls"><div className="slot-reels" aria-label="Practice slot reels">{slotSymbols.map((symbol,i)=><span className={slotSpinning?'spinning':''} key={i}>{symbol}</span>)}</div><button className="game-detail-done" type="button" onClick={spinSlots} disabled={slotSpinning}><RotateCw size={15}/> {slotSpinning?(arabic?'تدور البكرات...':'SPINNING...'):labels.tryDemo}</button></div>}
         {selected.id==='roulette'&&<div className="game-practice-controls"><div className="roulette-preview"><div className="roulette-wheel"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><b>{rouletteNumber===null?'?':rouletteNumber}</b></div><small>{rouletteNumber===null?'READY TO SPIN':rouletteNumber===0?(arabic?'صفر أخضر':'GREEN ZERO'):rouletteReds.has(rouletteNumber)?(arabic?'نتيجة حمراء':'RED RESULT'):(arabic?'نتيجة سوداء':'BLACK RESULT')}</small></div><button className="game-detail-done" type="button" onClick={runOtherDemo}><RotateCw size={15}/> {labels.tryDemo}</button></div>}
