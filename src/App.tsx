@@ -206,7 +206,15 @@ export default function App() {
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
   const [adminOpen, setAdminOpen] = useState(false)
   const [walletOpen, setWalletOpen] = useState(false)
-  function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') { setWalletInitialTab(tab); openOverlay('wallet') }
+  function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') {
+    setWalletInitialTab(tab)
+    const current = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []
+    const base = current.filter(id => id !== 'mobileMore' && id !== 'account' && id !== 'wallet')
+    window.history.replaceState({ ...window.history.state, betnovaOverlays: base }, '', window.location.href)
+    const next = [...base, 'wallet']
+    window.history.pushState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
+    applyOverlayStack(next)
+  }
   const [betsOpen, setBetsOpen] = useState(false)
   const [activePage, setActivePage] = useState<'sports' | 'games' | 'football'>('sports')
   const [selectedMatchDate, setSelectedMatchDate] = useState('')
