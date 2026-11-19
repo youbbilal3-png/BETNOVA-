@@ -76,7 +76,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
         <article className="reward-card">
           <div className="reward-card-icon"><RefreshCw size={20}/></div>
           <div><span className="reward-eyebrow">{ar ? 'مكافأة الإيداع المتتالي' : 'FIVE-DEPOSIT STREAK'}</span><h3>5%</h3>
-            <p>{ar ? 'بعد إتمام 5 إيداعات ناجحة متتالية بالعملة نفسها، تحصل على 5% من مجموع مبالغ الإيداعات الخمسة. لا تُحتسب طلبات الإيداع المرفوضة أو غير المؤكدة.' : 'After 5 consecutive approved deposits in the same currency, earn 5% of their combined value. Pending or rejected deposits do not qualify.'}</p>
+            <p>{ar ? 'عن كل مجموعة من 5 إيداعات ناجحة متتالية بالعملة نفسها، تحصل على 5% من مجموع مبالغ الإيداعات الخمسة. لا تُحتسب طلبات الإيداع المرفوضة أو غير المؤكدة.' : 'For every completed block of 5 consecutive approved deposits in the same currency, earn 5% of their combined value. Pending or rejected deposits do not qualify.'}</p>
           </div>
         </article>
         <article className="reward-card">
