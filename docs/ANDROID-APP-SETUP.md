@@ -49,9 +49,16 @@ The policy currently has an empty download URL. Do not enable a mandatory update
 
 ## Production signing and release
 
-A production APK requires a persistent Android release keystore. Create it once, keep a secure offline backup, and use the same key for every future update. Store the keystore and passwords as GitHub Actions secrets; never commit them to the repository or share them in chat.
+A production APK requires a persistent Android release keystore. Create it once, keep a secure offline backup, and use the same key for every future update. Store these values as GitHub Actions repository secrets:
 
-The debug APK uses a debug signing identity and must not be treated as a production update path. The release signing workflow and the final update URL still need to be completed after the owner has securely configured the signing credentials.
+- `ANDROID_KEYSTORE_BASE64`: base64-encoded keystore file.
+- `ANDROID_KEYSTORE_PASSWORD`: keystore password.
+- `ANDROID_KEY_ALIAS`: the alias created in the keystore.
+- `ANDROID_KEY_PASSWORD`: password for that alias.
+
+Never commit the keystore or passwords to the repository or share them in chat. The optional signed-release job is prepared in `.github/workflows/android-apk.yml`: open GitHub Actions, run **BETNOVA Android APK**, and set **Build a signed release APK** to true after all four secrets are configured. The normal workflow continues to build the debug APK without requiring signing secrets.
+
+The debug APK uses a debug signing identity and must not be treated as a production update path. The release workflow is ready for owner-supplied signing credentials, but no production-signed APK exists yet and the forced-update download URL must remain empty until one is uploaded to a stable HTTPS location.
 
 ## Deployment boundaries
 
