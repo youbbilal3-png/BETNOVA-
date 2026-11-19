@@ -62,6 +62,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
   const [hasLoaded, setHasLoaded] = useState(false)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState('')
+  const [marketIds, setMarketIds] = useState<string[]>([])
   const containerRef = useRef<HTMLDivElement | null>(null)
 
 
@@ -133,7 +134,10 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
         const previous = unique.get(key);
         if (!previous || Date.parse(market.last_updated_at) > Date.parse(previous.last_updated_at)) unique.set(key, market);
       }
-      setMarkets(Array.from(unique.values()))
+      const nextMarkets = Array.from(unique.values())
+      const nextMarketIds = nextMarkets.map(market => market.id)
+      setMarketIds(current => current.length === nextMarketIds.length && current.every((id, index) => id === nextMarketIds[index]) ? current : nextMarketIds)
+      setMarkets(nextMarkets)
     }
     setLoading(false)
   }
@@ -168,12 +172,18 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
   useEffect(() => {
     if (!supabase || !hasLoaded) return
     const client = supabase
-    const channel = client.channel('match-markets-' + fixtureId)
+    let channel = client.channel('match-markets-' + fixtureId)
+    for (const marketId of marketIds) {
+      channel = channel.on('postgres_changes', {
+        event: '*', schema: 'public', table: 'market_selections', filter: 'market_id=eq.' + marketId,
+      }, () => { void loadMarkets() })
+    }
+    channel = channel
       .on('postgres_changes', { event: '*', schema: 'public', table: 'markets', filter: 'fixture_id=eq.' + fixtureId }, () => { void loadMarkets() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fixture_events', filter: 'fixture_id=eq.' + fixtureId }, () => { void loadEvents() })
       .subscribe()
     return () => { void client.removeChannel(channel) }
-  }, [fixtureId, hasLoaded])
+  }, [fixtureId, hasLoaded, marketIds])
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Market[]>()
