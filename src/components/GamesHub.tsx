@@ -47,6 +47,7 @@ export default function GamesHub(){
   const [slotSymbols,setSlotSymbols]=useState<string[]>(['🍒','⭐','🍋'])
   const [slotSpinning,setSlotSpinning]=useState(false)
   const slotTimer=useRef<ReturnType<typeof setTimeout>|null>(null)
+  const modalRef=useRef<HTMLElement|null>(null)
   const [rouletteNumber,setRouletteNumber]=useState<number|null>(null)
   const [cardHand,setCardHand]=useState<number[]>([])
   const [dealerHand,setDealerHand]=useState<number[]>([])
@@ -60,7 +61,7 @@ export default function GamesHub(){
     setSlotSymbols(['🍒','⭐','🍋']);setRouletteNumber(null);setCardHand([]);setDealerHand([]);setBlackjackDone(false);setBaccaratHand(null)
   }
   const closeGame=()=>{setSelected(null);resetDemo()}
-  useEffect(()=>{if(!selected)return;const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape')closeGame()};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown)},[selected])
+  useEffect(()=>{if(!selected)return;const previous=document.activeElement as HTMLElement|null;modalRef.current?.focus();const onKeyDown=(event:KeyboardEvent)=>{if(event.key==='Escape'){closeGame();return}if(event.key==='Tab'){const nodes=modalRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])');if(!nodes?.length){event.preventDefault();modalRef.current?.focus();return}const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}};window.addEventListener('keydown',onKeyDown);return()=>{window.removeEventListener('keydown',onKeyDown);if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;previous?.focus()}},[selected])
   useEffect(()=>{if(!crashActive)return;const timer=window.setTimeout(()=>{const next=Number((multiplier+0.05).toFixed(2));setMultiplier(next);if(next>=crashAt){setCrashActive(false);setPracticeResult(arabic?`انتهت الجولة عند ${next.toFixed(2)}×. لا توجد أرباح أو تغييرات في الرصيد.`:`Practice crash at ${next.toFixed(2)}×. Round ended with no payout or balance change.`)}},220);return()=>window.clearTimeout(timer)},[crashActive,crashAt,multiplier,arabic])
   const startCrash=()=>{
     setCrashAt(1.25+Math.random()*4.75);setMultiplier(1);setCrashActive(true)
@@ -120,7 +121,7 @@ export default function GamesHub(){
     </div>
     <div className="games-safety-note"><Sparkles size={15}/><span>{labels.safety}</span></div>
     {selected&&<div className="game-detail-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)closeGame()}}>
-      <section className={`game-detail-modal game-${selected.accent}`} role="dialog" aria-modal="true" aria-labelledby="game-detail-title">
+      <section ref={modalRef} tabIndex={-1} className={`game-detail-modal game-${selected.accent}`} role="dialog" aria-modal="true" aria-labelledby="game-detail-title">
         <button className="game-detail-close" type="button" onClick={closeGame} aria-label={labels.close}><X size={18}/></button>
         <div className={`game-detail-art art-${selected.art}`}><span>{selected.mark}</span><i/><b>BETNOVA</b></div>
         <div className="games-kicker"><Sparkles size={14}/> {labels.practice} · {selected.tag}</div><h3 id="game-detail-title">{selected.name}</h3><p>{arabic?(arabicDescriptions[selected.id]??selected.description):selected.description}</p>
