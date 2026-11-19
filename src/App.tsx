@@ -3,6 +3,7 @@ import { Activity, ArrowDownUp, ArrowRight, Bell, CalendarDays, CircleHelp, Cloc
 import AuthPanel from './components/AuthPanel'
 import AccountPanel from './components/AccountPanel'
 import AdminOverview from './components/AdminOverview'
+import SupportCenter from './components/SupportCenter'
 import WalletPanel from './components/WalletPanel'
 import MatchMarkets from './components/MatchMarkets'
 import MatchStatistics from './components/MatchStatistics'
@@ -205,6 +206,7 @@ export default function App() {
   const [matchLoadError, setMatchLoadError] = useState<string | null>(null)
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
   const [adminOpen, setAdminOpen] = useState(false)
+  const [supportOpen, setSupportOpen] = useState(false)
   const [walletOpen, setWalletOpen] = useState(false)
   function openWallet(tab: 'deposit' | 'withdraw' | 'history' = 'deposit') {
     setWalletInitialTab(tab)
@@ -212,6 +214,14 @@ export default function App() {
     const base = current.filter(id => id !== 'mobileMore' && id !== 'account' && id !== 'wallet')
     window.history.replaceState({ ...window.history.state, betnovaOverlays: base }, '', window.location.href)
     const next = [...base, 'wallet']
+    window.history.pushState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
+    applyOverlayStack(next)
+  }
+  function openSupport() {
+    const current = Array.isArray(window.history.state?.betnovaOverlays) ? window.history.state.betnovaOverlays as string[] : []
+    const base = current.filter(id => id !== 'mobileMore' && id !== 'account' && id !== 'support')
+    window.history.replaceState({ ...window.history.state, betnovaOverlays: base }, '', window.location.href)
+    const next = [...base, 'support']
     window.history.pushState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
     applyOverlayStack(next)
   }
@@ -240,6 +250,7 @@ export default function App() {
     setAccountOpen(stack.includes('account'))
     setWalletOpen(stack.includes('wallet'))
     setAdminOpen(stack.includes('admin'))
+    setSupportOpen(stack.includes('support'))
     setBetsOpen(stack.includes('bets'))
     setAuthOpen(stack.includes('auth'))
     setNotificationsOpen(stack.includes('notifications'))
@@ -261,7 +272,7 @@ export default function App() {
   function goHome() {
     window.history.replaceState({ betnovaPage: 'sports', betnovaOverlays: [] }, '', window.location.pathname + window.location.search)
     setActivePage('sports')
-    setAccountOpen(false); setWalletOpen(false); setAdminOpen(false); setBetsOpen(false)
+    setAccountOpen(false); setWalletOpen(false); setAdminOpen(false); setSupportOpen(false); setBetsOpen(false)
     setAuthOpen(false); setNotificationsOpen(false); setSettingsOpen(false)
     setMobileMoreOpen(false); setMobileSlip(false); setDetailMatch(null)
   }
@@ -863,7 +874,7 @@ export default function App() {
             {betMessage && <p className="bet-slip-message">{betMessage}</p>}
             <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>{betBusy ? 'Placing…' : selected.some(item => item.isDemo) ? 'Save practice bet' : 'Place bet'} <ArrowRight size={15}/></button>
           </div>
-          <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><a href="#help">Get support <ArrowRight size={13}/></a></div></div>
+          <div className="help-card" id="help"><div className="help-icon"><CircleHelp size={18}/></div><div><b>Need a hand?</b><p>Visit our help center for guidance.</p><button type="button" onClick={openSupport}>Get support <ArrowRight size={13}/></button></div></div>
           <div className="responsible-card" id="responsible"><div className="responsible-icon"><ShieldCheck size={18}/></div><div><b>Play with awareness</b><p>Enjoy sports responsibly. Set limits and take breaks.</p><a href="#responsible">Learn more</a></div></div>
         </aside>}
       </main>
@@ -876,14 +887,14 @@ export default function App() {
           <button onClick={() => { closeMobileMenuToPage(); openFootball() }}><Trophy size={17}/>{language === 'ar' ? 'كرة القدم' : 'Football'}</button>
           <button onClick={() => { closeMobileMenuToPage(); openGames() }}><Sparkles size={17}/>{language === 'ar' ? 'الألعاب والترفيه' : 'Games & Arcade'}</button>
           <button onClick={() => { closeMobileMenuToPage(); setActivePage('sports'); openEventView("results") }}><Clock3 size={17}/>{t("results")}</button>
+          <button onClick={openSupport}><CircleHelp size={17}/>Help & support</button>
           {userEmail ? <>
             <button className="mobile-account-entry" onClick={() => { openOverlay('account') }}><UserRound size={18}/>{t("my_account")}<span>›</span></button>
             <button onClick={() => openWallet('deposit')}><Wallet size={17}/>Deposit</button>
             <button onClick={() => { openOverlay('bets') }}><Activity size={17}/>{t("my_bets")}</button>
             <button onClick={() => { openOverlay('notifications') }}><Bell size={17}/>{t("notifications")}</button>
             <button onClick={() => { closeOverlay('mobileMore'); document.getElementById("responsible")?.scrollIntoView({behavior:"smooth"}) }}><ShieldCheck size={17}/>Responsible play</button>
-            <button onClick={() => { closeOverlay('mobileMore'); document.getElementById("help")?.scrollIntoView({behavior:"smooth"}) }}><CircleHelp size={17}/>Help & support</button>
-            {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
+              {isAdminUser && <button onClick={() => { openOverlay('admin') }}><ShieldCheck size={17}/>{t("admin")}</button>}
             <button onClick={() => { closeOverlay('mobileMore'); void supabase?.auth.signOut() }}><ArrowRight size={17}/>{t("signout")}</button>
           </> : <>
             <button onClick={() => { setAuthMode("login"); openOverlay('auth') }}><ArrowRight size={17}/>{t("login")}</button>
@@ -920,6 +931,7 @@ export default function App() {
         </div>
       })()}
       {adminOpen && <AdminOverview onClose={() => closeOverlay('admin')} />}
+      {supportOpen && <SupportCenter onClose={() => closeOverlay('support')} userEmail={userEmail} />}
       {accountOpen && <AccountPanel onClose={() => closeOverlay('account')} onSignOut={() => { closeOverlay('account'); void supabase?.auth.signOut() }} onOpenWallet={openWallet} />}
       {settingsOpen && <div className="settings-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('settings') }}><section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><button className="settings-close" onClick={() => closeOverlay('settings')} aria-label={t('close')}><X size={19}/></button><div className="settings-kicker"><Settings size={15}/> BETNOVA · PREFERENCES</div><h2 id="settings-title">{t('settings')}</h2><p>Personalise your BETNOVA experience.</p><label><span><Globe2 size={16}/> {t('language')}</span><select value={language} onChange={event => setLanguage(event.target.value as typeof language)}>{languages.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}</select></label><label><span><Wallet size={16}/> Preferred currency</span><select value={betCurrency} onChange={event => setBetCurrency(event.target.value)}><option value="DZD">DZD · Algerian dinar</option><option value="USD">USD · US dollar</option><option value="EUR">EUR · Euro</option></select></label><div className="settings-note"><ShieldCheck size={16}/> Preferences apply to this session. Wallet deposits and withdrawals use manual verification and payout.</div><button className="settings-done" onClick={() => closeOverlay('settings')}>Done <ArrowRight size={15}/></button></section></div>}
       {walletOpen && <WalletPanel onClose={() => closeOverlay('wallet')} initialTab={walletInitialTab} />}
