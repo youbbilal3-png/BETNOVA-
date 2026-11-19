@@ -103,6 +103,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
           {depositClaims.length ? depositClaims.map(item => <div className="reward-history-row" key={item.id}><span>{new Date(item.created_at).toLocaleDateString()}</span><b>{money(Number(item.reward_amount ?? 0), item.currency)}</b><small>{ar ? 'مجموع الإيداعات' : 'Deposited'}: {money(Number(item.total_deposited ?? 0), item.currency)}</small></div>) : <p>{ar ? 'لا توجد مكافآت إيداع مسجلة بعد.' : 'No deposit streak rewards recorded yet.'}</p>}
         </div>
       </>}
+      <p className="rewards-disclaimer">{ar ? 'المكافآت لا تضمن الربح ولا ينبغي أن تدفعك إلى زيادة الرهانات أو مطاردة الخسائر. تطبق شروط الأهلية والتحقق والقوانين المحلية.' : 'Rewards do not guarantee profit and should never be a reason to increase stakes or chase losses. Eligibility, verification, and local laws apply.'}</p>
       <button className="rewards-done" onClick={onClose}>{ar ? 'إغلاق' : 'Close'} <ArrowRight size={15}/></button>
     </section>
   </div>
