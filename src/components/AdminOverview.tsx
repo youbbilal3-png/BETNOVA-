@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Activity, CalendarDays, CheckCircle2, Clock3, CreditCard, Headphones, Mail, RefreshCw, ShieldCheck, Trophy, Users, Wallet, X, XCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import PaymentMethodLogo from './PaymentMethodLogo'
+import AdminRewardsPanel from './AdminRewardsPanel'
 
 type Props = { onClose: () => void }
 type ProviderHealth = {
@@ -56,6 +57,7 @@ export default function AdminOverview({ onClose }: Props) {
   const [ownerCreditCurrency, setOwnerCreditCurrency] = useState('DZD')
   const [ownerCreditNote, setOwnerCreditNote] = useState('Owner wallet top-up')
   const [ownerWalletBalance, setOwnerWalletBalance] = useState<number | null>(null)
+  const [rewardsReviewOpen, setRewardsReviewOpen] = useState(false)
 
   const loadProviderHealth = useCallback(async () => {
     if (!supabase) {
@@ -322,6 +324,7 @@ export default function AdminOverview({ onClose }: Props) {
       <button className="admin-close" onClick={onClose} aria-label="Close administration"><X size={19}/></button>
       <div className="admin-kicker"><ShieldCheck size={14}/> BETNOVA CONTROL CENTER</div>
       <h2 id="admin-title">Administration</h2>
+      {isAdmin && <button className="admin-review-rewards-btn" onClick={() => setRewardsReviewOpen(true)}><ShieldCheck size={14}/> Review Earn & referral rewards</button> }
       {checking ? <p className="admin-message">Verifying your administrator access…</p> :
         error && !isAdmin ? <p className="admin-message error">{error}</p> :
         !isAdmin ? <p className="admin-message">This account does not have administrator permissions.</p> :
@@ -444,5 +447,6 @@ export default function AdminOverview({ onClose }: Props) {
           <div className="admin-safety-note"><ShieldCheck size={15}/> Deposit approvals credit the wallet atomically. Withdrawals reserve funds until you mark the external transfer paid or reject the request.</div>
         </>}
     </section>
+    {rewardsReviewOpen && <AdminRewardsPanel onClose={() => setRewardsReviewOpen(false)} />}
   </div>
 }
