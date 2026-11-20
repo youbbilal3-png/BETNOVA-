@@ -11,6 +11,7 @@ import WalletPanel from './components/WalletPanel'
 import MatchMarkets from './components/MatchMarkets'
 import MatchStatistics from './components/MatchStatistics'
 import MatchNotificationFollow from './components/MatchNotificationFollow'
+import NotificationSettings from './components/NotificationSettings'
 import MyBetsPanel from './components/MyBetsPanel'
 import RewardsPanel from './components/RewardsPanel'
 import EarnPanel from './components/EarnPanel'
@@ -971,7 +972,7 @@ export default function App() {
       {notificationsOpen && <div className="notification-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('notifications') }}>
         <section className="notification-panel" role="dialog" aria-modal="true" aria-label={t("notifications")}>
           <div className="mobile-more-header"><b>{t("notifications")}</b><button className="icon-btn" onClick={() => closeOverlay('notifications')} aria-label={t("close")}><X size={18}/></button></div>
-          <div className="notification-empty"><Bell size={24}/><b>{t("no_notifications")}</b><span>{t("notifications_hint")}</span></div>
+          <NotificationSettings language={language} />
           <button className="slip-cta" onClick={() => closeOverlay('notifications')}>{t("close")}</button>
         </section>
       </div>}
