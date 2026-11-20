@@ -30,3 +30,4 @@ jobs:
           deno check --config=deno.json supabase/functions/sportsapi-live-sync/index.ts
           deno check --config=deno.json supabase/functions/fivedollar-football-sync/index.ts
           deno check --config=deno.json supabase/functions/dispatch-push-notifications/index.ts
+          deno check --config=deno.json supabase/functions/submit-earn-proof/index.ts

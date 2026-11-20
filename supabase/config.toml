@@ -34,3 +34,6 @@ enabled = false
 
 [edge_runtime]
 enabled = false
+
+[functions.submit-earn-proof]
+verify_jwt = true

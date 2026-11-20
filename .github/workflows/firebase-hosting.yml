@@ -29,6 +29,29 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Restore latest signed APK and mandatory-update policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p public/downloads
+          if gh release view --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release download --repo "$GITHUB_REPOSITORY" --pattern "betnova-latest.apk" --dir public/downloads --clobber
+            TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq '.tagName')
+            VERSION="${TAG#v}"
+            node - "$VERSION" <<'NODE'
+            const fs = require('node:fs')
+            const path = 'public/app-version.json'
+            const policy = JSON.parse(fs.readFileSync(path, 'utf8'))
+            const version = process.argv[2]
+            if (!/^\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('Invalid latest release tag')
+            policy.latestVersion = version
+            policy.minimumSupportedVersion = version
+            policy.downloadUrl = 'https://betnova-8daa3.web.app/downloads/betnova-latest.apk'
+            fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\n')
+            NODE
+            test -s public/downloads/betnova-latest.apk
+          fi
+
       - name: Build BETNOVA
         run: npm run build
         env:

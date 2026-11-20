@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
@@ -25,13 +25,14 @@ function compareVersions(left: string, right: string) {
 export default function NativeAppGate() {
   const isNative = Capacitor.isNativePlatform()
   const [checking, setChecking] = useState(isNative)
+  const hasChecked = useRef(false)
   const [error, setError] = useState('')
   const [installedVersion, setInstalledVersion] = useState('1.0')
   const [policy, setPolicy] = useState<VersionPolicy | null>(null)
 
   const checkVersion = useCallback(async () => {
     if (!isNative) return
-    setChecking(true)
+    if (!hasChecked.current) setChecking(true)
     setError('')
     try {
       const [appInfo, response] = await Promise.all([
@@ -45,9 +46,12 @@ export default function NativeAppGate() {
       }
       setInstalledVersion(appInfo.version || '1.0')
       setPolicy(remote)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذر التحقق من إصدار التطبيق')
+    } catch {
+      // Keep the app usable on weak or temporarily unavailable connections.
+      // If a mandatory policy was already loaded, preserve it until a fresh check succeeds.
+      if (!hasChecked.current) setPolicy(null)
     } finally {
+      hasChecked.current = true
       setChecking(false)
     }
   }, [isNative])
