@@ -260,6 +260,7 @@ function builderConflict(a: { marketKey: string; label: string }, b: { marketKey
   return false
 }
 
+// [release] Bonus-wallet betting and locale-aware home/away odds ordering.
 export default function App() {
   const { language, setLanguage, t } = useLanguage()
   const [sport, setSport] = useState('Football')
