@@ -35,7 +35,8 @@ jobs:
         run: |
           mkdir -p public/downloads
           if gh release view --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release download --repo "$GITHUB_REPOSITORY" --pattern "betnova-latest.apk" --dir public/downloads --clobber
+            gh release download --repo "$GITHUB_REPOSITORY" --pattern "app-release.apk" --dir public/downloads --clobber
+            mv public/downloads/app-release.apk public/downloads/betnova-latest.apk
             TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq '.tagName')
             VERSION="${TAG#v}"
             node - "$VERSION" <<'NODE'
