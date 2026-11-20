@@ -1100,3 +1100,19 @@ html[lang="ar"] body,html[lang="ar"] button,html[lang="ar"] input,html[lang="ar"
 
 .admin-review-rewards-btn{display:inline-flex;align-items:center;gap:7px;margin:0 0 14px;padding:9px 12px;border:1px solid #c8e4d1;border-radius:9px;background:#effaf3;color:#176d48;font-size:11px;font-weight:800;cursor:pointer}
 .admin-review-rewards-btn:hover{background:#e1f5e8}
+
+
+/* Live statistics shown directly on match cards */
+.match-card-statistics{margin:0 0 11px;padding:10px 12px;border:1px solid #294f40;border-radius:12px;background:linear-gradient(145deg,#102a20,#0d211b);color:#e7f7ed}
+.match-card-statistics .match-statistics{margin:0;padding:0;border:0;background:transparent}
+.match-card-statistics .match-stats-heading{margin-bottom:8px}
+.match-card-statistics .match-stats-heading h3{font-size:12px;color:#effff5}
+.match-card-statistics .match-stats-heading .eyebrow{font-size:7px;color:#80b79a}
+.match-card-statistics .match-stats-heading small,.match-card-statistics .match-stats-columns{color:#8eaf9b;font-size:8px}
+.match-card-statistics .match-stat-row{padding:6px 0;border-top-color:#244638}
+.match-card-statistics .match-stat-values{color:#cce8d6;font-size:9px}
+.match-card-statistics .match-stat-values b{color:#e9fff0;font-size:10px}
+.match-card-statistics .match-stat-bars>span{background:#1d3d30}
+.match-card-statistics .match-stat-bars i{background:linear-gradient(90deg,#1f9c69,#8bdc88)}
+.match-statistics-compact .match-stats-heading h3{font-size:12px}
+@media(max-width:480px){.match-card-statistics{padding:8px;margin-bottom:9px}.match-card-statistics .match-stat-row{padding:5px 0}}
