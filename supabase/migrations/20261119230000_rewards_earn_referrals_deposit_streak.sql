@@ -291,12 +291,17 @@ begin
   for v_block in
     with ordered as (
       select d.id,d.currency,d.amount,d.status,d.created_at,
-        lag(d.currency) over(order by d.created_at,d.id) as previous_currency
+        lag(d.currency) over(order by d.created_at,d.id) as previous_currency,
+        lag(d.status) over(order by d.created_at,d.id) as previous_status
       from public.deposit_requests d
       where d.user_id=new.user_id
     ), segmented as (
       select o.*,
-        sum(case when status<>'approved' or previous_currency is distinct from currency then 1 else 0 end)
+        sum(case
+          when status<>'approved'
+            or previous_status is distinct from 'approved'
+            or previous_currency is distinct from currency
+          then 1 else 0 end)
           over(order by created_at,id rows between unbounded preceding and current row) as run_key
       from ordered o
     ), approved_runs as (
