@@ -171,8 +171,7 @@ begin
   );
   return v_bet_id;
 end;
-$function$
-
+$function$;
 
 revoke all on function public.betnova_place_bonus_bet(jsonb,numeric,text,uuid) from public,anon;
 grant execute on function public.betnova_place_bonus_bet(jsonb,numeric,text,uuid) to authenticated;
@@ -406,8 +405,7 @@ begin
     'bet_status',v_status
   );
 end;
-$function$
-
+$function$;
 
 revoke all on function public.betnova_reconcile_bet_payout(uuid,text,text) from public,anon,authenticated;
 grant execute on function public.betnova_reconcile_bet_payout(uuid,text,text) to service_role,authenticated;
