@@ -65,17 +65,14 @@ type Match = {
 }
 
 
-function LiveMatchClock({ startsAt, language }: { startsAt?: string; language: string }) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 5000)
-    return () => window.clearInterval(timer)
-  }, [])
+function LiveMatchClock({ startsAt, language, now }: { startsAt?: string; language: string; now: number }) {
   const kickoff = Date.parse(String(startsAt ?? ''))
   const elapsed = Number.isFinite(kickoff) ? Math.max(0, Math.floor((now - kickoff) / 1000)) : 0
-  const minutes = Math.floor(elapsed / 60)
-  const seconds = elapsed % 60
-  const clock = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0')
+  // The fixtures feed currently provides kickoff time, not the provider's live elapsed clock.
+  // Never display impossible wall-clock values such as 144:37; use the football-time ceiling.
+  const clock = elapsed >= 90 * 60
+    ? '90+'
+    : String(Math.floor(elapsed / 60)).padStart(2, '0') + ':' + String(elapsed % 60).padStart(2, '0')
   return <span className="live-match-clock" role="timer" aria-label={language === 'ar' ? 'المباراة مباشرة، الوقت المنقضي ' + clock : 'Live match, elapsed time ' + clock}>
     <span className="live-match-dot" aria-hidden="true" />
     <b>{language === 'ar' ? 'مباشر' : 'LIVE'}</b>
@@ -209,6 +206,11 @@ export default function App() {
   const [showFavorites, setShowFavorites] = useState(false)
   const [matches, setMatches] = useState<Match[]>([])
   const [visibleMatchLimit, setVisibleMatchLimit] = useState(40)
+  const [liveClockNow, setLiveClockNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setLiveClockNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
   const usingDemoData = false
   const [league, setLeague] = useState('All matches')
   const [selected, setSelected] = useState<{ match: Match; label: string; odd: string; selectionId: string; marketId: string; marketKey: string; isDemo?: boolean }[]>([])
@@ -439,6 +441,7 @@ export default function App() {
     let active = true
     let latestRequest = 0
     let initialLoad = true
+    let realtimeRefreshTimer: number | undefined
 
     async function loadFixtures() {
       const requestId = ++latestRequest
@@ -523,7 +526,7 @@ export default function App() {
         const page = await fixtureQuery
           .order('starts_at', { ascending: eventView !== 'results' })
           .order('id', { ascending: true })
-          .range(0, 249)
+          .range(0, 99)
         if (page.error) throw page.error
         const data = page.data ?? []
         if (!active || requestId !== latestRequest) return
@@ -679,13 +682,18 @@ export default function App() {
     void loadFixtures()
     const client = supabase
     const channel = client?.channel('betnova-fixture-live-updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'fixtures' }, () => { void loadFixtures() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fixtures' }, () => {
+        // Coalesce bursts of fixture updates into one database read.
+        if (realtimeRefreshTimer !== undefined) window.clearTimeout(realtimeRefreshTimer)
+        realtimeRefreshTimer = window.setTimeout(() => { void loadFixtures() }, 600)
+      })
       .subscribe()
     // Poll local DB for live updates when Realtime is temporarily disconnected.
     const refreshTimer = window.setInterval(() => { void loadFixtures() }, 120000)
     return () => {
       active = false
       window.clearInterval(refreshTimer)
+      if (realtimeRefreshTimer !== undefined) window.clearTimeout(realtimeRefreshTimer)
       if (client && channel) void client.removeChannel(channel)
     }
   }, [sport, eventView, selectedMatchDate])
@@ -948,7 +956,7 @@ export default function App() {
             </div>}
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">{sport} · {t('loading_events')}</div> : matchLoadError ? <div className="empty-state">{t('sports_data_error')}</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => openOverlay('matchDetails', { betnovaDetailMatch: match })} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openOverlay('matchDetails', { betnovaDetailMatch: match }) } }}>
-                <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : match.status === 'live' ? <LiveMatchClock startsAt={match.startsAt} language={language}/> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
+                <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : match.status === 'live' ? <LiveMatchClock startsAt={match.startsAt} language={language} now={liveClockNow}/> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
                 <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} initials`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus-group"><span className="versus">VS</span>{eventView !== 'results' && <span className="odds-caption">{match.oddsCaption} <CircleHelp size={12}/></span>}</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} initials`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : match.winnerPicks.some(Boolean) ? <div className="odds-area"><div className="odds-grid">{match.odds.map((odd,i)=>{const pick=match.winnerPicks[i];if(!pick)return null;const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} onClick={event=>{event.stopPropagation();if(pick)toggleMarketSelection(match,pick)}} className={picked?'odd picked':'odd'}><small>{match.oddsLabels[i] ?? ['Win 1','Draw','Win 2'][i]}</small><b>{odd}</b></button>})}</div></div> : null}</div>
                 <div className="match-footer"><button className="favorite-toggle" onClick={event => { event.stopPropagation(); toggleFavorite(match.id) }}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={event => { event.stopPropagation(); openOverlay('matchDetails', { betnovaDetailMatch: match }) }}>{language === 'ar' ? 'تفاصيل' : 'Details'} <ArrowRight size={13}/></button></div>
                 {typeof match.id === 'string' && <div className="match-card-markets" onClick={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}><MatchMarkets fixtureId={match.id} live={match.status === 'live'} deferLoad selectedIds={selected.map(item => item.selectionId)} onSelect={selection => toggleMarketSelection(match, selection)} /></div>}
