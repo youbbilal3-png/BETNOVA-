@@ -1,7 +1,7 @@
 create extension if not exists pgtap with schema extensions;
 
 begin;
-select plan(38);
+select plan(40);
 
 select has_table('public','earn_post_submissions','social earn submissions table exists');
 select has_column('public','earn_post_submissions','proof_sha256','screenshot SHA-256 is stored');
@@ -221,6 +221,54 @@ select is(
   (select reward_amount from public.deposit_streak_claims where user_id='10101010-1010-4010-8010-101010101010'),
   250::numeric,
   'currency-reset streak reward is exactly five percent of its own deposits'
+);
+
+-- A rejected deposit must break an otherwise same-currency streak.
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
+values('12121212-1212-4121-8121-121212121212','authenticated','authenticated','streak-rejected-break@example.invalid','',now(),now(),now());
+insert into public.deposit_requests(id,user_id,payment_method,amount,currency,status,created_at)
+select gen_random_uuid(),'12121212-1212-4121-8121-121212121212','baridimob',1000,'DZD','pending',now()+make_interval(secs=>g.n)
+from generate_series(1,6) as g(n);
+do $
+declare v_id uuid;
+begin
+  for v_id in select id from public.deposit_requests
+    where user_id='12121212-1212-4121-8121-121212121212' and created_at < now()+interval '5 seconds'
+    order by created_at,id
+  loop
+    update public.deposit_requests set status='approved' where id=v_id;
+  end loop;
+  update public.deposit_requests set status='rejected'
+    where user_id='12121212-1212-4121-8121-121212121212'
+      and created_at >= now()+interval '5 seconds' and created_at < now()+interval '6 seconds';
+  update public.deposit_requests set status='approved'
+    where user_id='12121212-1212-4121-8121-121212121212'
+      and created_at >= now()+interval '6 seconds';
+end;
+$;
+select is(
+  (select count(*) from public.deposit_streak_claims where user_id='12121212-1212-4121-8121-121212121212'),
+  0::bigint,
+  'a rejected deposit breaks the streak and four prior plus one later approval do not qualify'
+);
+insert into public.deposit_requests(id,user_id,payment_method,amount,currency,status,created_at)
+select gen_random_uuid(),'12121212-1212-4121-8121-121212121212','baridimob',1000,'DZD','pending',now()+make_interval(secs=>g.n+10)
+from generate_series(1,4) as g(n);
+do $
+declare v_id uuid;
+begin
+  for v_id in select id from public.deposit_requests
+    where user_id='12121212-1212-4121-8121-121212121212'
+      and status='pending' order by created_at,id
+  loop
+    update public.deposit_requests set status='approved' where id=v_id;
+  end loop;
+end;
+$;
+select is(
+  (select count(*) from public.deposit_streak_claims where user_id='12121212-1212-4121-8121-121212121212'),
+  1::bigint,
+  'five consecutive approvals after a rejected deposit earn exactly one streak reward'
 );
 
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
