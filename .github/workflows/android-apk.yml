@@ -90,9 +90,6 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
-      - name: Apply official BETNOVA launcher icons
-        run: node scripts/configure-android-icons.mjs
-
       - name: Add Firebase Android configuration
         run: |
           test -f google-services.json
@@ -101,6 +98,14 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Apply official BETNOVA launcher icons after Capacitor sync
+        run: node scripts/configure-android-icons.mjs
+
+      - name: Verify Android manifest uses BETNOVA launcher icons
+        run: |
+          grep -F 'android:icon="@mipmap/ic_launcher"' android/app/src/main/AndroidManifest.xml
+          grep -F 'android:roundIcon="@mipmap/ic_launcher_round"' android/app/src/main/AndroidManifest.xml
 
       - name: Configure Firebase Cloud Messaging
         run: node scripts/configure-android-firebase.mjs
