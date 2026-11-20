@@ -224,7 +224,7 @@ Deno.serve(async (req: Request) => {
     if (!logoUrl) return;
     const { data: team } = await supabase.from("teams").select("logo_url").eq("id", teamId).maybeSingle();
     if (String(team?.logo_url ?? "").trim()) return;
-    const { error } = await supabase.from("teams").update({ logo_url: logoUrl }).eq("id", teamId).is("logo_url", null);
+    const { error } = await supabase.from("teams").update({ logo_url: logoUrl }).eq("id", teamId).or('logo_url.is.null,logo_url.eq.""');
     if (error) providerErrors.push("could not save a live team badge");
   }
 
