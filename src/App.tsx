@@ -470,7 +470,9 @@ export default function App() {
           return
         }
 
-        const marketRelation = eventView === 'results' ? 'markets' : 'markets!inner'
+        // Live fixtures must remain visible even when a provider has not supplied live odds yet.
+        // Upcoming fixtures still require markets; results never require them.
+        const marketRelation = eventView === 'upcoming' ? 'markets!inner' : 'markets'
         let fixtureQuery = supabase
           .from('fixtures')
           .select(`
@@ -493,9 +495,8 @@ export default function App() {
           fixtureQuery = fixtureQuery
             .eq('status', 'live')
             .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
-          // Live feed can refresh odds more frequently than fixture metadata.
-          // Fresh open live markets (validated again below) are the source of truth;
-          // requiring fixtures.updated_at < 15m hid every live event during score-only syncs.
+            .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString())
+          // Fresh fixture updates identify live events; live odds remain optional on the card.
         } else if (eventView === 'results') {
           const selectedDayStart = selectedMatchDate ? new Date(selectedMatchDate + 'T00:00:00') : null
           const selectedDayEnd = selectedDayStart ? new Date(selectedDayStart.getTime() + 24 * 60 * 60 * 1000) : null
