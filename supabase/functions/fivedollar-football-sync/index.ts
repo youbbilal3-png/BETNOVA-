@@ -163,6 +163,21 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  async function applyFinalFixtureSnapshot(fixtureId: string, item: any) {
+    if (item?.status !== "finished") return;
+    const homeScore = finiteScore(item?.goals?.home);
+    const awayScore = finiteScore(item?.goals?.away);
+    if (homeScore === null || awayScore === null) return;
+    const checkedAt = now.toISOString();
+    const { error } = await supabase.from("fixtures").update({
+      status: "finished", home_score: homeScore, away_score: awayScore,
+      live_clock: null, live_status_phase: "finished",
+      live_status_description: "Full time", live_period: null,
+      live_clock_updated_at: checkedAt, updated_at: checkedAt,
+    }).eq("id", fixtureId);
+    if (error) throw new Error("Could not save confirmed final score");
+  }
+
   async function storeFixture(item: any): Promise<string | null> {
     const externalId = String(item?.id ?? "");
     const homeName = String(item?.teams?.home?.name ?? "").trim();
@@ -180,6 +195,11 @@ Deno.serve(async (req: Request) => {
     if (football.error || !football.data) throw new Error("Football catalogue unavailable");
     if (oldFixture.error) throw new Error("Could not inspect existing FiveDollar fixture");
     if (oldFixture.data?.id) {
+      await applyFinalFixtureSnapshot(oldFixture.data.id, item);
+      const { error: linkError } = await supabase.from("fivedollar_fixture_links").upsert({
+        provider_fixture_id: externalId, fixture_id: oldFixture.data.id, updated_at: now.toISOString(),
+      }, { onConflict: "provider_fixture_id" });
+      if (linkError) throw new Error("Could not refresh FiveDollar fixture mapping");
       fixtureCache.set(externalId, oldFixture.data.id);
       return oldFixture.data.id;
     }
@@ -206,6 +226,7 @@ Deno.serve(async (req: Request) => {
         provider_fixture_id: externalId, fixture_id: matched.id, updated_at: now.toISOString(),
       }, { onConflict: "provider_fixture_id" });
       if (linkError) throw new Error("Could not link FiveDollar odds to the existing match");
+      await applyFinalFixtureSnapshot(matched.id, item);
       fixtureCache.set(externalId, matched.id);
       return matched.id;
     }
@@ -635,7 +656,7 @@ Deno.serve(async (req: Request) => {
   try {
     let fixtures: any[] = [];
     if (mode === "live") {
-      const data = await get("/fixtures?status=live&include=events,stats&per_page=50");
+      const data = await get("/fixtures?status=live&include=events,stats&per_page=100");
       fixtures = Array.isArray(data) ? data : [];
     } else if (mode === "finalize") {
       const end = Math.floor(Date.now() / 1000);
@@ -692,11 +713,25 @@ Deno.serve(async (req: Request) => {
 
     const fixturesToProcess = mode === "prematch"
       ? fixtures.slice(prematchOffset, prematchOffset + 5)
-      : fixtures;
+      : mode === "finalize"
+        ? [...fixtures].sort((a: any, b: any) => Date.parse(String(a?.kickoff_utc ?? 0)) - Date.parse(String(b?.kickoff_utc ?? 0)))
+        : fixtures;
     const stored: Array<{item:any;id:string}> = [];
+    let finalizedPendingFixtures = 0;
     for (const item of fixturesToProcess) {
       const id = await storeFixture(item);
       if (!id) continue;
+      if (mode === "finalize") {
+        const { data: pendingLeg, error: pendingError } = await supabase.from("bet_legs")
+          .select("id").eq("fixture_id", id).eq("result_status", "pending").limit(1).maybeSingle();
+        if (pendingError) {
+          errors.push("could not inspect pending bets for final fixture");
+          continue;
+        }
+        if (!pendingLeg) continue;
+        if (finalizedPendingFixtures >= 3) break;
+        finalizedPendingFixtures++;
+      }
       stored.push({ item, id });
       await syncStatistics(item, id);
       if (mode === "live" && isNearKickoff(String(item?.kickoff_utc ?? ""))) {
