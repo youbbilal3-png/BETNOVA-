@@ -42,11 +42,11 @@ jobs:
             const policy = JSON.parse(fs.readFileSync(path, 'utf8'))
             const version = process.argv[2]
             const tag = process.argv[3]
-            if (!/^\\d+\\.\\d+(?:\\.\\d+)?$/.test(version)) throw new Error('Invalid latest release tag')
+            if (!/^\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('Invalid latest release tag')
             policy.latestVersion = version
             policy.minimumSupportedVersion = version
             policy.downloadUrl = 'https://github.com/youbbilal3-png/BETNOVA-/releases/download/' + tag + '/app-release.apk'
-            fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\\n')
+            fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\n')
             NODE
           fi
 
