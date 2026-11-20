@@ -72,6 +72,9 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Cache Gradle dependencies
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
@@ -102,10 +105,12 @@ jobs:
       - name: Apply official BETNOVA launcher icons after Capacitor sync
         run: node scripts/configure-android-icons.mjs
 
-      - name: Verify Android manifest uses BETNOVA launcher icons
+      - name: Verify Android manifest uses unique BETNOVA launcher icons
         run: |
-          grep -F 'android:icon="@mipmap/ic_launcher"' android/app/src/main/AndroidManifest.xml
-          grep -F 'android:roundIcon="@mipmap/ic_launcher_round"' android/app/src/main/AndroidManifest.xml
+          grep -F 'android:icon="@mipmap/betnova_launcher"' android/app/src/main/AndroidManifest.xml
+          grep -F 'android:roundIcon="@mipmap/betnova_launcher_round"' android/app/src/main/AndroidManifest.xml
+          grep -F '@drawable/betnova_launcher_foreground' android/app/src/main/res/mipmap-anydpi-v26/betnova_launcher.xml
+          grep -F '@drawable/betnova_launcher_monochrome' android/app/src/main/res/mipmap-anydpi-v26/betnova_launcher.xml
 
       - name: Configure Firebase Cloud Messaging
         run: node scripts/configure-android-firebase.mjs
@@ -137,7 +142,13 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: |
+          for attempt in 1 2 3 4; do
+            echo "Gradle debug build attempt $attempt/4"
+            if ./gradlew assembleDebug --no-daemon --max-workers=2; then exit 0; fi
+            if [ "$attempt" -eq 4 ]; then exit 1; fi
+            sleep $((attempt * 25))
+          done
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -156,7 +167,12 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           trap 'rm -f app/release.keystore' EXIT
-          ./gradlew assembleRelease
+          for attempt in 1 2 3 4; do
+            echo "Gradle release build attempt $attempt/4"
+            if ./gradlew assembleRelease --no-daemon --max-workers=2; then exit 0; fi
+            if [ "$attempt" -eq 4 ]; then exit 1; fi
+            sleep $((attempt * 25))
+          done
 
       - name: Verify signed APK and Android package identity
         if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
