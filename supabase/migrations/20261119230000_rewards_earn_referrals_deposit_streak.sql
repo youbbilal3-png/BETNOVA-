@@ -347,7 +347,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=''
-as $
+as $referral$
 declare
   v_item public.referrals%rowtype;
   v_ledger_id uuid;
@@ -378,7 +378,7 @@ begin
 
   return new;
 end;
-$;
+$referral$;
 revoke all on function private.betnova_process_referral_verification() from public,anon,authenticated;
 drop trigger if exists betnova_process_referral_verification on auth.users;
 create trigger betnova_process_referral_verification
