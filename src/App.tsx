@@ -671,7 +671,7 @@ export default function App() {
           // a real, currently open market (prefer O/U 2.5, then BTTS, then DC).
           // Never fabricate or derive prices.
           let cardPicks: (MarketPick | null)[] = winnerPicks.every(Boolean) ? winnerPicks : []
-          let cardLabels = [home?.name ?? 'Home', 'Draw', away?.name ?? 'Away']
+          let cardLabels = [home?.short_name || home?.name || 'Home', 'Draw', away?.short_name || away?.name || 'Away']
           let cardCaption = t('match_winner')
           if (!winnerPicks.every(Boolean)) {
             const preferredMarkets = [...openMarkets].sort((a: any, b: any) => {
@@ -1103,7 +1103,7 @@ export default function App() {
                 <button type="button" className={betFundingSource==='cash'?'active':''} onClick={()=>{setBetFundingSource('cash');setBetStake('');setBetMessage('')}}>Cash wallet</button>
                 <button type="button" className={betFundingSource==='bonus'?'active':''} onClick={()=>{setBetFundingSource('bonus');setBetStake('');setBetMessage('')}}>Bonus wallet</button>
               </div>
-              {betFundingSource==='bonus' && <label>Bonus currency<select value={betCurrency} onChange={event=>{setBetCurrency(event.target.value);setBetStake('')}}><option value="DZD">DZD</option><option value="USD">USD</option><option value="EUR">EUR</option></select></label>}
+              {betFundingSource==='bonus' && <small className="slip-balance-line">Bonus account currency: {betCurrency}</small>}
               <label>Stake · {betFundingSource==='bonus'?betCurrency:'DZD'}<input type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label>
               <div><span>{t('potential_return')}</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} {betFundingSource==='bonus'?betCurrency:'DZD'}</b></div>
               <small className="slip-balance-line">{betFundingSource==='bonus'
