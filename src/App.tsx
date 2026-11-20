@@ -450,6 +450,7 @@ export default function App() {
           return
         }
 
+        const marketRelation = eventView === 'results' ? 'markets' : 'markets!inner'
         let fixtureQuery = supabase
           .from('fixtures')
           .select(`
@@ -457,16 +458,16 @@ export default function App() {
             competitions!inner(name, country, sport_id),
             home_team:teams!fixtures_home_team_id_fkey(name, short_name, logo_url),
             away_team:teams!fixtures_away_team_id_fkey(name, short_name, logo_url),
-            markets(id, market_type, market_key, name, status, is_active, is_live, last_updated_at, market_selections(id, name, odds, status, result_status, updated_at))
+            ${marketRelation}(id, market_type, market_key, name, status, is_active, is_live, last_updated_at, market_selections(id, name, odds, status, result_status, updated_at))
           `)
           .eq('competitions.sport_id', sportRow.id)
-          // Keep fixture cards even when they have no odds, but embed only
-          // currently open prices and unsettled selections to keep payloads small.
+          // Upcoming and live cards must have a fresh open market; results remain visible without active odds.
           .eq('markets.is_active', true)
           .eq('markets.status', 'open')
           .gte('markets.last_updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
           .eq('markets.market_selections.status', 'active')
           .eq('markets.market_selections.result_status', 'pending')
+        if (eventView !== 'results') fixtureQuery = fixtureQuery.eq('markets.is_live', eventView === 'live')
         if (eventView === 'live') {
           // Never label an old fixture as live when the upstream feed has gone stale.
           fixtureQuery = fixtureQuery
