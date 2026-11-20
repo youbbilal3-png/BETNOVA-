@@ -481,7 +481,7 @@ export default function App() {
             id, starts_at, status, home_score, away_score,
             competitions!inner(name, country, sport_id),
             home_team:teams!fixtures_home_team_id_fkey(name, short_name, logo_url),
-            away_team:teams!fixtures_away_team_id_fkey(name, short_name, logo_url),
+            away_team:teams!fixtures_away_team_id_fkey(name, short_name, logo_url)
             ${marketSelection}
           `)
           .eq('competitions.sport_id', sportRow.id)
