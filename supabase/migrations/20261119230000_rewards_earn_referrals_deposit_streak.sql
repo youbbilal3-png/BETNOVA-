@@ -53,7 +53,7 @@ create table public.referrals (
   constraint referrals_no_self_referral check(referrer_user_id<>referred_user_id),
   constraint referral_review_state check(
     (status='pending' and reviewed_by is null and reviewed_at is null and wallet_ledger_id is null) or
-    (status='approved' and reviewed_by is not null and reviewed_at is not null and wallet_ledger_id is not null) or
+    (status='approved' and reviewed_at is not null and wallet_ledger_id is not null) or
     (status='rejected' and reviewed_by is not null and reviewed_at is not null and wallet_ledger_id is null)
   )
 );
@@ -73,6 +73,56 @@ create table public.deposit_streak_claims (
   created_at timestamptz not null default now()
 );
 create index deposit_streak_claims_user_created_idx on public.deposit_streak_claims(user_id,created_at desc);
+
+-- Grant the $100 welcome award once, into the separate USD bonus wallet.
+create unique index if not exists bonus_ledger_one_welcome_per_user
+  on public.bonus_ledger(user_id) where entry_type='welcome_bonus';
+
+create or replace function private.betnova_grant_welcome_bonus()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  v_wallet public.bonus_wallet_accounts%rowtype;
+  v_ledger_id uuid:=gen_random_uuid();
+begin
+  insert into public.bonus_wallet_accounts(user_id,currency)
+  values(new.id,'USD')
+  on conflict(user_id) do nothing;
+
+  select * into v_wallet
+  from public.bonus_wallet_accounts
+  where user_id=new.id
+  for update;
+
+  if not exists(
+    select 1 from public.bonus_ledger
+    where user_id=new.id and entry_type='welcome_bonus'
+  ) then
+    update public.bonus_wallet_accounts
+    set available_balance=available_balance+100,updated_at=now()
+    where id=v_wallet.id
+    returning * into v_wallet;
+
+    insert into public.bonus_ledger(
+      id,user_id,bonus_wallet_id,entry_type,amount_usd,balance_after,reserved_after,
+      reference_type,reference_id,idempotency_key,description
+    ) values(
+      v_ledger_id,new.id,v_wallet.id,'welcome_bonus',100,
+      v_wallet.available_balance,v_wallet.reserved_balance,
+      'signup',new.id,v_ledger_id,'BETNOVA $100 welcome bonus'
+    );
+  end if;
+  return new;
+end;
+$;
+revoke all on function private.betnova_grant_welcome_bonus() from public,anon,authenticated;
+drop trigger if exists betnova_grant_welcome_bonus on auth.users;
+create trigger betnova_grant_welcome_bonus
+  after insert on auth.users
+  for each row execute function private.betnova_grant_welcome_bonus();
 
 alter table public.earn_post_submissions enable row level security;
 alter table public.referral_codes enable row level security;
@@ -290,14 +340,18 @@ begin
   for v_block in
     with ordered as (
       select d.id,d.currency,d.amount,d.status,d.created_at,
-        sum(case when d.status<>'approved' then 1 else 0 end)
-          over(order by d.created_at,d.id rows between unbounded preceding and current row) as run_key
+        lag(d.currency) over(order by d.created_at,d.id) as previous_currency
       from public.deposit_requests d
       where d.user_id=new.user_id
-    ), approved_runs as (
+    ), segmented as (
       select o.*,
-        row_number() over(partition by run_key order by created_at,id) as run_position
+        sum(case when status<>'approved' or previous_currency is distinct from currency then 1 else 0 end)
+          over(order by created_at,id rows between unbounded preceding and current row) as run_key
       from ordered o
+    ), approved_runs as (
+      select s.*,
+        row_number() over(partition by run_key order by created_at,id) as run_position
+      from segmented s
       where status='approved'
     ), complete_blocks as (
       select run_key,((run_position-1)/5)::integer as block_number,
@@ -335,3 +389,47 @@ revoke all on function private.betnova_process_deposit_streak() from public,anon
 drop trigger if exists betnova_process_deposit_streak on public.deposit_requests;
 create trigger betnova_process_deposit_streak after update of status on public.deposit_requests
   for each row execute function private.betnova_process_deposit_streak();
+
+-- Referral credits are automatic once the referred new account confirms its email.
+create or replace function private.betnova_process_referral_verification()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  v_item public.referrals%rowtype;
+  v_ledger_id uuid;
+begin
+  if new.email_confirmed_at is null then return new; end if;
+  if tg_op='UPDATE' and old.email_confirmed_at is not null then return new; end if;
+
+  select * into v_item
+  from public.referrals
+  where referred_user_id=new.id
+  for update;
+
+  if not found or v_item.status<>'pending' then return new; end if;
+  if v_item.referrer_user_id=new.id then return new; end if;
+
+  v_ledger_id:=private.betnova_credit_cash_reward(
+    v_item.referrer_user_id,100,'DZD','referral',new.id,
+    'Verified referral reward · 100 DZD'
+  );
+
+  update public.referrals
+  set status='approved',
+      wallet_ledger_id=v_ledger_id,
+      review_note='Automatically credited after email verification',
+      reviewed_by=null,
+      reviewed_at=now()
+  where referred_user_id=new.id;
+
+  return new;
+end;
+$;
+revoke all on function private.betnova_process_referral_verification() from public,anon,authenticated;
+drop trigger if exists betnova_process_referral_verification on auth.users;
+create trigger betnova_process_referral_verification
+  after insert or update of email_confirmed_at on auth.users
+  for each row execute function private.betnova_process_referral_verification();
