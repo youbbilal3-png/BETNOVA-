@@ -579,7 +579,7 @@ export default function App() {
         let fixtureQuery = supabase
           .from('fixtures')
           .select(`
-            id, starts_at, status, home_score, away_score,
+            id, starts_at, status, updated_at, home_score, away_score,
             live_clock, live_status_phase, live_status_description, live_period, live_clock_updated_at,
             competitions!inner(name, country, sport_id),
             home_team:teams!fixtures_home_team_id_fkey(name, short_name, logo_url),
@@ -605,8 +605,7 @@ export default function App() {
             .eq('status', 'live')
             .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
             .lte('starts_at', new Date(Date.now() + 15 * 60 * 1000).toISOString())
-            .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString())
-          // Fresh fixture updates identify live events; live odds remain optional on the card.
+          // A fresh live market can also validate a fixture when its score feed has not refreshed.
         } else if (eventView === 'results') {
           const selectedDayStart = selectedMatchDate ? new Date(selectedMatchDate + 'T00:00:00') : null
           const selectedDayEnd = selectedDayStart ? new Date(selectedDayStart.getTime() + 24 * 60 * 60 * 1000) : null
@@ -626,9 +625,21 @@ export default function App() {
         const page = await fixtureQuery
           .order('starts_at', { ascending: eventView !== 'results' })
           .order('id', { ascending: true })
-          .range(0, 99)
+          .range(0, eventView === 'live' ? 249 : 99)
         if (page.error) throw page.error
-        const data = page.data ?? []
+        const fetchedData = page.data ?? []
+        const liveNow = Date.now()
+        const data = eventView === 'live' ? fetchedData.filter((row: any) => {
+          const fixtureUpdated = Date.parse(String(row.updated_at ?? ''))
+          const fixtureIsFresh = Number.isFinite(fixtureUpdated) && liveNow - fixtureUpdated <= 15 * 60 * 1000 && fixtureUpdated <= liveNow + 30000
+          const hasFreshLiveOdds = (row.markets ?? []).some((market: any) => {
+            const updated = Date.parse(String(market.last_updated_at ?? ''))
+            const fresh = Number.isFinite(updated) && liveNow - updated <= 3 * 60 * 1000 && updated <= liveNow + 30000
+            return market.is_live && market.is_active && market.status === 'open' && fresh &&
+              (market.market_selections ?? []).some((selection: any) => selection.status === 'active' && selection.result_status === 'pending' && Number.isFinite(Number(selection.odds)) && Number(selection.odds) > 1)
+          })
+          return fixtureIsFresh || hasFreshLiveOdds
+        }) : fetchedData
         if (!active || requestId !== latestRequest) return
 
         const mapped: Match[] = (data ?? []).map((row: any) => {
