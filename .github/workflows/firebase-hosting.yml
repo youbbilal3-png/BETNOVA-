@@ -36,21 +36,19 @@ jobs:
           if gh release view --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq '.tagName')
             VERSION="${TAG#v}"
-            node - "$VERSION" <<'NODE'
+            node - "$VERSION" "$TAG" <<'NODE'
             const fs = require('node:fs')
             const path = 'public/app-version.json'
             const policy = JSON.parse(fs.readFileSync(path, 'utf8'))
             const version = process.argv[2]
+            const tag = process.argv[3]
             if (!/^\\d+\\.\\d+(?:\\.\\d+)?$/.test(version)) throw new Error('Invalid latest release tag')
             policy.latestVersion = version
             policy.minimumSupportedVersion = version
-            policy.downloadUrl = 'https://github.com/youbbilal3-png/BETNOVA-/releases/download/' + process.env.TAG_NAME + '/app-release.apk'
+            policy.downloadUrl = 'https://github.com/youbbilal3-png/BETNOVA-/releases/download/' + tag + '/app-release.apk'
             fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\\n')
             NODE
           fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ github.ref_name }}
 
       - name: Build BETNOVA
         run: npm run build
