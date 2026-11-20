@@ -179,7 +179,7 @@ select gen_random_uuid(),'10101010-1010-4010-8010-101010101010','baridimob',1000
   case when g.n<=4 or g.n=10 then 'DZD' else 'EUR' end,
   'pending',now()+make_interval(secs=>g.n)
 from generate_series(1,10) as g(n);
-do $
+do $$
 declare v_id uuid;
 begin
   for v_id in select id from public.deposit_requests
@@ -188,8 +188,8 @@ begin
     update public.deposit_requests set status='approved' where id=v_id;
   end loop;
 end;
-$;
-select is(
+$$;
+select is((
   (select count(*) from public.deposit_streak_claims where user_id='10101010-1010-4010-8010-101010101010'),
   1::bigint,
   'currency changes reset the consecutive deposit streak'
