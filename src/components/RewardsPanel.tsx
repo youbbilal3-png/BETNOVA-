@@ -68,7 +68,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
         <article className="reward-card welcome">
           <div className="reward-card-icon"><Gift size={20}/></div>
           <div><span className="reward-eyebrow">{ar ? 'مكافأة الترحيب' : 'WELCOME BONUS'}</span><h3>{ar ? 'مكافأة ترحيبية حتى 100 دولار' : 'Up to $100 welcome bonus'}</h3>
-            <p>{ar ? 'القيمة عند التسجيل: 25,000 دج لعملة DZD، أو 100 دولار لعملة USD، أو 90 يورو لعملة EUR. تُضاف إلى محفظة المكافآت المنفصلة وليست رصيدًا نقديًا، وتخضع لشروط المكافأة.' : 'Signup values: 25,000 DZD for DZD accounts, $100 for USD accounts, or €90 for EUR accounts. Credited to the separate bonus wallet, not cash balance; bonus terms apply.'}</p>
+            <p>{ar ? 'القيمة عند التسجيل: 25,000 دج أو 100 دولار أو 90 يورو حسب العملة المختارة. تُضاف إلى محفظة المكافآت المنفصلة. لا يمكن طلب سحبها قبل إيداعات مقبولة بإجمالي 10$ مكافئ على الأقل (2,600 دج أو 9€)، ثم يخضع طلب السحب لمراجعة الإدارة؛ ويبقى الإيداع في محفظتك النقدية.' : 'Signup value: 25,000 DZD, $100, or €90 according to the selected currency. It is credited to the separate bonus wallet. A bonus withdrawal request requires at least $10 equivalent in approved deposits (2,600 DZD or €9); requests are reviewed by an administrator, and the deposit remains in your cash wallet.'}</p>
             {bonusBalances.length > 0 && <div className="reward-balance-list">{bonusBalances.map(item => <b className="reward-balance" key={item.currency}>{displayBonus(Number(item.available_balance))} <span>{ar ? 'رصيد المكافآت' : 'bonus balance'}</span></b>)}</div>}
           </div>
         </article>
