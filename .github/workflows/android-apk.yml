@@ -219,7 +219,8 @@ jobs:
       - name: Verify GitHub APK download and Firebase mandatory-update policy
         if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         run: |
-          APK_URL="https://github.com/youbbilal3-png/BETNOVA-/releases/download/v1.1/app-release.apk"
+          VERSION=$(node -p "JSON.parse(require('node:fs').readFileSync('public/app-version.json','utf8')).latestVersion")
+          APK_URL="https://github.com/youbbilal3-png/BETNOVA-/releases/download/v${VERSION}/app-release.apk"
           curl -fsSL "$APK_URL" -o /tmp/app-release.apk
           test -s /tmp/app-release.apk
           curl -fsSL https://betnova-8daa3.web.app/app-version.json | node -e "let body='';process.stdin.on('data',chunk=>body+=chunk);process.stdin.on('end',()=>{const policy=JSON.parse(body);if(policy.minimumSupportedVersion!==policy.latestVersion||!policy.downloadUrl.includes('/releases/download/'))process.exit(1)})"
