@@ -15,6 +15,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
   const ar = isArabic(language)
   const [loading, setLoading] = useState(true)
   const [bonusBalances, setBonusBalances] = useState<BonusBalance[]>([])
+  const [preferredCurrency, setPreferredCurrency] = useState('DZD')
   const [cashback, setCashback] = useState<Claim[]>([])
   const [depositClaims, setDepositClaims] = useState<Claim[]>([])
   const [referrals, setReferrals] = useState<Referral[]>([])
@@ -27,14 +28,16 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
     setLoading(true); setError('')
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) { setError(ar ? 'سجّل الدخول لعرض مكافآتك.' : 'Sign in to view your rewards.'); setLoading(false); return }
-    const [bonus, weekly, deposits, referralRows, code] = await Promise.all([
+    const [bonus, profile, weekly, deposits, referralRows, code] = await Promise.all([
       supabase.from('bonus_wallet_accounts').select('currency,available_balance').eq('user_id', user.id).order('currency'),
+      supabase.from('profiles').select('preferred_currency').eq('id', user.id).maybeSingle(),
       supabase.from('weekly_cashback_claims').select('id,currency,total_staked,cashback_amount,created_at').eq('user_id', user.id).order('week_start', { ascending: false }).limit(12),
       supabase.from('deposit_streak_claims').select('id,currency,total_deposited,reward_amount,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(12),
       supabase.from('referrals').select('referred_user_id,status,created_at').eq('referrer_user_id', user.id).order('created_at', { ascending: false }).limit(50),
       supabase.rpc('betnova_get_referral_code'),
     ])
     if (!bonus.error) setBonusBalances((bonus.data ?? []) as BonusBalance[])
+    if (!profile.error && profile.data?.preferred_currency) setPreferredCurrency(profile.data.preferred_currency)
     if (!weekly.error) setCashback((weekly.data ?? []) as Claim[])
     if (!deposits.error) setDepositClaims((deposits.data ?? []) as Claim[])
     if (!referralRows.error) setReferrals((referralRows.data ?? []) as Referral[])
@@ -46,7 +49,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
 
   useEffect(() => { void load() }, [load])
 
-  const displayBonus = (usd: number) => money(usd, 'USD')
+  const displayBonus = (usd: number) => preferredCurrency === 'DZD' ? money(usd * 260, 'DZD') : preferredCurrency === 'EUR' ? money(usd * 0.9, 'EUR') : money(usd, 'USD')
   const referralLink = referralCode ? `https://betnova-8daa3.web.app/?ref=${referralCode}` : ''
   async function copyReferral() {
     if (!referralLink) return
@@ -65,7 +68,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
         <article className="reward-card welcome">
           <div className="reward-card-icon"><Gift size={20}/></div>
           <div><span className="reward-eyebrow">{ar ? 'مكافأة الترحيب' : 'WELCOME BONUS'}</span><h3>{ar ? 'مكافأة ترحيبية حتى 100 دولار' : 'Up to $100 welcome bonus'}</h3>
-            <p>{ar ? 'تُمنح 100 دولار أمريكي وتُضاف إلى محفظة المكافآت المنفصلة بعملة USD، ولا تُضاف إلى الرصيد النقدي القابل للسحب. تطبق شروط المكافأة والتحقق.' : 'Receive $100 USD in your separate bonus wallet. It is not added to your withdrawable cash balance. Bonus terms and eligibility checks apply.'}</p>
+            <p>{ar ? 'القيمة عند التسجيل: 25,000 دج لعملة DZD، أو 100 دولار لعملة USD، أو 90 يورو لعملة EUR. تُضاف إلى محفظة المكافآت المنفصلة وليست رصيدًا نقديًا، وتخضع لشروط المكافأة.' : 'Signup values: 25,000 DZD for DZD accounts, $100 for USD accounts, or €90 for EUR accounts. Credited to the separate bonus wallet, not cash balance; bonus terms apply.'}</p>
             {bonusBalances.length > 0 && <div className="reward-balance-list">{bonusBalances.map(item => <b className="reward-balance" key={item.currency}>{displayBonus(Number(item.available_balance))} <span>{ar ? 'رصيد المكافآت' : 'bonus balance'}</span></b>)}</div>}
           </div>
         </article>
