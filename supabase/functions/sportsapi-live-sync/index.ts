@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const API_BASE = "https://api.sportsapi.app/v2";
 const PROVIDER = "sportsapi";
-const DAILY_REQUEST_LIMIT = 95;
+const DAILY_REQUEST_LIMIT = 900;
 const MAX_REQUESTS_PER_RUN = 8;
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -211,6 +211,21 @@ Deno.serve(async (req: Request) => {
       .eq("id", fixtureId).maybeSingle();
     if (error || !data) return null;
     return data;
+  }
+
+  async function ensureLiveTeamLogo(teamId: string, providerTeam: any) {
+    const providerId = String(providerTeam?.id ?? "").trim();
+    const providerImage = String(providerTeam?.image ?? "").trim();
+    const logoUrl = /^https:\/\//i.test(providerImage)
+      ? providerImage
+      : /^\d+$/.test(providerId)
+        ? `https://cdn.sportsapi.app/v2/teams/${providerId}/logo`
+        : "";
+    if (!logoUrl) return;
+    const { data: team } = await supabase.from("teams").select("logo_url").eq("id", teamId).maybeSingle();
+    if (String(team?.logo_url ?? "").trim()) return;
+    const { error } = await supabase.from("teams").update({ logo_url: logoUrl }).eq("id", teamId).is("logo_url", null);
+    if (error) providerErrors.push("could not save a live team badge");
   }
 
   async function createLiveFixture(
@@ -539,6 +554,10 @@ Deno.serve(async (req: Request) => {
       }
       const fixture = await getFixture(targetFixtureId);
       if (!fixture) continue;
+      await Promise.all([
+        ensureLiveTeamLogo(fixture.home_team_id, item?.home),
+        ensureLiveTeamLogo(fixture.away_team_id, item?.away),
+      ]);
       if (isNearKickoff(startTime)) {
         await recordMatchStart(targetFixtureId, new Date().toISOString());
       }
@@ -579,6 +598,10 @@ Deno.serve(async (req: Request) => {
 
     const fixture = await getFixture(link.fixture_id);
     if (!fixture) continue;
+    await Promise.all([
+      ensureLiveTeamLogo(fixture.home_team_id, item?.home),
+      ensureLiveTeamLogo(fixture.away_team_id, item?.away),
+    ]);
     if (isNearKickoff(startTime)) {
       await recordMatchStart(link.fixture_id, new Date().toISOString());
     }
