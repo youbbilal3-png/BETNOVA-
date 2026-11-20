@@ -189,7 +189,7 @@ begin
   end loop;
 end;
 $$;
-select is((
+select is(
   (select count(*) from public.deposit_streak_claims where user_id='10101010-1010-4010-8010-101010101010'),
   1::bigint,
   'currency changes reset the consecutive deposit streak'
