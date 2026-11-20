@@ -15,7 +15,6 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
   const ar = isArabic(language)
   const [loading, setLoading] = useState(true)
   const [bonusBalances, setBonusBalances] = useState<BonusBalance[]>([])
-  const [preferredCurrency, setPreferredCurrency] = useState('DZD')
   const [cashback, setCashback] = useState<Claim[]>([])
   const [depositClaims, setDepositClaims] = useState<Claim[]>([])
   const [referrals, setReferrals] = useState<Referral[]>([])
@@ -28,16 +27,14 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
     setLoading(true); setError('')
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) { setError(ar ? 'سجّل الدخول لعرض مكافآتك.' : 'Sign in to view your rewards.'); setLoading(false); return }
-    const [bonus, profile, weekly, deposits, referralRows, code] = await Promise.all([
+    const [bonus, weekly, deposits, referralRows, code] = await Promise.all([
       supabase.from('bonus_wallet_accounts').select('currency,available_balance').eq('user_id', user.id).order('currency'),
-      supabase.from('profiles').select('preferred_currency').eq('id', user.id).maybeSingle(),
       supabase.from('weekly_cashback_claims').select('id,currency,total_staked,cashback_amount,created_at').eq('user_id', user.id).order('week_start', { ascending: false }).limit(12),
       supabase.from('deposit_streak_claims').select('id,currency,total_deposited,reward_amount,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(12),
       supabase.from('referrals').select('referred_user_id,status,created_at').eq('referrer_user_id', user.id).order('created_at', { ascending: false }).limit(50),
       supabase.rpc('betnova_get_referral_code'),
     ])
     if (!bonus.error) setBonusBalances((bonus.data ?? []) as BonusBalance[])
-    if (!profile.error && profile.data?.preferred_currency) setPreferredCurrency(profile.data.preferred_currency)
     if (!weekly.error) setCashback((weekly.data ?? []) as Claim[])
     if (!deposits.error) setDepositClaims((deposits.data ?? []) as Claim[])
     if (!referralRows.error) setReferrals((referralRows.data ?? []) as Referral[])
