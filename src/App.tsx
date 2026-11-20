@@ -38,6 +38,7 @@ function teamInitials(name: string) {
   return chars.join('').toLocaleUpperCase().slice(0, 2)
 }
 
+// Live match clocks are rendered from SportsAPI's authoritative clock snapshot.
 type MarketPick = { selectionId: string; marketId: string; marketKey: string; marketLabel: string; selectionLabel: string; odds: string; isDemo?: boolean }
 type Match = {
   id: string | number
@@ -96,12 +97,12 @@ function LiveMatchClock({ liveClock, liveStatusPhase, liveStatusDescription, liv
     const periodEndSeconds = Number(liveClock.periodEndSeconds)
     let elapsedSeconds: number | null = null
 
-    if (Number.isFinite(periodStartedAt) && Number.isFinite(periodOffsetSeconds)) {
+    if (Number.isFinite(periodStartedAt) && liveClock.periodOffsetSeconds != null && Number.isFinite(periodOffsetSeconds)) {
       elapsedSeconds = Math.max(0, periodOffsetSeconds + (now - periodStartedAt) / 1000)
     } else {
       const playedAt = Date.parse(String(liveClock.playedAt ?? ''))
       const playedSeconds = Number(liveClock.playedSeconds)
-      if (Number.isFinite(playedSeconds)) {
+      if (liveClock.playedSeconds != null && Number.isFinite(playedSeconds)) {
         elapsedSeconds = Math.max(0, playedSeconds + (
           liveClock.running === true && Number.isFinite(playedAt) ? (now - playedAt) / 1000 : 0
         ))
