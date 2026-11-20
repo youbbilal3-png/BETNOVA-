@@ -37,6 +37,7 @@ const categoryFor = (market: Market, t: (key: any) => string, language: string) 
   const key = (market.market_key || market.market_type || '').toLowerCase()
   const name = market.name.toLowerCase()
   const value = key + ' ' + name
+  if (key === 'sport_total') return t('match_markets')
   const labels: Record<string, Record<string, string>> = {
     btts: {en:'Both Teams To Score',ar:'كلا الفريقين يسجلان',fr:'Les deux équipes marquent',es:'Ambos equipos marcan',pt:'Ambas as equipas marcam',de:'Beide Teams treffen',it:'Entrambe le squadre segnano',tr:'İki takım da gol atar',nl:'Beide teams scoren',ru:'Обе команды забьют',zh:'双方均进球',ja:'両チーム得点',ko:'양 팀 득점',id:'Kedua tim mencetak gol',hi:'दोनों टीमें स्कोर करेंगी',ur:'دونوں ٹیمیں گول کریں'},
     double: {en:'Double Chance',ar:'الفرصة المزدوجة',fr:'Double chance',es:'Doble oportunidad',pt:'Dupla hipótese',de:'Doppelte Chance',it:'Doppia chance',tr:'Çifte şans',nl:'Dubbele kans',ru:'Двойной шанс',zh:'双重机会',ja:'ダブルチャンス',ko:'더블 찬스',id:'Peluang ganda',hi:'डबल चांस',ur:'ڈبل چانس'},
