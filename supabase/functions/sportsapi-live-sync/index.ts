@@ -130,6 +130,23 @@ Deno.serve(async (req: Request) => {
     const delta = Date.now() - startTime.getTime();
     return Number.isFinite(delta) && delta >= -5 * 60_000 && delta <= 15 * 60_000;
   }
+
+  function liveClockFields(item: any, updatedAt: string) {
+    const rawClock = item?.clock;
+    const clock = rawClock && typeof rawClock === "object" && !Array.isArray(rawClock)
+      ? rawClock
+      : null;
+    const phase = String(item?.status?.phase ?? "").trim().slice(0, 40) || null;
+    const description = String(item?.status?.description ?? "").trim().slice(0, 100) || null;
+    const period = String(item?.status?.period ?? "").trim().slice(0, 40) || null;
+    return {
+      live_clock: clock,
+      live_status_phase: phase,
+      live_status_description: description,
+      live_period: period,
+      live_clock_updated_at: updatedAt,
+    };
+  }
   let requestBody: any = {};
   try { requestBody = await req.json(); } catch { requestBody = {}; }
   const mode = requestBody?.mode === "scores" ? "scores" : "full";
@@ -583,8 +600,11 @@ Deno.serve(async (req: Request) => {
       }
       link = insertedLink;
       fixturesMatched++;
+      const liveUpdatedAt = new Date().toISOString();
       await supabase.from("fixtures").update({
-        status: "live", home_score: homeScore, away_score: awayScore, updated_at: new Date().toISOString(),
+        status: "live", home_score: homeScore, away_score: awayScore,
+        ...liveClockFields(item, liveUpdatedAt),
+        updated_at: liveUpdatedAt,
       }).eq("id", targetFixtureId);
       await invalidateLivePrices(targetFixtureId);
       if (mode !== "scores" && !baselineReady && requestsMade < MAX_REQUESTS_PER_RUN) {
@@ -618,7 +638,9 @@ Deno.serve(async (req: Request) => {
     const nextStableSince = changed ? nowIso : link.score_stable_since;
 
     await supabase.from("fixtures").update({
-      status: "live", home_score: homeScore, away_score: awayScore, updated_at: nowIso,
+      status: "live", home_score: homeScore, away_score: awayScore,
+      ...liveClockFields(item, nowIso),
+      updated_at: nowIso,
     }).eq("id", link.fixture_id);
 
     await supabase.from("sportsapi_fixture_links").update({
@@ -681,7 +703,10 @@ Deno.serve(async (req: Request) => {
 
       if (statusType === "finished" && homeScore !== null && awayScore !== null) {
         await supabase.from("fixtures").update({
-          status: "finished", home_score: homeScore, away_score: awayScore, updated_at: checkedAt,
+          status: "finished", home_score: homeScore, away_score: awayScore,
+          live_clock: null, live_status_phase: "finished",
+          live_status_description: String(detail?.status?.description ?? "Finished").slice(0, 100),
+          live_period: null, live_clock_updated_at: checkedAt, updated_at: checkedAt,
         }).eq("id", link.fixture_id);
 
         const finalLink = { ...link, baseline_ready: Boolean(link.baseline_ready) };
@@ -737,7 +762,9 @@ Deno.serve(async (req: Request) => {
       } else if (statusType === "postponed" || statusType === "canceled") {
         await supabase.from("fixtures").update({
           status: statusType === "postponed" ? "postponed" : "cancelled",
-          updated_at: checkedAt,
+          live_clock: null, live_status_phase: statusType,
+          live_status_description: String(detail?.status?.description ?? statusType).slice(0, 100),
+          live_period: null, live_clock_updated_at: checkedAt, updated_at: checkedAt,
         }).eq("id", link.fixture_id);
         await supabase.from("sportsapi_fixture_links").update({
           last_status: statusType,
