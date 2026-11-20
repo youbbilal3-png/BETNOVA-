@@ -87,7 +87,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
         <article className="reward-card">
           <div className="reward-card-icon"><Link2 size={20}/></div>
           <div><span className="reward-eyebrow">{ar ? 'مكافأة الإحالة' : 'REFERRAL REWARD'}</span><h3>100 DZD</h3>
-            <p>{ar ? 'عن كل مستخدم جديد يسجل عبر رابطك، بعد تأكيد بريده الإلكتروني ومراجعة الاستحقاق.' : 'For each new user who registers through your link, automatically after the new user verifies their email; self-referrals are excluded.'}</p>
+            <p>{ar ? 'عن كل مستخدم جديد يسجل عبر رابطك، وتُضاف تلقائياً بعد تأكيد بريده الإلكتروني، مع استبعاد الإحالات الذاتية.' : 'For each new user who registers through your link, automatically after the new user verifies their email; self-referrals are excluded.'}</p>
             <div className="referral-share">
               <span>{referralCode || (ar ? 'رابط الإحالة غير متاح بعد' : 'Referral link not active yet')}</span>
               <button type="button" disabled={!referralLink} onClick={() => void copyReferral()}>{copied ? (ar ? 'تم النسخ' : 'Copied') : (ar ? 'نسخ الرابط' : 'Copy link')}</button>
