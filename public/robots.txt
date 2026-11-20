@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /app-version.json
+Sitemap: https://betnova-8daa3.web.app/sitemap.xml
