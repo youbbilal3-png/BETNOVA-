@@ -68,6 +68,7 @@ type Match = {
   liveStatusDescription?: string | null
   livePeriod?: string | null
   liveClockUpdatedAt?: string | null
+  statistics?: { home?: { key: string; label: string; value: string | number | null }[]; away?: { key: string; label: string; value: string | number | null }[]; updated_at?: string } | null
 }
 
 
@@ -425,15 +426,14 @@ export default function App() {
       const overlays = Array.isArray(window.history.state?.betnovaOverlays)
         ? window.history.state.betnovaOverlays as string[]
         : []
-      if (overlays.length > 0 || activePage !== 'sports') {
-        if (canGoBack) window.history.back()
-        else if (overlays.length > 0) {
-          const next = overlays.slice(0, -1)
-          window.history.replaceState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
-          applyOverlayStack(next)
-        } else {
-          setActivePage('sports')
-        }
+      if (overlays.length > 0) {
+        const next = overlays.slice(0, -1)
+        window.history.replaceState({ ...window.history.state, betnovaOverlays: next }, '', window.location.href)
+        applyOverlayStack(next)
+        return
+      }
+      if (activePage !== 'sports') {
+        setActivePage('sports')
         return
       }
       if (canGoBack) window.history.back()
@@ -545,7 +545,10 @@ export default function App() {
         // Upcoming fixtures still require markets; results never require them.
         const marketSelection = eventView === 'upcoming'
           ? ', markets!inner(id, market_type, market_key, name, status, is_active, is_live, last_updated_at, market_selections(id, name, odds, status, result_status))'
-          : ''
+          : eventView === 'live'
+            ? ', markets(id, market_type, market_key, name, status, is_active, is_live, last_updated_at, market_selections(id, name, odds, status, result_status))'
+            : ''
+        const statisticsSelection = eventView === 'live' ? ', fixture_statistics(statistics, updated_at)' : ''
         let fixtureQuery = supabase
           .from('fixtures')
           .select(`
@@ -554,7 +557,7 @@ export default function App() {
             competitions!inner(name, country, sport_id),
             home_team:teams!fixtures_home_team_id_fkey(name, short_name, logo_url),
             away_team:teams!fixtures_away_team_id_fkey(name, short_name, logo_url)
-            ${marketSelection}
+            ${marketSelection}${statisticsSelection}
           `)
           .eq('competitions.sport_id', sportRow.id)
           // Only upcoming cards require a current pre-match market.
@@ -608,7 +611,7 @@ export default function App() {
           const now = Date.now()
           const openMarkets = (row.markets ?? []).filter((market: any) => {
             const updated = Date.parse(String(market.last_updated_at ?? ''))
-            const maxAge = market.is_live ? 7 * 60 * 1000 : 24 * 60 * 60 * 1000
+            const maxAge = market.is_live ? 3 * 60 * 1000 : 24 * 60 * 60 * 1000
             const fresh = Number.isFinite(updated) && now - updated <= maxAge && updated <= now + 30000
             return market.is_active && market.status === 'open' && fresh &&
               (row.status === 'live' ? market.is_live : !market.is_live) &&
@@ -683,6 +686,9 @@ export default function App() {
               cardCaption = cleanMarketDisplayName(String(fallback.name || 'Available odds'))
             }
           }
+          const statsRows = Array.isArray(row.fixture_statistics) ? row.fixture_statistics : row.fixture_statistics ? [row.fixture_statistics] : []
+          const latestStats = statsRows.reduce((latest: any, candidate: any) =>
+            !latest || Date.parse(String(candidate.updated_at ?? '')) > Date.parse(String(latest.updated_at ?? '')) ? candidate : latest, null)
           const startsAt = new Date(row.starts_at)
           return {
             id: row.id,
@@ -710,6 +716,7 @@ export default function App() {
             liveStatusDescription: row.live_status_description ?? null,
             livePeriod: row.live_period ?? null,
             liveClockUpdatedAt: row.live_clock_updated_at ?? null,
+            statistics: latestStats?.statistics ? { ...(latestStats.statistics as any), updated_at: latestStats.updated_at } : null,
             score: row.home_score !== null && row.away_score !== null ? `${row.home_score} – ${row.away_score}` : undefined,
           }
         })
@@ -1033,6 +1040,7 @@ export default function App() {
               {loadingMatches ? <div className="empty-state">{sport} · {t('loading_events')}</div> : matchLoadError ? <div className="empty-state">{t('sports_data_error')}</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => openOverlay('matchDetails', { betnovaDetailMatch: match })} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openOverlay('matchDetails', { betnovaDetailMatch: match }) } }}>
                 <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : match.status === 'live' ? <LiveMatchClock liveClock={match.liveClock} liveStatusPhase={match.liveStatusPhase} liveStatusDescription={match.liveStatusDescription} livePeriod={match.livePeriod} liveClockUpdatedAt={match.liveClockUpdatedAt} language={language} now={liveClockNow}/> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
                 <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} initials`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus-group"><span className="versus">VS</span>{eventView !== 'results' && <span className="odds-caption">{match.oddsCaption} <CircleHelp size={12}/></span>}</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} initials`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : match.winnerPicks.some(Boolean) ? <div className="odds-area"><div className="odds-grid">{match.odds.map((odd,i)=>{const pick=match.winnerPicks[i];if(!pick)return null;const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} onClick={event=>{event.stopPropagation();if(pick)toggleMarketSelection(match,pick)}} className={picked?'odd picked':'odd'}><small>{match.oddsLabels[i] ?? ['Win 1','Draw','Win 2'][i]}</small><b>{odd}</b></button>})}</div></div> : null}</div>
+                {match.status === 'live' && match.statistics && (match.statistics.home?.length || match.statistics.away?.length) ? <div className="match-card-statistics"><MatchStatistics key={String(match.id)} fixtureId={String(match.id)} snapshot={match.statistics} compact /></div> : null}
                 <div className="match-footer"><button className="favorite-toggle" onClick={event => { event.stopPropagation(); toggleFavorite(match.id) }}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={event => { event.stopPropagation(); openOverlay('matchDetails', { betnovaDetailMatch: match }) }}>{language === 'ar' ? 'تفاصيل' : 'Details'} <ArrowRight size={13}/></button></div>
                 {typeof match.id === 'string' && <div className="match-card-markets" onClick={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}><MatchMarkets fixtureId={match.id} live={match.status === 'live'} deferLoad selectedIds={selected.map(item => item.selectionId)} onSelect={selection => toggleMarketSelection(match, selection)} /></div>}
               </article>) : <div className="empty-state">{query ? t('empty_search') : sport === 'Football' ? eventView === 'live' ? t('empty_live') : eventView === 'results' ? t('empty_results') : t('empty_football') : t('empty_sport')}</div>}
@@ -1120,7 +1128,7 @@ export default function App() {
           <small>All stakes are charged in DZD. Odds are revalidated before confirmation.</small>
         </footer>
       </section></div>}
-      {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('matchDetails') }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => closeOverlay('matchDetails')} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">{t('match_details')}</h2><div className="detail-teams"><div><span className="detail-mark team-crest">{detailMatch.homeLogo && <img src={detailMatch.homeLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.homeMark}</span></span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark team-crest">{detailMatch.awayLogo && <img src={detailMatch.awayLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.awayMark}</span></span><b>{detailMatch.away}</b></div></div><div className="detail-winner-odds" aria-label="Match winner odds">{[0,1,2].map(i=>{const pick=detailMatch.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} className={picked?'detail-winner-pick picked':'detail-winner-pick'} onClick={()=>pick&&toggleMarketSelection(detailMatch,pick)}><span>{pick?.marketKey === 'sport_winner' ? (String(pick.selectionLabel).toLowerCase() === 'home' ? detailMatch.home : detailMatch.away) : ['Win 1','Draw','Win 2'][i]}</span><b>{pick?.odds ?? '—'}</b></button>})}</div><div className="detail-info-grid"><div><small>{detailMatch.status === 'live' || detailMatch.status === 'finished' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? <LiveMatchClock liveClock={detailMatch.liveClock} liveStatusPhase={detailMatch.liveStatusPhase} liveStatusDescription={detailMatch.liveStatusDescription} livePeriod={detailMatch.livePeriod} liveClockUpdatedAt={detailMatch.liveClockUpdatedAt} language={language} now={liveClockNow}/> : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div><div className="detail-section-actions">{typeof detailMatch.id === 'string' && !usingDemoData && <button type="button" className="detail-section-toggle" aria-expanded={detailAlertsOpen} onClick={() => setDetailAlertsOpen(value => !value)}>{detailAlertsOpen ? 'إخفاء تنبيهات المباراة' : 'تنبيهات المباراة والفريق'}</button>}<button type="button" className="detail-section-toggle primary" aria-expanded={detailMarketsOpen} onClick={() => detailMarketsOpen ? closeOverlay('matchMarkets') : openOverlay('matchMarkets')}>{detailMarketsOpen ? 'إخفاء أسواق المباراة' : t('markets')}</button></div>{detailAlertsOpen && typeof detailMatch.id === 'string' && !usingDemoData && <MatchNotificationFollow fixtureId={detailMatch.id} homeName={detailMatch.home} awayName={detailMatch.away} language={language} />}{(detailMatch.status === 'live' || detailMatch.status === 'finished') && typeof detailMatch.id === 'string' && <MatchStatistics key={detailMatch.id} fixtureId={detailMatch.id} />}{detailMarketsOpen && (detailMatch.winnerPicks.some(pick => pick?.isDemo) ? <div className="markets-empty">BETNOVA ESTIMATE · Practice mode. Cash betting is unavailable for this event.</div> : usingDemoData || typeof detailMatch.id !== 'string' ? <div className="markets-empty">Sample fixture preview only. Verified markets are unavailable for this event.</div> : <><div className="detail-market-heading"><div><span className="eyebrow dark">EXPLORE THE ODDS</span><h3>{t('markets')}</h3></div><span>{detailMatch.status === 'live' ? 'LIVE EVENT' : 'PRE-MATCH'}</span></div><MatchMarkets key={detailMatch.id} fixtureId={detailMatch.id} live={detailMatch.status === 'live'} selectedIds={selected.map(item => item.selectionId)} onSelect={selection => { if (detailMatch) toggleMarketSelection(detailMatch, selection) }} /></>)}</section></div>}
+      {detailMatch && <div className="detail-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeOverlay('matchDetails') }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button className="detail-close" onClick={() => closeOverlay('matchDetails')} aria-label="Close match details"><X size={19}/></button><div className="detail-kicker">BETNOVA · MATCH CENTER</div><div className="detail-league">{detailMatch.league}{detailMatch.country ? ` · ${detailMatch.country}` : ''}</div><h2 id="detail-title">{t('match_details')}</h2><div className="detail-teams"><div><span className="detail-mark team-crest">{detailMatch.homeLogo && <img src={detailMatch.homeLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.homeMark}</span></span><b>{detailMatch.home}</b></div><span className="detail-versus">{detailMatch.score ?? 'VS'}</span><div><span className="detail-mark team-crest">{detailMatch.awayLogo && <img src={detailMatch.awayLogo} alt="" onError={event => { event.currentTarget.style.display = "none" }}/>}<span>{detailMatch.awayMark}</span></span><b>{detailMatch.away}</b></div></div><div className="detail-winner-odds" aria-label="Match winner odds">{[0,1,2].map(i=>{const pick=detailMatch.winnerPicks[i];const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} className={picked?'detail-winner-pick picked':'detail-winner-pick'} onClick={()=>pick&&toggleMarketSelection(detailMatch,pick)}><span>{pick?.marketKey === 'sport_winner' ? (String(pick.selectionLabel).toLowerCase() === 'home' ? detailMatch.home : detailMatch.away) : ['Win 1','Draw','Win 2'][i]}</span><b>{pick?.odds ?? '—'}</b></button>})}</div><div className="detail-info-grid"><div><small>{detailMatch.status === 'live' || detailMatch.status === 'finished' ? 'MATCH STATUS' : 'KICK-OFF'}</small><b>{detailMatch.status === 'finished' ? 'Full time' : detailMatch.status === 'live' ? <LiveMatchClock liveClock={detailMatch.liveClock} liveStatusPhase={detailMatch.liveStatusPhase} liveStatusDescription={detailMatch.liveStatusDescription} livePeriod={detailMatch.livePeriod} liveClockUpdatedAt={detailMatch.liveClockUpdatedAt} language={language} now={liveClockNow}/> : detailMatch.kickoff ?? detailMatch.time}</b></div><div><small>COMPETITION</small><b>{detailMatch.league}</b></div><div><small>COUNTRY</small><b>{detailMatch.country || 'Not specified'}</b></div><div><small>RESULT</small><b>{detailMatch.score ?? 'Not available yet'}</b></div></div><div className="detail-section-actions">{typeof detailMatch.id === 'string' && !usingDemoData && <button type="button" className="detail-section-toggle" aria-expanded={detailAlertsOpen} onClick={() => setDetailAlertsOpen(value => !value)}>{detailAlertsOpen ? 'إخفاء تنبيهات المباراة' : 'تنبيهات المباراة والفريق'}</button>}<button type="button" className="detail-section-toggle primary" aria-expanded={detailMarketsOpen} onClick={() => setDetailMarketsOpen(value => !value)}>{detailMarketsOpen ? 'إخفاء أسواق المباراة' : t('markets')}</button></div>{detailAlertsOpen && typeof detailMatch.id === 'string' && !usingDemoData && <MatchNotificationFollow fixtureId={detailMatch.id} homeName={detailMatch.home} awayName={detailMatch.away} language={language} />}{(detailMatch.status === 'live' || detailMatch.status === 'finished') && typeof detailMatch.id === 'string' && <MatchStatistics key={detailMatch.id} fixtureId={detailMatch.id} />}{detailMarketsOpen && (detailMatch.winnerPicks.some(pick => pick?.isDemo) ? <div className="markets-empty">BETNOVA ESTIMATE · Practice mode. Cash betting is unavailable for this event.</div> : usingDemoData || typeof detailMatch.id !== 'string' ? <div className="markets-empty">Sample fixture preview only. Verified markets are unavailable for this event.</div> : <><div className="detail-market-heading"><div><span className="eyebrow dark">EXPLORE THE ODDS</span><h3>{t('markets')}</h3></div><span>{detailMatch.status === 'live' ? 'LIVE EVENT' : 'PRE-MATCH'}</span></div><MatchMarkets key={detailMatch.id} fixtureId={detailMatch.id} live={detailMatch.status === 'live'} selectedIds={selected.map(item => item.selectionId)} onSelect={selection => { if (detailMatch) toggleMarketSelection(detailMatch, selection) }} /></>)}</section></div>}
       {selected.length > 0 && (() => {
         const combinedOdds = hasSameMatchBuilder ? null : selected.reduce((total, item) => total * Number(item.odd), 1)
         const potentialReturn = combinedOdds === null ? null : Math.max(0, Number(betStake) || 0) * combinedOdds
