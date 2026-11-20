@@ -15,12 +15,17 @@ function format(value: unknown): string {
   return String(value)
 }
 
-export default function MatchStatistics({ fixtureId }: { fixtureId: string }) {
+export default function MatchStatistics({ fixtureId, snapshot: initialSnapshot, compact = false }: { fixtureId: string; snapshot?: Snapshot | null; compact?: boolean }) {
   const { t } = useLanguage()
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(initialSnapshot ?? null)
+  const [loading, setLoading] = useState(initialSnapshot === undefined)
 
   useEffect(() => {
+    if (initialSnapshot !== undefined) {
+      setSnapshot(initialSnapshot ?? null)
+      setLoading(false)
+      return
+    }
     const client = supabase
     if (!client) { setLoading(false); return }
     let active = true
@@ -39,17 +44,17 @@ export default function MatchStatistics({ fixtureId }: { fixtureId: string }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fixture_statistics', filter: 'fixture_id=eq.' + fixtureId }, () => { void load() })
       .subscribe()
     return () => { active = false; window.clearInterval(refreshTimer); void client.removeChannel(channel) }
-  }, [fixtureId])
+  }, [fixtureId, initialSnapshot])
 
   if (loading) return <div className="match-stats-state"><LoaderCircle size={16}/>{t('loading_statistics')}</div>
   if (!snapshot || !(snapshot.home?.length || snapshot.away?.length)) {
-    return <div className="match-stats-empty"><Activity size={18}/><span>{t('no_statistics')}</span></div>
+    return compact ? null : <div className="match-stats-empty"><Activity size={18}/><span>{t('no_statistics')}</span></div>
   }
 
   const home = new Map((snapshot.home ?? []).map(item => [item.key, item]))
   const away = new Map((snapshot.away ?? []).map(item => [item.key, item]))
   const keys = Array.from(new Set([...home.keys(), ...away.keys()]))
-  return <section className="match-statistics">
+  return <section className={compact ? 'match-statistics match-statistics-compact' : 'match-statistics'}>
     <div className="match-stats-heading"><div><span className="eyebrow dark">{t('match_center')}</span><h3>{t('match_statistics')}</h3></div><small>{snapshot.updated_at ? new Date(snapshot.updated_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</small></div>
     <div className="match-stats-columns"><span>{t('home')}</span><span>{t('away')}</span></div>
     {keys.map(key => {
