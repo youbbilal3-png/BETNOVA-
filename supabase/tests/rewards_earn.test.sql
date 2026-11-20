@@ -223,6 +223,16 @@ select is(
   'currency-reset streak reward is exactly five percent of its own deposits'
 );
 
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
+values('88888888-8888-4888-8888-888888888888','authenticated','authenticated','betnova-admin-test@example.invalid','',now(),now(),now());
+update public.profiles set role='admin' where id='88888888-8888-4888-8888-888888888888';
+do $claims$
+begin
+  perform set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',true);
+  perform set_config('request.jwt.claims','{"sub":"88888888-8888-4888-8888-888888888888","role":"authenticated"}',true);
+end;
+$claims$;
+
 insert into public.earn_post_submissions(
   user_id,platform,post_url,proof_path,proof_sha256
 ) values(
