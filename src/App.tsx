@@ -572,7 +572,7 @@ export default function App() {
                 selectionLabel: String(selection.name),
                 odds: Number(selection.odds).toFixed(2),
               }))
-              cardLabels = selections.map((selection: any) => { const side = String(selection.name).toLowerCase(); return side === 'home' ? homeName : side === 'away' ? awayName : String(selection.name) })
+              cardLabels = selections.map((selection: any) => { const side = String(selection.name).toLowerCase(); return side === 'home' ? (home?.name ?? 'Home team') : side === 'away' ? (away?.name ?? 'Away team') : String(selection.name) })
               cardCaption = cleanMarketDisplayName(String(fallback.name || 'Available odds'))
             }
           }
