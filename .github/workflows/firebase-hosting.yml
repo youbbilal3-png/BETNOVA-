@@ -48,7 +48,7 @@ jobs:
             policy.minimumSupportedVersion = version
             policy.downloadUrl = 'https://betnova-8daa3.web.app/downloads/betnova-latest.apk'
             fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\n')
-            NODE
+          NODE
             test -s public/downloads/betnova-latest.apk
           fi
 
