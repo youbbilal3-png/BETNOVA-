@@ -62,21 +62,68 @@ type Match = {
   kickoff?: string
   dateLabel?: string
   startsAt?: string
+  liveClock?: Record<string, any> | null
+  liveStatusPhase?: string | null
+  liveStatusDescription?: string | null
+  livePeriod?: string | null
 }
 
 
-function LiveMatchClock({ startsAt, language, now }: { startsAt?: string; language: string; now: number }) {
-  const kickoff = Date.parse(String(startsAt ?? ''))
-  const elapsed = Number.isFinite(kickoff) ? Math.max(0, Math.floor((now - kickoff) / 1000)) : 0
-  // The fixtures feed currently provides kickoff time, not the provider's live elapsed clock.
-  // Never display impossible wall-clock values such as 144:37; show the standard regulation-time ceiling.
-  const clock = elapsed >= 90 * 60
-    ? '90+'
-    : String(Math.floor(elapsed / 60)).padStart(2, '0') + ':' + String(elapsed % 60).padStart(2, '0')
-  return <span className="live-match-clock" role="timer" aria-label={language === 'ar' ? 'المباراة مباشرة، الوقت المنقضي ' + clock : 'Live match, elapsed time ' + clock}>
+function LiveMatchClock({ liveClock, liveStatusPhase, liveStatusDescription, livePeriod, language, now }: {
+  liveClock?: Record<string, any> | null
+  liveStatusPhase?: string | null
+  liveStatusDescription?: string | null
+  livePeriod?: string | null
+  language: string
+  now: number
+}) {
+  const phase = String(liveStatusPhase ?? '').toLowerCase()
+  const description = String(liveStatusDescription ?? '').trim()
+  const period = String(livePeriod ?? '').toLowerCase()
+  const isHalfTime = phase === 'break' && (
+    /half[\\s-]?time|halftime/i.test(description) ||
+    ['period1', 'first_half', 'firsthalf'].includes(period)
+  )
+
+  let clock = ''
+  if (isHalfTime) {
+    clock = 'HALF TIME'
+  } else if (phase === 'break') {
+    clock = description ? description.toUpperCase() : 'BREAK'
+  } else if (phase === 'inprogress' && liveClock) {
+    const periodStartedAt = Date.parse(String(liveClock.periodStartedAt ?? ''))
+    const periodOffsetSeconds = Number(liveClock.periodOffsetSeconds)
+    const periodEndSeconds = Number(liveClock.periodEndSeconds)
+    let elapsedSeconds: number | null = null
+
+    if (Number.isFinite(periodStartedAt) && Number.isFinite(periodOffsetSeconds)) {
+      elapsedSeconds = Math.max(0, periodOffsetSeconds + (now - periodStartedAt) / 1000)
+    } else {
+      const playedAt = Date.parse(String(liveClock.playedAt ?? ''))
+      const playedSeconds = Number(liveClock.playedSeconds)
+      if (Number.isFinite(playedSeconds)) {
+        elapsedSeconds = Math.max(0, playedSeconds + (
+          liveClock.running === true && Number.isFinite(playedAt) ? (now - playedAt) / 1000 : 0
+        ))
+      }
+    }
+
+    if (elapsedSeconds !== null) {
+      if (Number.isFinite(periodEndSeconds) && periodEndSeconds > 0 && elapsedSeconds > periodEndSeconds) {
+        const addedMinute = Math.floor((elapsedSeconds - periodEndSeconds) / 60) + 1
+        clock = `${Math.floor(periodEndSeconds / 60)}+${addedMinute}'`
+      } else {
+        clock = `${Math.floor(elapsedSeconds / 60) + 1}'`
+      }
+    }
+  }
+
+  const label = language === 'ar' ? 'مباشر' : 'LIVE'
+  const ariaClock = clock || label
+  return <span className="live-match-clock" role="timer" aria-label={language === 'ar' ? 'المباراة مباشرة، ' + ariaClock : 'Live match, ' + ariaClock}>
     <span className="live-match-dot" aria-hidden="true" />
-    <b>{language === 'ar' ? 'مباشر' : 'LIVE'}</b>
-    <time>{clock}</time>
+    <b>{isHalfTime ? 'HALF TIME' : label}</b>
+    {clock && !isHalfTime && <time>{clock}</time>}
   </span>
 }
 
@@ -482,6 +529,7 @@ export default function App() {
           .from('fixtures')
           .select(`
             id, starts_at, status, home_score, away_score,
+            live_clock, live_status_phase, live_status_description, live_period, live_clock_updated_at,
             competitions!inner(name, country, sport_id),
             home_team:teams!fixtures_home_team_id_fkey(name, short_name, logo_url),
             away_team:teams!fixtures_away_team_id_fkey(name, short_name, logo_url)
@@ -635,6 +683,10 @@ export default function App() {
             winnerPicks: cardPicks,
             marketsCount: Math.max(openMarkets.length, cardPicks.some(pick => pick?.isDemo) ? 1 : 0),
             status: row.status,
+            liveClock: row.live_clock && typeof row.live_clock === 'object' ? row.live_clock : null,
+            liveStatusPhase: row.live_status_phase ?? null,
+            liveStatusDescription: row.live_status_description ?? null,
+            livePeriod: row.live_period ?? null,
             score: row.home_score !== null && row.away_score !== null ? `${row.home_score} – ${row.away_score}` : undefined,
           }
         })
@@ -956,7 +1008,7 @@ export default function App() {
             </div>}
             <div className="match-list">
               {loadingMatches ? <div className="empty-state">{sport} · {t('loading_events')}</div> : matchLoadError ? <div className="empty-state">{t('sports_data_error')}</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => openOverlay('matchDetails', { betnovaDetailMatch: match })} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openOverlay('matchDetails', { betnovaDetailMatch: match }) } }}>
-                <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : match.status === 'live' ? <LiveMatchClock startsAt={match.startsAt} language={language} now={liveClockNow}/> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
+                <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' ? <><Trophy size={13}/>{match.score ?? t('score_unavailable')}</> : match.status === 'live' ? <LiveMatchClock liveClock={match.liveClock} liveStatusPhase={match.liveStatusPhase} liveStatusDescription={match.liveStatusDescription} livePeriod={match.livePeriod} language={language} now={liveClockNow}/> : <><Clock3 size={13}/>{match.time}</>}<span className="match-date"><span aria-hidden="true">·</span>{match.dateLabel ?? ""}</span></span></div>
                 <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} initials`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus-group"><span className="versus">VS</span>{eventView !== 'results' && <span className="odds-caption">{match.oddsCaption} <CircleHelp size={12}/></span>}</span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} initials`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div>{eventView === 'results' ? <div className="result-label">FULL TIME</div> : match.winnerPicks.some(Boolean) ? <div className="odds-area"><div className="odds-grid">{match.odds.map((odd,i)=>{const pick=match.winnerPicks[i];if(!pick)return null;const picked=!!pick&&selected.some(item=>item.selectionId===pick.selectionId);return <button type="button" key={i} disabled={!pick} aria-pressed={picked} onClick={event=>{event.stopPropagation();if(pick)toggleMarketSelection(match,pick)}} className={picked?'odd picked':'odd'}><small>{match.oddsLabels[i] ?? ['Win 1','Draw','Win 2'][i]}</small><b>{odd}</b></button>})}</div></div> : null}</div>
                 <div className="match-footer"><button className="favorite-toggle" onClick={event => { event.stopPropagation(); toggleFavorite(match.id) }}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button className="details-trigger" onClick={event => { event.stopPropagation(); openOverlay('matchDetails', { betnovaDetailMatch: match }) }}>{language === 'ar' ? 'تفاصيل' : 'Details'} <ArrowRight size={13}/></button></div>
                 {typeof match.id === 'string' && <div className="match-card-markets" onClick={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}><MatchMarkets fixtureId={match.id} live={match.status === 'live'} deferLoad selectedIds={selected.map(item => item.selectionId)} onSelect={selection => toggleMarketSelection(match, selection)} /></div>}
