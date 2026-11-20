@@ -63,3 +63,13 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BETNOVA }}
           projectId: betnova-8daa3
           channelId: live
+
+      - name: Verify deployed update policy and signed APK download
+        run: |
+          curl -fsSL https://betnova-8daa3.web.app/app-version.json -o /tmp/betnova-app-version.json
+          node -e "const p=require('/tmp/betnova-app-version.json');if(!p.latestVersion||p.minimumSupportedVersion!==p.latestVersion||!p.downloadUrl.endsWith('/app-release.apk'))process.exit(1);console.log('Update policy verified:',p.latestVersion)"
+          APK_URL=$(node -p "require('/tmp/betnova-app-version.json').downloadUrl")
+          curl -fLsS "$APK_URL" -o /tmp/betnova-release.apk
+          test -s /tmp/betnova-release.apk
+          unzip -t /tmp/betnova-release.apk >/dev/null
+          echo "Signed APK download verified"
