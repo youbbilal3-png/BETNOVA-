@@ -69,7 +69,7 @@ function LiveMatchClock({ startsAt, language, now }: { startsAt?: string; langua
   const kickoff = Date.parse(String(startsAt ?? ''))
   const elapsed = Number.isFinite(kickoff) ? Math.max(0, Math.floor((now - kickoff) / 1000)) : 0
   // The fixtures feed currently provides kickoff time, not the provider's live elapsed clock.
-  // Never display impossible wall-clock values such as 144:37; use the football-time ceiling.
+  // Never display impossible wall-clock values such as 144:37; show the standard regulation-time ceiling.
   const clock = elapsed >= 90 * 60
     ? '90+'
     : String(Math.floor(elapsed / 60)).padStart(2, '0') + ':' + String(elapsed % 60).padStart(2, '0')
