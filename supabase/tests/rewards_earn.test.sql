@@ -1,7 +1,7 @@
 create extension if not exists pgtap with schema extensions;
 
 begin;
-select plan(36);
+select plan(38);
 
 select has_table('public','earn_post_submissions','social earn submissions table exists');
 select has_column('public','earn_post_submissions','proof_sha256','screenshot SHA-256 is stored');
@@ -47,8 +47,9 @@ select ok(
   'proof bucket is private'
 );
 select ok(
-  exists(select 1 from pg_trigger where tgname='betnova_grant_welcome_bonus' and not tgisinternal),
-  'welcome bonus is granted by an auth signup trigger'
+  exists(select 1 from pg_trigger where tgname='on_auth_user_created' and not tgisinternal)
+  and to_regprocedure('public.handle_new_user()') is not null,
+  'existing auth signup trigger grants the currency-specific welcome bonus'
 );
 select ok(
   exists(select 1 from pg_trigger where tgname='betnova_process_referral_verification' and not tgisinternal),
@@ -59,13 +60,30 @@ insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,c
 values('99999999-9999-4999-8999-999999999999','authenticated','authenticated','welcome-bonus-test@example.invalid','',now(),now(),now());
 select is(
   (select available_balance from public.bonus_wallet_accounts where user_id='99999999-9999-4999-8999-999999999999'),
-  100::numeric,
-  'new users receive exactly $100 in the separate bonus wallet'
+  96.153846::numeric,
+  'DZD signups receive 25,000 DZD in the separate USD-denominated bonus wallet'
 );
 select is(
   (select count(*) from public.bonus_ledger where user_id='99999999-9999-4999-8999-999999999999' and entry_type='welcome_bonus'),
   1::bigint,
   'welcome bonus is recorded once in the bonus ledger'
+);
+
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_user_meta_data,created_at,updated_at)
+values('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','authenticated','authenticated','welcome-usd-test@example.invalid','',now(),
+  jsonb_build_object('preferred_currency','USD'),now(),now());
+select is(
+  (select available_balance from public.bonus_wallet_accounts where user_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+  100::numeric,
+  'USD signups receive a $100 welcome bonus'
+);
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_user_meta_data,created_at,updated_at)
+values('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','authenticated','authenticated','welcome-eur-test@example.invalid','',now(),
+  jsonb_build_object('preferred_currency','EUR'),now(),now());
+select is(
+  (select available_balance from public.bonus_wallet_accounts where user_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+  100::numeric,
+  'EUR signups receive a €90 equivalent welcome bonus'
 );
 
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
