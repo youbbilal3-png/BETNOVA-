@@ -38,7 +38,7 @@ function teamInitials(name: string) {
   return chars.join('').toLocaleUpperCase().slice(0, 2)
 }
 
-// Live match clocks are rendered from SportsAPI's authoritative clock snapshot.
+// Live match clocks use the provider's period snapshot; never invent minutes when no trusted clock is supplied.
 type MarketPick = { selectionId: string; marketId: string; marketKey: string; marketLabel: string; selectionLabel: string; odds: string; isDemo?: boolean }
 type Match = {
   id: string | number
