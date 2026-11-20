@@ -293,6 +293,9 @@ export default function App() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [walletBalance, setWalletBalance] = useState(0)
+  const [bonusBalanceUSD, setBonusBalanceUSD] = useState(0)
+  const [bonusRecoveryUSD, setBonusRecoveryUSD] = useState(0)
+  const [betFundingSource, setBetFundingSource] = useState<'cash' | 'bonus'>('cash')
   const [isAdminUser, setIsAdminUser] = useState(false)
   const [loadingMatches, setLoadingMatches] = useState(true)
   const [matchLoadError, setMatchLoadError] = useState<string | null>(null)
@@ -457,10 +460,14 @@ export default function App() {
     if (!client) return
     let active = true
     let walletChannel: ReturnType<typeof client.channel> | null = null
+    let bonusWalletChannel: ReturnType<typeof client.channel> | null = null
     const loadWalletBalance = async (userId?: string) => {
       if (!userId) {
         setWalletBalance(0)
+        setBonusBalanceUSD(0)
+        setBonusRecoveryUSD(0)
         if (walletChannel) { void client.removeChannel(walletChannel); walletChannel = null }
+        if (bonusWalletChannel) { void client.removeChannel(bonusWalletChannel); bonusWalletChannel = null }
         return
       }
       const { data, error } = await client.from('wallet_accounts')
@@ -481,6 +488,22 @@ export default function App() {
         })
         .subscribe()
     }
+    const loadBonusWallet = async (userId?: string) => {
+      if (!userId) return
+      const [{data,error},{data:profile}] = await Promise.all([
+        client.from('bonus_wallet_accounts').select('available_balance,recovery_balance').eq('user_id',userId).maybeSingle(),
+        client.from('profiles').select('preferred_currency').eq('id',userId).maybeSingle(),
+      ])
+      if (!active) return
+      if (error) { console.error('Could not refresh bonus wallet:',error.message); return }
+      setBonusBalanceUSD(Number(data?.available_balance ?? 0))
+      setBonusRecoveryUSD(Number(data?.recovery_balance ?? 0))
+      if (profile?.preferred_currency && ['DZD','USD','EUR'].includes(profile.preferred_currency)) setBetCurrency(profile.preferred_currency)
+      if (bonusWalletChannel) void client.removeChannel(bonusWalletChannel)
+      bonusWalletChannel = client.channel('header-bonus-wallet-' + userId)
+        .on('postgres_changes',{event:'*',schema:'public',table:'bonus_wallet_accounts',filter:'user_id=eq.'+userId},()=>{void loadBonusWallet(userId)})
+        .subscribe()
+    }
     const checkAdmin = async (userId?: string) => {
       if (!userId) { setIsAdminUser(false); return }
       const { data } = await client.from('profiles').select('role').eq('id', userId).maybeSingle()
@@ -491,17 +514,20 @@ export default function App() {
       setUserEmail(user?.email ?? null)
       void checkAdmin(user?.id)
       void loadWalletBalance(user?.id)
+      void loadBonusWallet(user?.id)
     })
     const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
       const user=session?.user
       setUserEmail(user?.email ?? null)
       void checkAdmin(user?.id)
       void loadWalletBalance(user?.id)
+      void loadBonusWallet(user?.id)
     })
     return () => {
       active = false
       subscription.unsubscribe()
       if (walletChannel) void client.removeChannel(walletChannel)
+      if (bonusWalletChannel) void client.removeChannel(bonusWalletChannel)
     }
   }, [])
 
@@ -645,7 +671,7 @@ export default function App() {
           // a real, currently open market (prefer O/U 2.5, then BTTS, then DC).
           // Never fabricate or derive prices.
           let cardPicks: (MarketPick | null)[] = winnerPicks.every(Boolean) ? winnerPicks : []
-          let cardLabels = ['Win 1', 'Draw', 'Win 2']
+          let cardLabels = [home?.name ?? 'Home', 'Draw', away?.name ?? 'Away']
           let cardCaption = t('match_winner')
           if (!winnerPicks.every(Boolean)) {
             const preferredMarkets = [...openMarkets].sort((a: any, b: any) => {
@@ -900,40 +926,59 @@ export default function App() {
         setBetMessage('Sign in to place a bet with your available wallet balance.')
         return
       }
-      // Deposits and the visible wallet balance are held in DZD. Read the authoritative
-      // wallet immediately before submitting; the RPC locks it and repeats all checks.
-      const { data: wallet, error: walletError } = await supabase
-        .from('wallet_accounts')
-        .select('available_balance')
-        .eq('user_id', user.id)
-        .eq('currency', 'DZD')
-        .maybeSingle()
-      if (walletError) throw walletError
-      const available = Number(wallet?.available_balance ?? 0)
-      setWalletBalance(available)
-      if (available < stake) throw new Error('Insufficient available DZD balance. Deposit funds or enter a smaller stake.')
-      const { data: betId, error: betError } = await supabase.rpc('betnova_place_bet', {
-        p_selections: selected.map(item => ({ selection_id: item.selectionId })),
-        p_stake: stake,
-        p_currency: 'DZD',
-        p_idempotency_key: betIdempotencyKey
-      })
-      if (betError) throw betError
-      if (!betId) throw new Error('No bet reference was returned. Your selections remain in the slip; check My Bets before retrying.')
-      // The RPC commits the bet, wallet debit and ledger entry atomically. A secondary
-      // balance refresh must never misreport a committed bet as failed.
-      const { data: refreshedWallet, error: refreshError } = await supabase
-        .from('wallet_accounts')
-        .select('available_balance')
-        .eq('user_id', user.id)
-        .eq('currency', 'DZD')
-        .maybeSingle()
-      if (refreshError) {
-        console.error('Bet placed; wallet refresh failed:', refreshError.message)
-        setWalletBalance(Math.max(0, available - stake))
+      let betId: string | null = null
+      if (betFundingSource === 'bonus') {
+        if (bonusRecoveryUSD > 0) throw new Error('Bonus balance is temporarily locked while a previous result correction is being reconciled.')
+        const rate = betCurrency === 'DZD' ? 260 : betCurrency === 'EUR' ? 0.9 : 1
+        const stakeUSD = stake / rate
+        const {data: bonusWallet,error:bonusError} = await supabase
+          .from('bonus_wallet_accounts').select('available_balance,recovery_balance')
+          .eq('user_id',user.id).maybeSingle()
+        if (bonusError) throw bonusError
+        if (Number(bonusWallet?.recovery_balance ?? 0)>0) throw new Error('Bonus balance is temporarily locked while a previous result correction is being reconciled.')
+        if (Number(bonusWallet?.available_balance ?? 0)+0.000001 < stakeUSD) throw new Error('Insufficient bonus balance. Reduce the stake or choose your cash wallet.')
+        const {data,error:betError}=await supabase.rpc('betnova_place_bonus_bet',{
+          p_selections:selected.map(item=>({selection_id:item.selectionId})),
+          p_stake:stake,
+          p_currency:betCurrency,
+          p_idempotency_key:betIdempotencyKey
+        })
+        if(betError) throw betError
+        betId=String(data ?? '')
+        const {data:refreshedBonus,error:refreshBonusError}=await supabase
+          .from('bonus_wallet_accounts').select('available_balance,recovery_balance')
+          .eq('user_id',user.id).maybeSingle()
+        if(refreshBonusError) console.error('Bonus bet placed; bonus wallet refresh failed:',refreshBonusError.message)
+        else {
+          setBonusBalanceUSD(Number(refreshedBonus?.available_balance ?? Math.max(0,Number(bonusWallet?.available_balance ?? 0)-stakeUSD)))
+          setBonusRecoveryUSD(Number(refreshedBonus?.recovery_balance ?? 0))
+        }
       } else {
-        setWalletBalance(Number(refreshedWallet?.available_balance ?? Math.max(0, available - stake)))
+        // Cash bets continue to use the existing DZD wallet and settlement flow.
+        const { data: wallet, error: walletError } = await supabase
+          .from('wallet_accounts').select('available_balance')
+          .eq('user_id', user.id).eq('currency', 'DZD').maybeSingle()
+        if (walletError) throw walletError
+        const available = Number(wallet?.available_balance ?? 0)
+        setWalletBalance(available)
+        if (available < stake) throw new Error('Insufficient available DZD balance. Deposit funds or enter a smaller stake.')
+        const { data, error: betError } = await supabase.rpc('betnova_place_bet', {
+          p_selections: selected.map(item => ({ selection_id: item.selectionId })),
+          p_stake: stake, p_currency: 'DZD', p_idempotency_key: betIdempotencyKey
+        })
+        if (betError) throw betError
+        betId=String(data ?? '')
+        const { data: refreshedWallet, error: refreshError } = await supabase
+          .from('wallet_accounts').select('available_balance')
+          .eq('user_id', user.id).eq('currency', 'DZD').maybeSingle()
+        if (refreshError) {
+          console.error('Bet placed; wallet refresh failed:', refreshError.message)
+          setWalletBalance(Math.max(0, available - stake))
+        } else {
+          setWalletBalance(Number(refreshedWallet?.available_balance ?? Math.max(0, available - stake)))
+        }
       }
+      if (!betId) throw new Error('No bet reference was returned. Your selections remain in the slip; check My Bets before retrying.')
       setSelected([])
       setBetStake('')
       setBetIdempotencyKey(crypto.randomUUID())
@@ -1053,7 +1098,18 @@ export default function App() {
         {activePage !== 'football' && <aside className="right-rail">
           <div className="slip-card"><div className="slip-head"><div><span className="eyebrow dark">{t('your_picks')}</span><h3>{t('bet_slip')} <span>{selected.length}</span></h3></div><button className="slip-clear" onClick={()=>setSelected([])}>{t("clear")}</button></div>
             {selected.length ? <div className="slip-selections">{selected.map(s=><div className="slip-selection" key={s.selectionId}><div><b>{s.match.home} – {s.match.away}</b><small>{s.label} · {s.match.league}</small></div><strong>{s.odd}</strong><button onClick={()=>setSelected(current=>current.filter(x=>x.selectionId!==s.selectionId))}><X size={14}/></button></div>)}</div> : <div className="slip-empty"><div className="slip-empty-icon"><ArrowDownUp size={22}/></div><b>{t("slip_waiting")}</b><p>{t("select_price")}</p></div>}
-            {userEmail ? <div className="bet-slip-stake"><label>Stake · DZD<input type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label><div><span>{t('potential_return')}</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} DZD</b></div><small className="slip-balance-line">Available balance: {walletBalance.toFixed(2)} DZD</small></div> : <p className="guest-slip-note">{t('guest_signin_note')}</p>}
+            {userEmail ? <div className="bet-slip-stake">
+              <div className="bet-funding-switch">
+                <button type="button" className={betFundingSource==='cash'?'active':''} onClick={()=>{setBetFundingSource('cash');setBetStake('');setBetMessage('')}}>Cash wallet</button>
+                <button type="button" className={betFundingSource==='bonus'?'active':''} onClick={()=>{setBetFundingSource('bonus');setBetStake('');setBetMessage('')}}>Bonus wallet</button>
+              </div>
+              {betFundingSource==='bonus' && <label>Bonus currency<select value={betCurrency} onChange={event=>{setBetCurrency(event.target.value);setBetStake('')}}><option value="DZD">DZD</option><option value="USD">USD</option><option value="EUR">EUR</option></select></label>}
+              <label>Stake · {betFundingSource==='bonus'?betCurrency:'DZD'}<input type="number" min="0.01" step="0.01" inputMode="decimal" value={betStake} onChange={event=>setBetStake(event.target.value)} placeholder={t("enter_stake")}/></label>
+              <div><span>{t('potential_return')}</span><b>{(Math.max(0,Number(betStake)||0)*selected.reduce((total,item)=>total*Number(item.odd),1)).toFixed(2)} {betFundingSource==='bonus'?betCurrency:'DZD'}</b></div>
+              <small className="slip-balance-line">{betFundingSource==='bonus'
+                ? `Bonus available: ${(bonusBalanceUSD*(betCurrency==='DZD'?260:betCurrency==='EUR'?0.9:1)).toFixed(2)} ${betCurrency}${bonusRecoveryUSD>0?' · Locked for correction':''}`
+                : `Cash available: ${walletBalance.toFixed(2)} DZD`}</small>
+            </div> : <p className="guest-slip-note">{t('guest_signin_note')}</p>}
             {betMessage && <p className="bet-slip-message">{betMessage}</p>}
             <button className="slip-cta" onClick={()=>void placeBet()} disabled={!selected.length||betBusy||(!!userEmail&&!betStake)}>{betBusy ? t('placing_bet') : t('place_bet_action')} <ArrowRight size={15}/></button>
           </div>

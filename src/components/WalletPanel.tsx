@@ -16,7 +16,8 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
   const { t } = useLanguage()
   const [userId, setUserId] = useState('')
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [bonus, setBonus] = useState<{available_balance:number;reserved_balance:number}>({available_balance:0,reserved_balance:0})
+  const [bonus, setBonus] = useState<{available_balance:number;reserved_balance:number;recovery_balance:number}>({available_balance:0,reserved_balance:0,recovery_balance:0})
+  const [bonusCurrency, setBonusCurrency] = useState('DZD')
   const [bonusWithdrawMode, setBonusWithdrawMode] = useState(false)
   const [methods, setMethods] = useState<Method[]>([])
   const [deposits, setDeposits] = useState<RequestRow[]>([])
@@ -46,7 +47,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
       supabase.from('payment_methods').select('code,display_name,is_enabled,is_withdrawal_enabled,supported_currencies,instructions').order('sort_order'),
       supabase.from('deposit_requests').select('id,payment_method,amount,currency,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
       supabase.from('withdrawal_requests').select('id,payment_method,amount,currency,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
-      supabase.from('bonus_wallet_accounts').select('available_balance,reserved_balance').eq('user_id', user.id).maybeSingle(),
+      supabase.from('bonus_wallet_accounts').select('available_balance,reserved_balance,recovery_balance').eq('user_id', user.id).maybeSingle(),
       supabase.from('profiles').select('preferred_currency').eq('id', user.id).maybeSingle()
     ])
     for (const result of [a,m,d,w,b,profile]) if (result.error) throw result.error
@@ -54,9 +55,9 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
     setMethods((m.data ?? []) as Method[])
     setDeposits((d.data ?? []) as RequestRow[])
     setWithdrawals((w.data ?? []) as RequestRow[])
-    setBonus({available_balance:Number(b.data?.available_balance ?? 0),reserved_balance:Number(b.data?.reserved_balance ?? 0)})
+    setBonus({available_balance:Number(b.data?.available_balance ?? 0),reserved_balance:Number(b.data?.reserved_balance ?? 0),recovery_balance:Number(b.data?.recovery_balance ?? 0)})
     const preferred = profile.data?.preferred_currency
-    if (preferred === 'DZD' || preferred === 'USD' || preferred === 'EUR') setCurrency(preferred)
+    if (preferred === 'DZD' || preferred === 'USD' || preferred === 'EUR') { setCurrency(preferred); setBonusCurrency(preferred) }
   }
 
   useEffect(() => { void refresh().catch(caught => setError(caught instanceof Error ? caught.message : t('could_not_load_wallet'))) }, [])
@@ -187,7 +188,7 @@ export default function WalletPanel({ onClose, initialTab = 'deposit' }: Props) 
         <strong>{formatMoney(Number(account?.available_balance ?? 0), currency)}</strong>
         <small>{Number(account?.reserved_balance ?? 0) > 0 ? `${formatMoney(Number(account?.reserved_balance),currency)} {t('reserved_for_withdrawals_label')}` : t('available_wallet_balance')}</small>{Number(account?.recovery_balance ?? 0) > 0 && <div className="wallet-recovery-chip"><b>{t('recovery_balance')}</b><strong>{formatMoney(Number(account?.recovery_balance),currency)}</strong></div>}
       </div>
-      <div className="wallet-balance-card wallet-bonus-balance"><span>{t('bonus_separate_balance')}</span><strong>{formatMoney(bonus.available_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1), currency)}</strong><small>{formatMoney(bonus.reserved_balance * (currency === 'DZD' ? 260 : currency === 'EUR' ? 0.9 : 1), currency )} {t('reserved_label')}</small><small>{t('bonus_unlock_note')}</small></div>
+      <div className="wallet-balance-card wallet-bonus-balance"><span>{t('bonus_separate_balance')} · {bonusCurrency}</span><strong>{formatMoney(bonus.available_balance * (bonusCurrency === 'DZD' ? 260 : bonusCurrency === 'EUR' ? 0.9 : 1), bonusCurrency)}</strong><small>{formatMoney(bonus.reserved_balance * (bonusCurrency === 'DZD' ? 260 : bonusCurrency === 'EUR' ? 0.9 : 1), bonusCurrency)} {t('reserved_label')}</small>{bonus.recovery_balance>0 && <small>{t('recovery_balance')}: {formatMoney(bonus.recovery_balance*(bonusCurrency==='DZD'?260:bonusCurrency==='EUR'?0.9:1),bonusCurrency)}</small>}<small>{t('bonus_unlock_note')}</small></div>
       <div className="wallet-tabs">
         <button className={tab === 'deposit' ? 'active' : ''} onClick={() => setTab('deposit')}><ArrowDownToLine size={14}/> {t('deposit_tab')}</button>
         <button className={tab === 'withdraw' ? 'active' : ''} onClick={() => setTab('withdraw')}><ArrowUpFromLine size={14}/> {t('withdraw_tab')}</button>
