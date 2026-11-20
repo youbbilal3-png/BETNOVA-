@@ -29,14 +29,11 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Restore latest signed APK and mandatory-update policy
+      - name: Configure mandatory-update policy with GitHub Release APK
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p public/downloads
           if gh release view --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release download --repo "$GITHUB_REPOSITORY" --pattern "app-release.apk" --dir public/downloads --clobber
-            mv public/downloads/app-release.apk public/downloads/betnova-latest.apk
             TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq '.tagName')
             VERSION="${TAG#v}"
             node - "$VERSION" <<'NODE'
@@ -44,14 +41,16 @@ jobs:
             const path = 'public/app-version.json'
             const policy = JSON.parse(fs.readFileSync(path, 'utf8'))
             const version = process.argv[2]
-            if (!/^\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('Invalid latest release tag')
+            if (!/^\\d+\\.\\d+(?:\\.\\d+)?$/.test(version)) throw new Error('Invalid latest release tag')
             policy.latestVersion = version
             policy.minimumSupportedVersion = version
-            policy.downloadUrl = 'https://betnova-8daa3.web.app/downloads/betnova-latest.apk'
-            fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\n')
-          NODE
-            test -s public/downloads/betnova-latest.apk
+            policy.downloadUrl = 'https://github.com/youbbilal3-png/BETNOVA-/releases/download/' + process.env.TAG_NAME + '/app-release.apk'
+            fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\\n')
+            NODE
           fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
 
       - name: Build BETNOVA
         run: npm run build
