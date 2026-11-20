@@ -3,6 +3,7 @@ import { Activity, CalendarDays, CheckCircle2, Clock3, CreditCard, Headphones, M
 import { supabase } from '../lib/supabase'
 import PaymentMethodLogo from './PaymentMethodLogo'
 import AdminRewardsPanel from './AdminRewardsPanel'
+import OwnerProfitPanel from './OwnerProfitPanel'
 
 type Props = { onClose: () => void }
 type ProviderHealth = {
@@ -46,7 +47,7 @@ export default function AdminOverview({ onClose }: Props) {
   const [supportNotes, setSupportNotes] = useState<Record<string, string>>({})
   const [providerHealth, setProviderHealth] = useState<ProviderHealth | null>(null)
   const [providerHealthError, setProviderHealthError] = useState('')
-  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'bonus' | 'support' | 'payments' | 'providers' | 'wallet'>('deposits')
+  const [tab, setTab] = useState<'deposits' | 'withdrawals' | 'bonus' | 'support' | 'payments' | 'providers' | 'wallet' | 'owner-profit'>('deposits')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -344,6 +345,7 @@ export default function AdminOverview({ onClose }: Props) {
             <button className={tab === 'payments' ? 'active' : ''} onClick={() => setTab('payments')}><ShieldCheck size={14}/> Methods</button>
             <button className={tab === 'providers' ? 'active' : ''} onClick={() => { setTab('providers'); void loadProviderHealth() }}><Activity size={14}/> Data health</button>
             <button className={tab === 'wallet' ? 'active' : ''} onClick={() => { setTab('wallet'); void loadOwnerWallet() }}><Wallet size={14}/> My wallet</button>
+            <button className={tab === 'owner-profit' ? 'active' : ''} onClick={() => setTab('owner-profit')}><Activity size={14}/> Owner profit</button>
             <button className="admin-refresh" onClick={() => void refreshFinance()} aria-label="Refresh finance"><RefreshCw size={14}/></button>
           </div>
           {error && <p className="admin-message error">{error}</p>}
@@ -389,6 +391,7 @@ export default function AdminOverview({ onClose }: Props) {
               <div className="admin-finance-actions"><button onClick={() => { window.location.href = `mailto:${item.email}?subject=${encodeURIComponent('BETNOVA Support: ' + item.subject)}` }}><Mail size={14}/> Reply by email</button><button disabled={busyId === item.id} onClick={() => void updateSupportRequest(item)}><CheckCircle2 size={14}/> Save request</button></div>
             </article>)}
           </div>}
+          {tab === 'owner-profit' && <OwnerProfitPanel />}
           {tab === 'wallet' && <div className="admin-finance-list">
             <article className="admin-finance-item">
               <div className="admin-finance-top"><b>Owner wallet</b><span>Administrator only</span></div>
