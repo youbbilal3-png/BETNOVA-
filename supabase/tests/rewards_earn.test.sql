@@ -229,23 +229,15 @@ values('12121212-1212-4121-8121-121212121212','authenticated','authenticated','s
 insert into public.deposit_requests(id,user_id,payment_method,amount,currency,status,created_at)
 select gen_random_uuid(),'12121212-1212-4121-8121-121212121212','baridimob',1000,'DZD','pending',now()+make_interval(secs=>g.n)
 from generate_series(1,6) as g(n);
-do $
-declare v_id uuid;
-begin
-  for v_id in select id from public.deposit_requests
-    where user_id='12121212-1212-4121-8121-121212121212' and created_at < now()+interval '5 seconds'
-    order by created_at,id
-  loop
-    update public.deposit_requests set status='approved' where id=v_id;
-  end loop;
-  update public.deposit_requests set status='rejected'
-    where user_id='12121212-1212-4121-8121-121212121212'
-      and created_at >= now()+interval '5 seconds' and created_at < now()+interval '6 seconds';
-  update public.deposit_requests set status='approved'
-    where user_id='12121212-1212-4121-8121-121212121212'
-      and created_at >= now()+interval '6 seconds';
-end;
-$;
+with ranked as (
+  select id,row_number() over(order by created_at,id) as rn
+  from public.deposit_requests
+  where user_id='12121212-1212-4121-8121-121212121212'
+)
+update public.deposit_requests d
+set status=case when r.rn=5 then 'rejected' else 'approved' end
+from ranked r
+where d.id=r.id;
 select is(
   (select count(*) from public.deposit_streak_claims where user_id='12121212-1212-4121-8121-121212121212'),
   0::bigint,
@@ -254,17 +246,10 @@ select is(
 insert into public.deposit_requests(id,user_id,payment_method,amount,currency,status,created_at)
 select gen_random_uuid(),'12121212-1212-4121-8121-121212121212','baridimob',1000,'DZD','pending',now()+make_interval(secs=>g.n+10)
 from generate_series(1,4) as g(n);
-do $
-declare v_id uuid;
-begin
-  for v_id in select id from public.deposit_requests
-    where user_id='12121212-1212-4121-8121-121212121212'
-      and status='pending' order by created_at,id
-  loop
-    update public.deposit_requests set status='approved' where id=v_id;
-  end loop;
-end;
-$;
+update public.deposit_requests
+set status='approved'
+where user_id='12121212-1212-4121-8121-121212121212'
+  and status='pending';
 select is(
   (select count(*) from public.deposit_streak_claims where user_id='12121212-1212-4121-8121-121212121212'),
   1::bigint,
