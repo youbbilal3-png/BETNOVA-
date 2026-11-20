@@ -74,55 +74,6 @@ create table public.deposit_streak_claims (
 );
 create index deposit_streak_claims_user_created_idx on public.deposit_streak_claims(user_id,created_at desc);
 
--- Grant the $100 welcome award once, into the separate USD bonus wallet.
-create unique index if not exists bonus_ledger_one_welcome_per_user
-  on public.bonus_ledger(user_id) where entry_type='welcome_bonus';
-
-create or replace function private.betnova_grant_welcome_bonus()
-returns trigger
-language plpgsql
-security definer
-set search_path=''
-as $
-declare
-  v_wallet public.bonus_wallet_accounts%rowtype;
-  v_ledger_id uuid:=gen_random_uuid();
-begin
-  insert into public.bonus_wallet_accounts(user_id,currency)
-  values(new.id,'USD')
-  on conflict(user_id) do nothing;
-
-  select * into v_wallet
-  from public.bonus_wallet_accounts
-  where user_id=new.id
-  for update;
-
-  if not exists(
-    select 1 from public.bonus_ledger
-    where user_id=new.id and entry_type='welcome_bonus'
-  ) then
-    update public.bonus_wallet_accounts
-    set available_balance=available_balance+100,updated_at=now()
-    where id=v_wallet.id
-    returning * into v_wallet;
-
-    insert into public.bonus_ledger(
-      id,user_id,bonus_wallet_id,entry_type,amount_usd,balance_after,reserved_after,
-      reference_type,reference_id,idempotency_key,description
-    ) values(
-      v_ledger_id,new.id,v_wallet.id,'welcome_bonus',100,
-      v_wallet.available_balance,v_wallet.reserved_balance,
-      'signup',new.id,v_ledger_id,'BETNOVA $100 welcome bonus'
-    );
-  end if;
-  return new;
-end;
-$;
-revoke all on function private.betnova_grant_welcome_bonus() from public,anon,authenticated;
-drop trigger if exists betnova_grant_welcome_bonus on auth.users;
-create trigger betnova_grant_welcome_bonus
-  after insert on auth.users
-  for each row execute function private.betnova_grant_welcome_bonus();
 
 alter table public.earn_post_submissions enable row level security;
 alter table public.referral_codes enable row level security;
