@@ -623,7 +623,7 @@ export default function App() {
         // Keep the first screen fast: load a bounded page of fixtures rather than
         // sequentially fetching up to 5,000 rows with nested market selections.
         const page = await fixtureQuery
-          .order('starts_at', { ascending: eventView !== 'results' })
+          .order('starts_at', { ascending: eventView !== 'results' && eventView !== 'live' })
           .order('id', { ascending: true })
           .range(0, eventView === 'live' ? 249 : 99)
         if (page.error) throw page.error
