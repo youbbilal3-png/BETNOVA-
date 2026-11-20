@@ -124,7 +124,7 @@ jobs:
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
           test -s android/app/release.keystore
           cp scripts/android-release-signing.gradle android/app/release-signing.gradle
-          printf "\\napply from: 'release-signing.gradle'\\n" >> android/app/build.gradle
+          printf "\napply from: 'release-signing.gradle'\n" >> android/app/build.gradle
         shell: bash
 
       - name: Build debug APK
@@ -190,11 +190,11 @@ jobs:
           const path = 'public/app-version.json'
           const policy = JSON.parse(fs.readFileSync(path, 'utf8'))
           const version = process.argv[2]
-          if (!/^\\d+\\.\\d+(?:\\.\\d+)?$/.test(version)) throw new Error('Invalid release version')
+          if (!/^\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('Invalid release version')
           policy.latestVersion = version
           policy.minimumSupportedVersion = version
           policy.downloadUrl = 'https://github.com/youbbilal3-png/BETNOVA-/releases/download/v' + version + '/betnova-latest.apk'
-          fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\\n')
+          fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\n')
           NODE
 
       - name: Rebuild web assets with the published update policy
