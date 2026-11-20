@@ -29,14 +29,16 @@ export default function MatchStatistics({ fixtureId }: { fixtureId: string }) {
         .select('statistics,updated_at').eq('fixture_id', fixtureId)
         .order('updated_at', { ascending: false }).limit(1).maybeSingle()
       if (!active) return
-      setSnapshot(data?.statistics ? { ...(data.statistics as Snapshot), updated_at: data.updated_at } : null)
+      if (data?.statistics) setSnapshot({ ...(data.statistics as Snapshot), updated_at: data.updated_at })
+      else setSnapshot(null)
       setLoading(false)
     }
     void load()
+    const refreshTimer = window.setInterval(() => { void load() }, 30_000)
     const channel = client.channel('fixture-statistics-' + fixtureId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fixture_statistics', filter: 'fixture_id=eq.' + fixtureId }, () => { void load() })
       .subscribe()
-    return () => { active = false; void client.removeChannel(channel) }
+    return () => { active = false; window.clearInterval(refreshTimer); void client.removeChannel(channel) }
   }, [fixtureId])
 
   if (loading) return <div className="match-stats-state"><LoaderCircle size={16}/>{t('loading_statistics')}</div>
@@ -54,8 +56,9 @@ export default function MatchStatistics({ fixtureId }: { fixtureId: string }) {
       const h = home.get(key), a = away.get(key)
       const hv = numeric(h?.value), av = numeric(a?.value)
       const max = Math.max(hv ?? 0, av ?? 0, 1)
-      const hp = hv === null || av === null ? 50 : hv / max * 100
-      const ap = hv === null || av === null ? 50 : av / max * 100
+      const isPossession = key === 'possession' || key.endsWith('_possession')
+      const hp = hv === null || av === null ? 50 : isPossession ? Math.max(0, Math.min(100, hv)) : hv / max * 100
+      const ap = hv === null || av === null ? 50 : isPossession ? Math.max(0, Math.min(100, av)) : av / max * 100
       return <div className="match-stat-row" key={key}>
         <div className="match-stat-values"><b>{format(h?.value)}</b><span>{h?.label ?? a?.label ?? key.replace(/_/g,' ')}</span><b>{format(a?.value)}</b></div>
         <div className="match-stat-bars"><span><i style={{width:hp+'%'}}/></span><span><i style={{width:ap+'%'}}/></span></div>

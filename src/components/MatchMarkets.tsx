@@ -102,6 +102,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
   async function loadMarkets() {
     if (!supabase) { setMarkets([]); setLoading(false); return }
     setError('')
+    try {
     const { data, error: queryError } = await supabase
       .from('markets')
       .select('id,market_key,market_type,name,status,is_live,last_updated_at,settlement_rule,market_selections(id,name,odds,status,result_status)')
@@ -109,7 +110,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
       .eq('is_active', true)
       .in('status', ['open','suspended'])
       .order('name')
-    if (queryError) { setError(t('could_not_load_markets')); setMarkets([]) }
+    if (queryError) throw queryError
     else {
       const cleaned = ((data ?? []) as Market[]).map(m => {
         const marketSelections = (m.market_selections ?? []).filter(s => s.status === 'active' && s.result_status === 'pending' && Number.isFinite(Number(s.odds)) && Number(s.odds) > 1)
@@ -140,19 +141,35 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
       setMarketIds(current => current.length === nextMarketIds.length && current.every((id, index) => id === nextMarketIds[index]) ? current : nextMarketIds)
       setMarkets(nextMarkets)
     }
-    setLoading(false)
+    } catch (error) {
+      console.error('[BETNOVA] Match markets load failed', error)
+      setError(t('could_not_load_markets'))
+      setMarkets([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function loadEvents() {
     if (!supabase) return
-    const { data } = await supabase.from('fixture_events')
-      .select('id,event_type,period,minute,added_time,player_name,team:teams!fixture_events_team_id_fkey(name,short_name)')
-      .eq('fixture_id', fixtureId).order('occurred_at', { ascending: false }).limit(10)
-    setEvents((data ?? []) as unknown as LiveEvent[])
+    try {
+      const { data } = await supabase.from('fixture_events')
+        .select('id,event_type,period,minute,added_time,player_name,team:teams!fixture_events_team_id_fkey(name,short_name)')
+        .eq('fixture_id', fixtureId).order('occurred_at', { ascending: false }).limit(10)
+      setEvents((data ?? []) as unknown as LiveEvent[])
+    } catch (error) {
+      console.error('[BETNOVA] Match event load failed', error)
+      setEvents([])
+    }
   }
 
   useEffect(() => {
+    setMarkets([]); setEvents([]); setHasLoaded(false); setExpanded(''); setMarketIds([]); setError(''); setLoading(!deferLoad)
+  }, [fixtureId, deferLoad])
+
+  useEffect(() => {
     if (!deferLoad) {
+      if (hasLoaded) return
       setLoading(true)
       void loadMarkets().then(() => setHasLoaded(true))
       void loadEvents()
@@ -211,7 +228,7 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
     if (opening && live && events.length === 0) void loadEvents()
   }
 
-  if (error && !hasLoaded) return <div className="markets-empty">{error}<button onClick={() => { setLoading(true); void loadMarkets().then(() => setHasLoaded(true)) }}>{t('try_again')}</button></div>
+  if (error) return <div className="markets-empty" role="alert">{error}<button type="button" onClick={() => { setLoading(true); void loadMarkets().then(() => setHasLoaded(true)) }}>{t('try_again')}</button></div>
 
   return <div ref={containerRef} className="match-markets match-markets-card">
     {live && events.length > 0 && <section className="match-event-feed"><div className="match-event-feed-head"><span><Radio size={12}/> {t('live_match_events')}</span><small>{events.length} {t('recent_updates')}</small></div>{events.map(event=><div className="match-event-row" key={event.id}><b>{event.minute !== null ? event.minute + (event.added_time ? '+' + event.added_time : '') + "'" : '•'}</b><span className={'event-dot '+event.event_type}>{event.event_type==='goal'?'⚽':event.event_type==='yellow_card'?'🟨':event.event_type==='red_card'?'🟥':event.event_type==='corner'?'◉':event.event_type==='substitution'?'↔':'•'}</span><span>{event.player_name || t(event.event_type === 'goal' ? 'goal_event' : event.event_type === 'yellow_card' ? 'yellow_card_event' : event.event_type === 'red_card' ? 'red_card_event' : event.event_type === 'corner' ? 'corner_event' : event.event_type === 'substitution' ? 'substitution_event' : 'other_event')}{event.team?.name ? ' · '+event.team.name : ''}</span></div>)}</section>}
