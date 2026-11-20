@@ -68,7 +68,7 @@ type Match = {
 function LiveMatchClock({ startsAt, language }: { startsAt?: string; language: string }) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    const timer = window.setInterval(() => setNow(Date.now()), 5000)
     return () => window.clearInterval(timer)
   }, [])
   const kickoff = Date.parse(String(startsAt ?? ''))
@@ -472,7 +472,9 @@ export default function App() {
 
         // Live fixtures must remain visible even when a provider has not supplied live odds yet.
         // Upcoming fixtures still require markets; results never require them.
-        const marketRelation = eventView === 'upcoming' ? 'markets!inner' : 'markets'
+        const marketSelection = eventView === 'upcoming'
+          ? ', markets!inner(id, market_type, market_key, name, status, is_active, is_live, last_updated_at, market_selections(id, name, odds, status, result_status))'
+          : ''
         let fixtureQuery = supabase
           .from('fixtures')
           .select(`
@@ -480,7 +482,7 @@ export default function App() {
             competitions!inner(name, country, sport_id),
             home_team:teams!fixtures_home_team_id_fkey(name, short_name, logo_url),
             away_team:teams!fixtures_away_team_id_fkey(name, short_name, logo_url),
-            ${marketRelation}(id, market_type, market_key, name, status, is_active, is_live, last_updated_at, market_selections(id, name, odds, status, result_status, updated_at))
+            ${marketSelection}
           `)
           .eq('competitions.sport_id', sportRow.id)
           // Only upcoming cards require a current pre-match market.
@@ -728,10 +730,10 @@ export default function App() {
     (!showFavorites || favoriteIds.includes(String(m.id))) &&
     (league === 'All matches' || m.league === league) &&
     (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().includes(query.toLowerCase()) &&
-    (!selectedMatchDate || (m.startsAt ? localDateKey(m.startsAt) === selectedMatchDate : false)) &&
-    (!selectedMatchTime || (m.startsAt ? new Date(m.startsAt).toTimeString().slice(0, 5) >= selectedMatchTime : false)) &&
-    (!selectedMatchTimeTo || (m.startsAt ? new Date(m.startsAt).toTimeString().slice(0, 5) <= selectedMatchTimeTo : false))
-  ), [matches, league, query, showFavorites, favoriteIds, selectedMatchDate, selectedMatchTime, selectedMatchTimeTo])
+    (eventView !== 'upcoming' || !selectedMatchDate || (m.startsAt ? localDateKey(m.startsAt) === selectedMatchDate : false)) &&
+    (eventView !== 'upcoming' || !selectedMatchTime || (m.startsAt ? new Date(m.startsAt).toTimeString().slice(0, 5) >= selectedMatchTime : false)) &&
+    (eventView !== 'upcoming' || !selectedMatchTimeTo || (m.startsAt ? new Date(m.startsAt).toTimeString().slice(0, 5) <= selectedMatchTimeTo : false))
+  ), [matches, league, query, showFavorites, favoriteIds, selectedMatchDate, selectedMatchTime, selectedMatchTimeTo, eventView])
 
   const visibleMatches = useMemo(
     () => filteredMatches.slice(0, visibleMatchLimit),
