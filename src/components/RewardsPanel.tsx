@@ -49,7 +49,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
 
   useEffect(() => { void load() }, [load])
 
-  const displayBonus = (usd: number) => preferredCurrency === 'DZD' ? money(usd * 260, 'DZD') : preferredCurrency === 'EUR' ? money(usd * 0.9, 'EUR') : money(usd, 'USD')
+  const displayBonus = (usd: number) => money(usd, 'USD')
   const referralLink = referralCode ? `https://betnova-8daa3.web.app/?ref=${referralCode}` : ''
   async function copyReferral() {
     if (!referralLink) return
@@ -68,7 +68,7 @@ export default function RewardsPanel({ onClose, language = 'en' }: Props) {
         <article className="reward-card welcome">
           <div className="reward-card-icon"><Gift size={20}/></div>
           <div><span className="reward-eyebrow">{ar ? 'مكافأة الترحيب' : 'WELCOME BONUS'}</span><h3>{ar ? 'مكافأة ترحيبية حتى 100 دولار' : 'Up to $100 welcome bonus'}</h3>
-            <p>{ar ? 'القيمة عند التسجيل: 25,000 دج لعملة DZD، أو 100 دولار لعملة USD، أو 90 يورو لعملة EUR. تُضاف إلى محفظة المكافآت المنفصلة وليست رصيدًا نقديًا، وتخضع لشروط المكافأة.' : 'Signup values: 25,000 DZD for DZD accounts, $100 for USD accounts, or €90 for EUR accounts. Credited to the separate bonus wallet, not cash balance; bonus terms apply.'}</p>
+            <p>{ar ? 'تُمنح 100 دولار أمريكي وتُضاف إلى محفظة المكافآت المنفصلة بعملة USD، ولا تُضاف إلى الرصيد النقدي القابل للسحب. تطبق شروط المكافأة والتحقق.' : 'Receive $100 USD in your separate bonus wallet. It is not added to your withdrawable cash balance. Bonus terms and eligibility checks apply.'}</p>
             {bonusBalances.length > 0 && <div className="reward-balance-list">{bonusBalances.map(item => <b className="reward-balance" key={item.currency}>{displayBonus(Number(item.available_balance))} <span>{ar ? 'رصيد المكافآت' : 'bonus balance'}</span></b>)}</div>}
           </div>
         </article>
