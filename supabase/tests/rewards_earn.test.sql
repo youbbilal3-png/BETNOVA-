@@ -1,7 +1,7 @@
 create extension if not exists pgtap with schema extensions;
 
 begin;
-select plan(28);
+select plan(36);
 
 select has_table('public','earn_post_submissions','social earn submissions table exists');
 select has_column('public','earn_post_submissions','proof_sha256','screenshot SHA-256 is stored');
@@ -45,6 +45,27 @@ select ok(
 select ok(
   exists(select 1 from storage.buckets where id='earn-proofs' and public=false),
   'proof bucket is private'
+);
+select ok(
+  exists(select 1 from pg_trigger where tgname='betnova_grant_welcome_bonus' and not tgisinternal),
+  'welcome bonus is granted by an auth signup trigger'
+);
+select ok(
+  exists(select 1 from pg_trigger where tgname='betnova_process_referral_verification' and not tgisinternal),
+  'referral rewards are automatically processed after email verification'
+);
+
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
+values('99999999-9999-4999-8999-999999999999','authenticated','authenticated','welcome-bonus-test@example.invalid','',now(),now(),now());
+select is(
+  (select available_balance from public.bonus_wallet_accounts where user_id='99999999-9999-4999-8999-999999999999'),
+  100::numeric,
+  'new users receive exactly $100 in the separate bonus wallet'
+);
+select is(
+  (select count(*) from public.bonus_ledger where user_id='99999999-9999-4999-8999-999999999999' and entry_type='welcome_bonus'),
+  1::bigint,
+  'welcome bonus is recorded once in the bonus ledger'
 );
 
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
@@ -105,7 +126,7 @@ select is(
   'each completed five-deposit block has one cash ledger entry'
 );
 
--- Referral attribution and approval use verified accounts and admin review.
+-- Referral attribution is automatic after the referred user confirms email.
 do $$
 declare
   v_referrer uuid:='66666666-6666-4666-8666-666666666666';
@@ -118,7 +139,7 @@ begin
   v_code:=public.betnova_get_referral_code();
   if v_code !~ '^[A-F0-9]{10}$' then raise exception 'Invalid generated referral code'; end if;
   insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_user_meta_data,created_at,updated_at)
-  values(v_referred,'authenticated','authenticated','referred@example.invalid','',now(),
+  values(v_referred,'authenticated','authenticated','referred@example.invalid','',null,
     jsonb_build_object('referral_code',v_code),now(),now());
 end;
 $$;
@@ -126,27 +147,62 @@ $$;
 select is(
   (select status from public.referrals where referred_user_id='77777777-7777-4777-8777-777777777777'),
   'pending'::text,
-  'signup with a referral link creates a pending attribution'
+  'signup with a referral link creates a pending attribution until email verification'
 );
-
-insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
-values('88888888-8888-4888-8888-888888888888','authenticated','authenticated','betnova-admin-test@example.invalid','',now(),now(),now());
-update public.profiles set role='admin' where id='88888888-8888-4888-8888-888888888888';
-do $auth_claims$
-begin
-  perform set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',true);
-  perform set_config('request.jwt.claims','{"sub":"88888888-8888-4888-8888-888888888888","role":"authenticated"}',true);
-end;
-$auth_claims$;
-
-select lives_ok(
-  $$select public.betnova_review_referral('77777777-7777-4777-8777-777777777777','approve','verified test referral')$$,
-  'admin can approve a verified referral'
+update auth.users
+set email_confirmed_at=now()
+where id='77777777-7777-4777-8777-777777777777';
+select is(
+  (select status from public.referrals where referred_user_id='77777777-7777-4777-8777-777777777777'),
+  'approved'::text,
+  'email verification automatically approves the referral'
 );
 select is(
   (select available_balance from public.wallet_accounts where user_id='66666666-6666-4666-8666-666666666666' and currency='DZD'),
   100::numeric,
-  'approved referral reward credits 100 DZD to the referrer cash wallet'
+  'verified referral automatically credits 100 DZD to the referrer cash wallet'
+);
+update auth.users
+set email_confirmed_at=now()+interval '1 minute'
+where id='77777777-7777-4777-8777-777777777777';
+select is(
+  (select available_balance from public.wallet_accounts where user_id='66666666-6666-4666-8666-666666666666' and currency='DZD'),
+  100::numeric,
+  're-verifying an account cannot duplicate its referral reward'
+);
+
+
+insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at)
+values('10101010-1010-4010-8010-101010101010','authenticated','authenticated','currency-streak-test@example.invalid','',now(),now(),now());
+insert into public.deposit_requests(id,user_id,payment_method,amount,currency,status,created_at)
+select gen_random_uuid(),'10101010-1010-4010-8010-101010101010','baridimob',1000,
+  case when g.n<=4 or g.n=10 then 'DZD' else 'EUR' end,
+  'pending',now()+make_interval(secs=>g.n)
+from generate_series(1,10) as g(n);
+do $
+declare v_id uuid;
+begin
+  for v_id in select id from public.deposit_requests
+    where user_id='10101010-1010-4010-8010-101010101010' order by created_at,id
+  loop
+    update public.deposit_requests set status='approved' where id=v_id;
+  end loop;
+end;
+$;
+select is(
+  (select count(*) from public.deposit_streak_claims where user_id='10101010-1010-4010-8010-101010101010'),
+  1::bigint,
+  'currency changes reset the consecutive deposit streak'
+);
+select is(
+  (select currency from public.deposit_streak_claims where user_id='10101010-1010-4010-8010-101010101010'),
+  'EUR'::text,
+  'only the complete five-deposit EUR streak receives a reward'
+);
+select is(
+  (select reward_amount from public.deposit_streak_claims where user_id='10101010-1010-4010-8010-101010101010'),
+  250::numeric,
+  'currency-reset streak reward is exactly five percent of its own deposits'
 );
 
 insert into public.earn_post_submissions(
