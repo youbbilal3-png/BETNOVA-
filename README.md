@@ -54,3 +54,5 @@ Do not add secrets, service-role keys, payment credentials, or private API keys 
 
 ## Latest app maintenance
 - Live match cards share one lightweight clock; fixture loading is capped to the first 100 rows and realtime refresh bursts are coalesced.
+
+BETNOVA 1.8 release build includes match-clock, match-statistics, and match-markets navigation fixes.
