@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ChevronDown, Clock3, LoaderCircle, Radio } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useLanguage } from '../i18n'
@@ -55,7 +55,7 @@ const categoryFor = (market: Market, t: (key: any) => string, language: string) 
   return t('match_markets')
 }
 
-export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, deferLoad = false }: Props) {
+function MatchMarketsPanel({ fixtureId, onSelect, selectedIds, live, deferLoad = false }: Props) {
   const { t, language } = useLanguage()
   const [markets, setMarkets] = useState<Market[]>([])
   const [events, setEvents] = useState<LiveEvent[]>([])
@@ -176,7 +176,12 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
       return
     }
     const node = containerRef.current
-    if (!node || hasLoaded || typeof IntersectionObserver === 'undefined') return
+    if (!node || hasLoaded) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setLoading(true)
+      void loadMarkets().then(() => setHasLoaded(true))
+      return
+    }
     const observer = new IntersectionObserver(entries => {
       if (!entries.some(entry => entry.isIntersecting)) return
       observer.disconnect()
@@ -237,20 +242,20 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
       const isOpen = expanded === category
       const items = grouped.find(group => group.category === category)?.items ?? []
       return <section className={'match-card-market-accordion' + (isOpen ? ' open' : '')} key={category}>
-        <button type="button" className="match-card-market-trigger" aria-expanded={isOpen} onClick={() => void toggleCategory(category)}>
+        <button type="button" className="match-card-market-trigger" aria-expanded={isOpen} onClick={event => { event.stopPropagation(); void toggleCategory(category) }}>
           <span>{category}</span><small>{hasLoaded ? items.length + ' ' + t('markets_count') : ''}</small><ChevronDown size={16}/>
         </button>
         {isOpen && <div className="match-card-market-panel">
           {loading ? <div className="match-card-market-empty"><LoaderCircle size={14}/> {t('loading_markets')}</div> : items.length === 0 ? <div className="match-card-market-empty">{language === 'ar' ? 'لا توجد أسعار متاحة لهذا السوق حاليًا' : 'No odds currently supplied for this market'}</div> : items.map(market => {
             const updatedMs = new Date(market.last_updated_at).getTime()
-            const maxAgeMs = market.is_live ? 7 * 60 * 1000 : 24 * 60 * 60 * 1000
+            const maxAgeMs = market.is_live ? 3 * 60 * 1000 : 24 * 60 * 60 * 1000
             const priceFresh = Number.isFinite(updatedMs) && Date.now() - updatedMs <= maxAgeMs && updatedMs <= Date.now() + 30000
             const canBet = market.status === 'open' && priceFresh && (live ? market.is_live : !market.is_live)
             return <article className="market-item" data-market-key={(market.market_key || market.market_type || '').toLowerCase()} key={market.id}>
               <div className="market-item-title"><b>{market.name}</b>{market.is_live && <span className="market-live-tag"><Radio size={10}/> {t('live')}</span>}{market.status === 'suspended' && <span className="market-suspended">{t('suspended')}</span>}{market.status === 'open' && !priceFresh && <span className="market-suspended">{t('price_expired')}</span>}</div>
               <div className="market-outcomes">{market.market_selections.map(selection => {
                 const picked = selectedIds.includes(selection.id)
-                return <button key={selection.id} type="button" disabled={!canBet && !picked} aria-pressed={picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={() => onSelect({selectionId:selection.id,marketId:market.id,marketKey:market.market_key || market.market_type,marketLabel:cleanMarketName(market.name),selectionLabel:displaySelection(selection.name),odds:String(selection.odds)})}>
+                return <button key={selection.id} type="button" disabled={!canBet && !picked} aria-pressed={picked} className={picked ? 'market-outcome picked' : 'market-outcome'} onClick={event => { event.stopPropagation(); onSelect({selectionId:selection.id,marketId:market.id,marketKey:market.market_key || market.market_type,marketLabel:cleanMarketName(market.name),selectionLabel:displaySelection(selection.name),odds:String(selection.odds)}) }}>
                   <span>{displaySelection(selection.name)}</span><b>{Number(selection.odds).toFixed(2)}</b>
                 </button>
               })}</div>
@@ -262,4 +267,32 @@ export default function MatchMarkets({ fixtureId, onSelect, selectedIds, live, d
     {hasLoaded && markets.length === 0 && <div className="match-card-market-empty">{language === 'ar' ? 'لا توجد أسعار متاحة لهذه المباراة حاليًا' : 'No markets available for this match right now'}</div>}
     {live && <div className="markets-live-note"><Clock3 size={13}/> {t('live_prices_warning')}</div>}
   </div>
+}
+
+class MatchMarketsErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('[BETNOVA] Match markets panel crashed', error)
+  }
+
+  render() {
+    if (this.state.failed) {
+      return <div className="match-card-market-empty" role="alert">
+        Markets could not be opened.
+        <button type="button" onClick={() => this.setState({ failed: false })}>Try again</button>
+      </div>
+    }
+    return this.props.children
+  }
+}
+
+export default function MatchMarkets(props: Props) {
+  return <MatchMarketsErrorBoundary key={String(props.fixtureId)}>
+    <MatchMarketsPanel {...props} />
+  </MatchMarketsErrorBoundary>
 }
