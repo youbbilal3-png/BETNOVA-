@@ -197,7 +197,7 @@ jobs:
           policy.minimumSupportedVersion = version
           policy.downloadUrl = 'https://betnova-8daa3.web.app/downloads/betnova-latest.apk'
           fs.writeFileSync(path, JSON.stringify(policy, null, 2) + '\n')
-        NODE
+          NODE
 
       - name: Rebuild web assets with the published APK
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
