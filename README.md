@@ -51,3 +51,6 @@ The database currently contains profiles, five sports, 362 football competition/
 6. Administration, security controls, audit logs and testing
 
 Do not add secrets, service-role keys, payment credentials, or private API keys to this repository.
+
+## Latest app maintenance
+- Live match cards share one lightweight clock; fixture loading is capped to the first 100 rows and realtime refresh bursts are coalesced.
