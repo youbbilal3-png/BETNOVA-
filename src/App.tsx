@@ -81,7 +81,7 @@ function LiveMatchClock({ liveClock, liveStatusPhase, liveStatusDescription, liv
   const description = String(liveStatusDescription ?? '').trim()
   const period = String(livePeriod ?? '').toLowerCase()
   const isHalfTime = phase === 'break' && (
-    /half[\\s-]?time|halftime/i.test(description) ||
+    /half[\s-]?time|halftime/i.test(description) ||
     ['period1', 'first_half', 'firsthalf'].includes(period)
   )
 
