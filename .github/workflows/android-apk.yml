@@ -47,6 +47,9 @@ on:
 permissions:
   contents: write
 
+env:
+  BUILD_SIGNED_RELEASE: ${{ (github.event_name == 'workflow_dispatch' && inputs.build_release == true) || (github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release]')) }}
+
 concurrency:
   group: betnova-android-build
   cancel-in-progress: true
@@ -106,11 +109,11 @@ jobs:
         run: node scripts/set-android-version.mjs
 
       - name: Require main branch for signed release
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         run: test "$GITHUB_REF" = "refs/heads/main"
 
       - name: Configure release signing
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -140,7 +143,7 @@ jobs:
           retention-days: 14
 
       - name: Build signed release APK
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         working-directory: android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -151,7 +154,7 @@ jobs:
           ./gradlew assembleRelease
 
       - name: Verify signed APK and Android package identity
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         run: |
           APK="android/app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
@@ -159,7 +162,7 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.betnova.app'"
 
       - name: Upload signed release APK
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: BETNOVA-android-release
@@ -168,7 +171,7 @@ jobs:
           retention-days: 30
 
       - name: Publish signed APK as a GitHub Release asset
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -182,7 +185,7 @@ jobs:
           fi
 
       - name: Prepare update policy using GitHub Release download
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         run: |
           VERSION=$(node -p "JSON.parse(require('node:fs').readFileSync('public/app-version.json','utf8')).latestVersion")
           node - "$VERSION" <<'NODE'
@@ -198,14 +201,14 @@ jobs:
           NODE
 
       - name: Rebuild web assets with the published update policy
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         run: npm run build
         env:
           VITE_SUPABASE_URL: https://lvhuipkfsdughearjsvy.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_31QoDyH3c357Da-yCpI1Cw_DwUb5DBy
 
       - name: Deploy update policy and web app to Firebase Hosting
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
@@ -214,7 +217,7 @@ jobs:
           channelId: live
 
       - name: Verify GitHub APK download and Firebase mandatory-update policy
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release && github.ref == 'refs/heads/main' }}
+        if: ${{ env.BUILD_SIGNED_RELEASE == 'true' }}
         run: |
           APK_URL="https://github.com/youbbilal3-png/BETNOVA-/releases/download/v1.1/app-release.apk"
           curl -fsSL "$APK_URL" -o /tmp/app-release.apk
