@@ -546,6 +546,9 @@ export default function App() {
               const rank = (market: any) => {
                 const key = String(market.market_key || market.market_type || '').toLowerCase()
                 const name = String(market.name || '').toLowerCase()
+                if (key === 'sport_winner') return 0
+                if (key === 'sport_total') return 1
+                if (key === 'sport_spread') return 2
                 if (key === 'total_goals' && /2[.,]5/.test(name)) return 0
                 if (key === 'total_goals') return 1
                 if (key === 'both_teams_score' || key === 'btts') return 2
