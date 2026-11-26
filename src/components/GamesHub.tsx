@@ -215,10 +215,11 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       if(error)throw error
       const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
       if(!result||!result.round_id)throw new Error('No round receipt was returned. Check game history before retrying.')
+      if(selected.id==='plinko'){const landing=Number((result.details as Record<string,unknown>|undefined)?.landing_slot??0);setPlinkoSlot(landing>0?landing-1:null)}
       const animationDuration=selected.id==='plinko'?1800:['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id)?1350:selected.id==='roulette'?1100:0
       const remaining=Math.max(0,animationDuration-(Date.now()-animationStarted))
       if(remaining)await new Promise(resolve=>window.setTimeout(resolve,remaining))
-      if(selected.id==='plinko'){const landing=Number((result.details as Record<string,unknown>|undefined)?.landing_slot??0);setPlinkoSlot(landing>0?landing-1:null);setPlinkoDropping(false)}
+      if(selected.id==='plinko')setPlinkoDropping(false)
       if(['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id)){
         const outcome=String(result.result??'')
         const symbols=selected.id==='lucky-fruits'?['🍒','🍋','🍉','🍇','⭐','7️⃣']:selected.id==='pharaoh'?['𓂀','👑','⚱️','🐪','💎','☀️']:selected.id==='coyote-jackpot'?['🐺','🌵','⭐','💎','7️⃣','🪙']:['🪐','🌟','🚀','🌙','💫','👾']
@@ -226,7 +227,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
         const pair=outcome==='FRUIT_PAIR'||outcome==='SCARAB'||outcome==='STAR_PAIR'||outcome==='COYOTE_PAIR'
         const symbol=winning?(selected.id==='lucky-fruits'?'7️⃣':selected.id==='pharaoh'?'𓂀':selected.id==='coyote-jackpot'?'🐺':'🚀'):pair?(selected.id==='lucky-fruits'?'🍒':selected.id==='pharaoh'?'𓂀':selected.id==='coyote-jackpot'?'🐺':'🌟'):null
         const filler=symbols.filter(value=>value!==symbol)
-        const reels=Array.from({length:9},(_,i)=>i<3&&symbol?symbol:choose(filler.length?filler:symbols))
+        const reels=Array.from({length:9},(_,i)=>symbols[(Math.floor(i/3)*3+i%3)%symbols.length])
         if(pair){reels[0]=symbol!;reels[1]=symbol!}
         if(winning){reels[0]=symbol!;reels[1]=symbol!;reels[2]=symbol!}
         setSlotSymbols(reels);setSlotSpinning(false)
@@ -235,7 +236,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       if(selected.id==='apple'){setAppleLevel(Number(realChoice));setAppleDone(true)}
       let outcomeText=String(result.result??'')
       if(selected.id==='apple')outcomeText=result.won?(arabic?'مسار آمن!':'Safe path!'):(arabic?'وجدت التفاحة الخطرة.':'Trap found.')
-      else if(selected.id==='plinko')outcomeText=result.won?(arabic?'أصابت الكرة خانة رابحة!':'The ball landed in a winning slot!'):(arabic?'لم تصب الكرة خانة رابحة.':'The ball landed in a losing slot.')
+      else if(selected.id==='plinko'){const details=(result.details??{}) as Record<string,unknown>;const pocket=Number(details.landing_slot??0);const odds=Number(details.slot_multiplier??0);outcomeText=arabic?`دخلت الكرة الخانة ${pocket} · المضاعف ${odds.toFixed(2)}× · ${result.won?'فوز':'لا يوجد عائد'}.`:`Ball landed in pocket ${pocket} · ${odds.toFixed(2)}× · ${result.won?'WIN':'NO PAYOUT'}.`}
       else if(['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id))outcomeText=result.won?(arabic?'مبروك! فزت في الجولة.':'Congratulations! You won the round.'):(arabic?'لم تفز هذه المرة.':'No win this time.')
       else if(selected.id==='roulette')outcomeText=arabic?'النتيجة '+String((result.details as Record<string,unknown>|undefined)?.number??'—')+' · '+(result.won?'فوز':'لم تفز'):'Result '+String((result.details as Record<string,unknown>|undefined)?.number??'—')+' · '+(result.won?'WIN':'NO WIN')
       setPracticeCount(value=>value+1)
