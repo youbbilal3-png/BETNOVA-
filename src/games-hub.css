@@ -342,3 +342,20 @@
 .slot-theme-coyote-jackpot .slot-reels{background:radial-gradient(ellipse at 50% 0%,#d8a33f55,#21182a 78%);border-color:#d8ae5d88}
 .slot-theme-coyote-jackpot .slot-reels span{background:linear-gradient(160deg,#fff1bd,#c58b39 55%,#69421c);color:#39270e;border-color:#f2d58a}
 @media(max-width:600px){.slot-reels{gap:6px;padding:9px}.slot-reels span{min-height:55px;font-size:27px}.plinko-pegs{min-height:210px;gap:11px}}
+
+/* Permanent three-row reel layout; result animations may never collapse rows */
+.slot-reels{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(58px,1fr))!important;align-items:stretch;min-height:205px}
+.slot-reels span{min-width:0;min-height:58px!important;display:grid;place-items:center}
+.slot-reels span.spinning{animation:bn-slot-cell-spin .22s linear infinite alternate}
+@keyframes bn-slot-cell-spin{from{transform:translateY(-3px);filter:brightness(1.2)}to{transform:translateY(3px);filter:brightness(.8)}}
+/* Plinko ball lands in the exact pocket returned by the server */
+.plinko-board{min-height:300px;padding-bottom:18px;overflow:visible}
+.plinko-pegs{min-height:225px}
+.plinko-ball{left:var(--plinko-slot-x,50%);top:8px;transform:translateX(-50%);opacity:0;transition:left .55s cubic-bezier(.2,.8,.2,1),top .55s ease,opacity .15s}
+.plinko-ball.dropping{opacity:1;animation:bn-plinko-drop 1.8s cubic-bezier(.3,.1,.5,1) forwards}
+.plinko-ball.landed{opacity:1;top:calc(100% - 62px);transform:translateX(-50%);box-shadow:0 0 18px #70f2ff,0 0 30px #70f2ff88}
+@keyframes bn-plinko-drop{0%{top:8px;transform:translateX(-50%) scale(1)}25%{top:65px;transform:translateX(calc(-50% - 12px)) scale(.95)}50%{top:125px;transform:translateX(calc(-50% + 12px)) scale(1)}75%{top:185px;transform:translateX(calc(-50% - 7px)) scale(.95)}100%{top:calc(100% - 62px);transform:translateX(-50%) scale(.9)}}
+.plinko-slots{grid-template-columns:repeat(10,minmax(0,1fr))!important;gap:3px}
+.plinko-slots span{height:38px;font-size:clamp(7px,2.2vw,10px);font-weight:950}
+.plinko-slots span.landed{outline:2px solid #70ffd0;outline-offset:1px;transform:translateY(-4px);box-shadow:0 0 18px #70ffd088}
+@media(max-width:600px){.slot-reels{min-height:180px;grid-template-rows:repeat(3,minmax(52px,1fr))!important}.slot-reels span{min-height:52px!important;font-size:27px}.plinko-board{min-height:275px}.plinko-pegs{min-height:205px}}
