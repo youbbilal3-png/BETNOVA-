@@ -13,6 +13,8 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
   const [verified, setVerified] = useState(false)
   const [accountBalances, setAccountBalances] = useState<{currency:string;available_balance:number;reserved_balance:number}[]>([])
   const [bonusBalance, setBonusBalance] = useState(0)
+  const [preferredCurrency, setPreferredCurrency] = useState<'DZD'|'USD'|'EUR'>('DZD')
+  const [newAccountCurrency, setNewAccountCurrency] = useState<'DZD'|'USD'|'EUR'>('USD')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,15 +33,42 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
       setDisplayName(String(data.user.user_metadata?.display_name ?? data.user.user_metadata?.full_name ?? ''))
       setCreatedAt(data.user.created_at)
       setVerified(Boolean(data.user.email_confirmed_at))
-      const [balances, bonus] = await Promise.all([
+      const [balances, bonus, profile] = await Promise.all([
         supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance').eq('user_id', data.user.id),
-        supabase.from('bonus_wallet_accounts').select('available_balance').eq('user_id', data.user.id).maybeSingle()
+        supabase.from('bonus_wallet_accounts').select('available_balance').eq('user_id', data.user.id).maybeSingle(),
+        supabase.from('profiles').select('preferred_currency').eq('id', data.user.id).maybeSingle()
       ])
-      if (active) { setAccountBalances((balances.data ?? []) as {currency:string;available_balance:number;reserved_balance:number}[]); setBonusBalance(Number(bonus.data?.available_balance ?? 0)) }
+      if (balances.error) throw balances.error
+      if (bonus.error) throw bonus.error
+      if (profile.error) throw profile.error
+      if (active) {
+        const preferred = profile.data?.preferred_currency
+        if (preferred === 'DZD' || preferred === 'USD' || preferred === 'EUR') setPreferredCurrency(preferred)
+        setAccountBalances((balances.data ?? []) as {currency:string;available_balance:number;reserved_balance:number}[])
+        setBonusBalance(Number(bonus.data?.available_balance ?? 0))
+      }
     }
     void loadAccount().catch(caught => setError(caught instanceof Error ? caught.message : 'Could not load account details.'))
     return () => { active = false }
   }, [])
+
+  async function addCurrencyAccount() {
+    if (!supabase) return
+    setBusy(true); setError(''); setNotice('')
+    try {
+      const { error: accountError } = await supabase.rpc('betnova_open_currency_account', { p_currency: newAccountCurrency })
+      if (accountError) throw accountError
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+      if (!user) throw new Error('Please sign in again.')
+      const { data, error: balancesError } = await supabase.from('wallet_accounts').select('currency,available_balance,reserved_balance').eq('user_id', user.id)
+      if (balancesError) throw balancesError
+      setAccountBalances((data ?? []) as {currency:string;available_balance:number;reserved_balance:number}[])
+      setNotice(newAccountCurrency + ' account opened with a zero balance.')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not open currency account.')
+    } finally { setBusy(false) }
+  }
 
   async function saveProfile(event: FormEvent) {
     event.preventDefault()
@@ -90,13 +119,14 @@ export default function AccountPanel({ onClose, onSignOut, onOpenWallet }: Props
       <div className="account-wallet-summary">
         <div className="account-wallet-summary-head"><span>{t('available_balance').toUpperCase()}</span><button type="button" onClick={() => onOpenWallet('deposit')}>{t('add_funds')}</button></div>
         <div className="account-wallet-balance-grid">
-          {['DZD','USD','EUR'].map(currency => {
-            const balance = accountBalances.find(item => item.currency === currency)
-            return <div key={currency}><small>{currency}</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(balance?.available_balance ?? 0))}</strong>{Number(balance?.reserved_balance ?? 0) > 0 && <small>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(balance?.reserved_balance))} {t('reserved_for_withdrawals_label')}</small>}</div>
+          {accountBalances.map(item => {
+            const currency = item.currency
+            return <div key={currency}><small>{currency}</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(item.available_balance ?? 0))}</strong>{Number(item.reserved_balance ?? 0) > 0 && <small>{new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(Number(item.reserved_balance))} {t('reserved_for_withdrawals_label')}</small>}</div>
           })}
         </div>
       </div>
-      <div className="account-wallet-summary account-bonus-summary"><div className="account-wallet-summary-head"><span>{t('bonus_separate_balance')}</span></div><div className="account-wallet-balance-grid"><div><small>USD</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}).format(bonusBalance)}</strong></div><div><small>DZD equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'DZD',maximumFractionDigits:0}).format(bonusBalance*260)}</strong></div><div><small>EUR equivalent</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(bonusBalance*0.9)}</strong></div></div></div>
+        <div className="account-currency-add"><label>Open another currency account<select value={newAccountCurrency} onChange={event => setNewAccountCurrency(event.target.value as 'DZD'|'USD'|'EUR')}><option value="DZD" disabled={accountBalances.some(item=>item.currency==='DZD')}>DZD · Algerian dinar</option><option value="USD" disabled={accountBalances.some(item=>item.currency==='USD')}>USD · US dollar</option><option value="EUR" disabled={accountBalances.some(item=>item.currency==='EUR')}>EUR · Euro</option></select></label><button type="button" className="account-secondary" onClick={() => void addCurrencyAccount()} disabled={busy || accountBalances.length >= 3 || accountBalances.some(item=>item.currency===newAccountCurrency)}>Add account</button></div>
+      <div className="account-wallet-summary account-bonus-summary"><div className="account-wallet-summary-head"><span>{t('bonus_separate_balance')}</span></div><div className="account-wallet-balance-grid"><div><small>{preferredCurrency}</small><strong>{new Intl.NumberFormat(undefined,{style:'currency',currency:preferredCurrency,maximumFractionDigits:preferredCurrency==='DZD'?0:2}).format(bonusBalance * (preferredCurrency==='DZD'?260:preferredCurrency==='EUR'?0.9:1))}</strong></div></div></div>
       <div className="account-wallet-actions"><button type="button" onClick={() => onOpenWallet('deposit')}><ArrowDownToLine size={17}/> {t('deposit')}</button><button type="button" onClick={() => onOpenWallet('withdraw')}><ArrowUpFromLine size={17}/> {t('withdraw')}</button></div>
       <div className="account-status-grid">
         <div><span>{t('email_status')}</span><b className={verified ? 'verified' : 'unverified'}>{verified ? <><CheckCircle2 size={15}/> {t('verified')}</>  : t('not_verified')}</b></div>
