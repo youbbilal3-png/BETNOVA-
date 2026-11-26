@@ -226,7 +226,6 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
         const winning=outcome==='JACKPOT'||outcome==='PHARAOH_JACKPOT'||outcome==='COSMIC_JACKPOT'||outcome==='COYOTE_JACKPOT'||outcome==='FRUIT_TRIPLE'||outcome==='ROYAL_TREASURE'||outcome==='PLANET_TRIPLE'||outcome==='COYOTE_TRIPLE'
         const pair=outcome==='FRUIT_PAIR'||outcome==='SCARAB'||outcome==='STAR_PAIR'||outcome==='COYOTE_PAIR'
         const symbol=winning?(selected.id==='lucky-fruits'?'7️⃣':selected.id==='pharaoh'?'𓂀':selected.id==='coyote-jackpot'?'🐺':'🚀'):pair?(selected.id==='lucky-fruits'?'🍒':selected.id==='pharaoh'?'𓂀':selected.id==='coyote-jackpot'?'🐺':'🌟'):null
-        const filler=symbols.filter(value=>value!==symbol)
         const reels=Array.from({length:9},(_,i)=>symbols[(Math.floor(i/3)*3+i%3)%symbols.length])
         if(pair){reels[0]=symbol!;reels[1]=symbol!}
         if(winning){reels[0]=symbol!;reels[1]=symbol!;reels[2]=symbol!}
