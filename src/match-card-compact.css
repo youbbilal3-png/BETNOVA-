@@ -224,3 +224,11 @@
   outline:2px solid #b9ee75;
   outline-offset:2px;
 }
+
+
+/* Explicitly identify non-bettable pre-match reference odds shown on live fixtures. */
+.app-shell .match-card .match-card-1x2-wrap{width:100%;}
+.app-shell .match-card .match-card-1x2-note{margin:0 0 5px;color:#f0c77a;font-size:9px;font-weight:850;letter-spacing:.35px;text-align:center;}
+.app-shell .match-card .match-card-1x2-pick.reference{border-style:dashed!important;border-color:#d6a85c88!important;background:#302719!important;color:#f5dfb7!important;cursor:not-allowed!important;}
+.app-shell .match-card .match-card-1x2-pick.reference:disabled{opacity:.82!important;}
+.detail-winner-pick.reference{border-style:dashed!important;border-color:#d6a85c88!important;background:#302719!important;color:#f5dfb7!important;cursor:not-allowed!important;opacity:.9!important;}
