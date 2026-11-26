@@ -33,7 +33,7 @@ const baccaratTotal=(hand:number[])=>hand.reduce((sum,value)=>sum+baccaratValue(
 export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:string;token:number}|null}){
   const {language,t}=useLanguage()
   const arabic=language==='ar'
-  const translatedGameTag=(id:string)=>{switch(id){case 'crash':case 'plinko':return t('game_tag_instant');case 'apple':return t('game_tag_skill');case 'lucky-fruits':return t('game_tag_classic');case 'pharaoh':return t('game_tag_adventure');case 'space-spin':return t('game_tag_cosmic');case 'roulette':return t('game_tag_table');case 'blackjack':case 'baccarat':return t('game_tag_cards');default:return id}}
+  const translatedGameTag=(id:string)=>{switch(id){case 'crash':case 'plinko':return t('game_tag_instant');case 'apple':return t('game_tag_skill');case 'lucky-fruits':return t('game_tag_classic');case 'pharaoh':return t('game_tag_adventure');case 'space-spin':return t('game_tag_cosmic');case 'coyote-jackpot':return 'COYOTE JACKPOT';case 'roulette':return t('game_tag_table');case 'blackjack':case 'baccarat':return t('game_tag_cards');default:return id}}
   const translatedGameDescription=(id:string)=>{switch(id){case 'crash':return arabic?'أدخل مبلغ الرهان وابدأ اللعبة. اسحب أرباحك قبل انفجار الطائرة.':'Enter your stake and start. Cash out before the plane crashes.';case 'apple':return t('game_desc_apple');case 'plinko':return t('game_desc_plinko');case 'lucky-fruits':return t('game_desc_fruits');case 'pharaoh':return t('game_desc_pharaoh');case 'space-spin':return t('game_desc_space');case 'coyote-jackpot':return arabic?'آلة حظ بثلاثة صفوف وثلاثة أعمدة. وضع تجريبي فقط.':'A three-row, three-column slot preview. Practice only.';case 'roulette':return t('game_desc_roulette');case 'blackjack':return t('game_desc_blackjack');case 'baccarat':return t('game_desc_baccarat');default:return ''}}
   const labels={all:t('all_games'),games:t('games'),slots:t('slots'),casino:t('casino'),heading:t('arcade_heading'),zone:t('game_zone'),subtitle:t('arcade_subtitle'),explore:t('explore_game'),safety:t('arcade_safety'),practice:t('free_practice'),demo:t('demo_mode'),start:t('start_practice'),next:t('next_step'),stop:t('stop_now'),pick:t('pick_apple'),drop:t('drop_ball'),tryDemo:t('try_demo'),reset:t('reset_practice'),close:t('close')}
   const [category,setCategory]=useState<Category>('all')
@@ -55,7 +55,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const [appleCashoutKey,setAppleCashoutKey]=useState<string|null>(null)
   const [plinkoSlot,setPlinkoSlot]=useState<number|null>(null)
   const [plinkoDropping,setPlinkoDropping]=useState(false)
-  const [slotSymbols,setSlotSymbols]=useState<string[]>(Array(9).fill('🍒'))
+  const [slotSymbols,setSlotSymbols]=useState<string[]>(Array.from({length:9},(_,i)=>['🍒','⭐','🍋'][i%3]))
   const [slotSpinning,setSlotSpinning]=useState(false)
   const slotTimer=useRef<ReturnType<typeof setTimeout>|null>(null)
   const modalRef=useRef<HTMLElement|null>(null)
@@ -86,7 +86,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   useEffect(()=>{
     if(!selected)return
     setRealBetResult(null);setRealBetMessage('');setRealBalance(null);setRealAppleRound(null)
-    setRealChoice(selected.id==='crash'?'2.00':selected.id==='apple'?'1':selected.id==='plinko'?'medium':selected.id==='roulette'?'red':selected.id==='baccarat'?'player':selected.id==='blackjack'?'stand':'standard')
+    setRealChoice(selected.id==='crash'?'2.00':selected.id==='apple'?'1':selected.id==='plinko'?'medium':selected.id==='roulette'?'red':selected.id==='baccarat'?'player':selected.id==='blackjack'?'stand':selected.id==='plinko'?'medium':'standard')
     const client=supabase
     if(!client){setRealBetMessage(arabic?'خدمة الرهان غير متاحة حالياً.':'Betting service is unavailable.');return}
     let active=true
@@ -176,7 +176,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const dropPlinko=()=>{
     if(plinkoDropping)return
     const slot=Math.floor(Math.random()*10)
-    setPlinkoDropping(true);setPlinkoSlot(null);setPracticeResult(arabic?'الكرة تهبط عبر المسامير...':'Ball dropping through the pegs...')
+    setPlinkoDropping(true);setPlinkoSlot(slot);setPracticeResult(arabic?'الكرة تهبط عبر المسامير...':'Ball dropping through the pegs...')
     slotTimer.current=setTimeout(()=>{setPlinkoSlot(slot);setPlinkoDropping(false);setPracticeCount(value=>value+1);setPracticeResult(arabic?`استقرت الكرة في الخانة ${slot+1} · المضاعف المعروض ${[8,5,3,2,1.5,1.2,1.5,2,3,5][slot]}×. تدريب فقط دون إضافة رصيد.`:`Ball landed in pocket ${slot+1} · displayed demo multiplier ${[8,5,3,2,1.5,1.2,1.5,2,3,5][slot]}×. Practice only; no balance change.`);slotTimer.current=null},950)
   }
   const blackjackTotal=(hand:number[])=>{let total=hand.reduce((sum,value)=>sum+(value===11?1:value),0);if(hand.includes(11)&&total+10<=21)total+=10;return total}
@@ -203,7 +203,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     setRealBetBusy(true);setRealBetMessage('');setRealBetResult(null)
     const animationStarted=Date.now()
     if(selected.id==='plinko'){setPlinkoDropping(true);setPlinkoSlot(null)}
-    if(['lucky-fruits','pharaoh','space-spin'].includes(selected.id))setSlotSpinning(true)
+    if(['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id))setSlotSpinning(true)
     if(selected.id==='roulette')setRouletteSpinning(true)
     try{
       const {data:{user},error:authError}=await supabase.auth.getUser()
@@ -215,17 +215,20 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       if(error)throw error
       const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
       if(!result||!result.round_id)throw new Error('No round receipt was returned. Check game history before retrying.')
-      const animationDuration=selected.id==='plinko'?3800:['lucky-fruits','pharaoh','space-spin'].includes(selected.id)?1350:selected.id==='roulette'?1100:0
+      const animationDuration=selected.id==='plinko'?1800:['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id)?1350:selected.id==='roulette'?1100:0
       const remaining=Math.max(0,animationDuration-(Date.now()-animationStarted))
       if(remaining)await new Promise(resolve=>window.setTimeout(resolve,remaining))
-      if(selected.id==='plinko')setPlinkoDropping(false)
-      if(['lucky-fruits','pharaoh','space-spin'].includes(selected.id)){
+      if(selected.id==='plinko'){const landing=Number((result.details as Record<string,unknown>|undefined)?.landing_slot??0);setPlinkoSlot(landing>0?landing-1:null);setPlinkoDropping(false)}
+      if(['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id)){
         const outcome=String(result.result??'')
-        const reels=selected.id==='lucky-fruits'
-          ?outcome==='JACKPOT'?['7️⃣','7️⃣','7️⃣']:outcome==='FRUIT_TRIPLE'?['🍉','🍉','🍉']:outcome==='FRUIT_PAIR'?['🍒','🍒','🍋']:['🍒','🍋','🍉']
-          :selected.id==='pharaoh'
-            ?outcome==='PHARAOH_JACKPOT'?['𓂀','𓂀','𓂀']:outcome==='ROYAL_TREASURE'?['💎','💎','👑']:outcome==='SCARAB'?['𓂀','𓂀','⚱️']:['☀️','🐪','⚱️']
-            :outcome==='COSMIC_JACKPOT'?['🚀','🚀','🚀']:outcome==='PLANET_TRIPLE'?['🪐','🪐','🪐']:outcome==='STAR_PAIR'?['🌟','🌟','🌙']:['🪐','🌙','👾']
+        const symbols=selected.id==='lucky-fruits'?['🍒','🍋','🍉','🍇','⭐','7️⃣']:selected.id==='pharaoh'?['𓂀','👑','⚱️','🐪','💎','☀️']:selected.id==='coyote-jackpot'?['🐺','🌵','⭐','💎','7️⃣','🪙']:['🪐','🌟','🚀','🌙','💫','👾']
+        const winning=outcome==='JACKPOT'||outcome==='PHARAOH_JACKPOT'||outcome==='COSMIC_JACKPOT'||outcome==='COYOTE_JACKPOT'||outcome==='FRUIT_TRIPLE'||outcome==='ROYAL_TREASURE'||outcome==='PLANET_TRIPLE'||outcome==='COYOTE_TRIPLE'
+        const pair=outcome==='FRUIT_PAIR'||outcome==='SCARAB'||outcome==='STAR_PAIR'||outcome==='COYOTE_PAIR'
+        const symbol=winning?(selected.id==='lucky-fruits'?'7️⃣':selected.id==='pharaoh'?'𓂀':selected.id==='coyote-jackpot'?'🐺':'🚀'):pair?(selected.id==='lucky-fruits'?'🍒':selected.id==='pharaoh'?'𓂀':selected.id==='coyote-jackpot'?'🐺':'🌟'):null
+        const filler=symbols.filter(value=>value!==symbol)
+        const reels=Array.from({length:9},(_,i)=>i<3&&symbol?symbol:choose(filler.length?filler:symbols))
+        if(pair){reels[0]=symbol!;reels[1]=symbol!}
+        if(winning){reels[0]=symbol!;reels[1]=symbol!;reels[2]=symbol!}
         setSlotSymbols(reels);setSlotSpinning(false)
       }
       if(selected.id==='roulette'){setRouletteNumber(Number((result.details as Record<string,unknown>|undefined)?.number??0));setRouletteSpinning(false)}
@@ -233,7 +236,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       let outcomeText=String(result.result??'')
       if(selected.id==='apple')outcomeText=result.won?(arabic?'مسار آمن!':'Safe path!'):(arabic?'وجدت التفاحة الخطرة.':'Trap found.')
       else if(selected.id==='plinko')outcomeText=result.won?(arabic?'أصابت الكرة خانة رابحة!':'The ball landed in a winning slot!'):(arabic?'لم تصب الكرة خانة رابحة.':'The ball landed in a losing slot.')
-      else if(['lucky-fruits','pharaoh','space-spin'].includes(selected.id))outcomeText=result.won?(arabic?'مبروك! فزت في الجولة.':'Congratulations! You won the round.'):(arabic?'لم تفز هذه المرة.':'No win this time.')
+      else if(['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id))outcomeText=result.won?(arabic?'مبروك! فزت في الجولة.':'Congratulations! You won the round.'):(arabic?'لم تفز هذه المرة.':'No win this time.')
       else if(selected.id==='roulette')outcomeText=arabic?'النتيجة '+String((result.details as Record<string,unknown>|undefined)?.number??'—')+' · '+(result.won?'فوز':'لم تفز'):'Result '+String((result.details as Record<string,unknown>|undefined)?.number??'—')+' · '+(result.won?'WIN':'NO WIN')
       setPracticeCount(value=>value+1)
       setPracticeResult(outcomeText)
@@ -317,7 +320,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     }catch(error){setRealBetMessage(error instanceof Error?error.message:'Cash-out confirmation failed. Retry; the same request key prevents duplicate payout.')}
     finally{setRealBetBusy(false)}
   }
-  const paidTableUnavailable=selected?.id==='blackjack'||selected?.id==='baccarat'||selected?.id==='coyote-jackpot'
+  const paidTableUnavailable=selected?.id==='blackjack'||selected?.id==='baccarat'
   return <section className="games-hub" id="games">
     <div className="games-hub-head">
       <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>{labels.heading} <em>{labels.zone}</em></h2><p>{labels.subtitle}</p></div>
@@ -378,7 +381,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
           <div className="apple-board">{Array.from({length:APPLE_ROWS},(_,row)=>{const rowNumber=row+1;const odds=0.95/Math.pow(0.8,rowNumber);return <div className={"apple-odds-row "+(row<appleLevel?'cleared':row===appleLevel&&realAppleRound?'current':realBetResult?.result==='TRAP_FOUND'&&row===appleLevel?'failed':'')} key={rowNumber}><div className="apple-odds-fruits">{Array.from({length:APPLE_COLUMNS},(_,col)=><button type="button" className={applePicks[row]===col?(realBetResult?.result==='TRAP_FOUND'&&row===appleLevel?'trap':'picked'):''} key={col} onClick={()=>void pickRealApple(col)} disabled={!realAppleRound||row!==appleLevel||realBetBusy||appleDone} aria-label={arabic?'اختر التفاحة':'Pick apple'}>🍏</button>)}</div><strong className="apple-row-multiplier">{odds.toFixed(2)}×</strong></div>})}</div>
           {realAppleRound&&appleLevel>0&&<button type="button" className="apple-cashout-button" onClick={()=>void cashOutRealApple()} disabled={realBetBusy}>{arabic?'اسحب':'CASH OUT'} · {(realAppleRound.stake*realAppleRound.multiplier).toFixed(2)} DZD</button>}
         </div>}
-        {selected.id==='plinko'&&<div className="game-practice-controls"><div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:9},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{[8,5,3,2,1.5,1.2,1.5,2,3,5].map((odds,i)=><span className={plinkoSlot===i?'landed':''} key={i}>{odds}×</span>)}</div></div></div>}
+        {selected.id==='plinko'&&<div className="game-practice-controls"><div className="plinko-board"><span className={'plinko-ball '+(plinkoDropping?'dropping':'')+(plinkoSlot!==null&&!plinkoDropping?' landed':'')} style={{'--plinko-slot-x':`${plinkoSlot===null?50:5+plinkoSlot*10}%`} as CSSProperties} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:9},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:10},(_,i)=>{const odds=realChoice==='low'?(i===0||i===9?0:1.1875):realChoice==='medium'?(i>=2&&i<=6?1.9:0):(i===4?3.8:0);return <span className={plinkoSlot===i?'landed':''} key={i}>{odds.toFixed(2)}×</span>})}</div></div></div>}
         {['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id)&&<div className={"game-practice-controls slot-theme slot-theme-"+selected.id}><div className="slot-reels" aria-label={selected.name}>{slotSymbols.map((symbol,i)=><span className={slotSpinning?'spinning':''} key={i}>{symbol}</span>)}</div></div>}
         {selected.id==='roulette'&&<div className="game-practice-controls"><div className="roulette-preview"><div className={"roulette-wheel "+(rouletteSpinning?'spinning':'')}><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><b>{rouletteNumber===null?'?':rouletteNumber}</b></div><small>{rouletteSpinning?(arabic?'العجلة تدور...':'WHEEL SPINNING'):rouletteNumber===null?(arabic?'جاهز':'READY'):rouletteNumber===0?(arabic?'صفر أخضر':'GREEN ZERO'):rouletteReds.has(rouletteNumber)?(arabic?'أحمر':'RED'):(arabic?'أسود':'BLACK')}</small></div></div>}
         {selected.id==='blackjack'&&<div className="game-practice-controls"><div className="practice-playing-cards"><span>♠</span><span>♥</span></div></div>}
@@ -386,6 +389,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
         <section className="arcade-wager-panel arcade-wager-simple" aria-label={arabic?'رهان اللعبة':'Game wager'}>
           {paidTableUnavailable?<div className="arcade-coming-note">{arabic?'هذه اللعبة غير متاحة للرهان حالياً.':'Real-money play is not available for this table yet.'}</div>:<>
             <div className="arcade-wallet-line"><span>{arabic?'رصيدك':'Your balance'}</span><strong>{realBalance===null?'—':realBalance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' DZD'}</strong></div>
+            {selected.id==='plinko'&&<div className="arcade-choice-row"><button type="button" className={realChoice==='low'?'active':''} onClick={()=>setRealChoice('low')} disabled={realBetBusy}>{arabic?'مخاطر منخفضة':'LOW RISK'}</button><button type="button" className={realChoice==='medium'?'active':''} onClick={()=>setRealChoice('medium')} disabled={realBetBusy}>{arabic?'متوسطة':'MEDIUM'}</button><button type="button" className={realChoice==='high'?'active':''} onClick={()=>setRealChoice('high')} disabled={realBetBusy}>{arabic?'مرتفعة':'HIGH RISK'}</button></div>}
             {selected.id==='roulette'&&<div className="arcade-choice-row"><button type="button" className={realChoice==='red'?'active':''} onClick={()=>setRealChoice('red')} disabled={realBetBusy}>{arabic?'أحمر':'RED'}</button><button type="button" className={realChoice==='black'?'active':''} onClick={()=>setRealChoice('black')} disabled={realBetBusy}>{arabic?'أسود':'BLACK'}</button></div>}
             <label className="arcade-wager-field"><span>{arabic?'مبلغ الرهان (DZD)':'Stake (DZD)'}</span><input type="number" min="0.01" max="1000000" step="0.01" inputMode="decimal" value={realStake} onChange={event=>setRealStake(event.target.value)} disabled={realBetBusy||(selected.id==='crash'&&Boolean(realCrashRound))||(selected.id==='apple'&&Boolean(realAppleRound))}/></label>
             {selected.id==='crash'?(!realCrashRound?<button className="arcade-wager-submit" type="button" onClick={startRealCrash} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ البدء...':'STARTING...'):arabic?'ابدأ اللعبة':'START GAME'}</button>:null):selected.id==='apple'?(!realAppleRound?<button className="arcade-wager-submit" type="button" onClick={startRealApple} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ البدء...':'STARTING...'):arabic?'ابدأ اللعبة':'START GAME'}</button>:null):<button className="arcade-wager-submit" type="button" onClick={playRealRound} disabled={realBetBusy||realBalance===null||!supabase}>{realBetBusy?(arabic?'جارٍ اللعب...':'PLAYING...'):arabic?'ابدأ اللعبة':'START GAME'}</button>}
