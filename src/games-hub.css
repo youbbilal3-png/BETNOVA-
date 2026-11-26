@@ -359,3 +359,28 @@
 .plinko-slots span{height:38px;font-size:clamp(7px,2.2vw,10px);font-weight:950}
 .plinko-slots span.landed{outline:2px solid #70ffd0;outline-offset:1px;transform:translateY(-4px);box-shadow:0 0 18px #70ffd088}
 @media(max-width:600px){.slot-reels{min-height:180px;grid-template-rows:repeat(3,minmax(52px,1fr))!important}.slot-reels span{min-height:52px!important;font-size:27px}.plinko-board{min-height:275px}.plinko-pegs{min-height:205px}}
+
+
+/* Premium dimensional artwork pass — isolated to arcade visuals */
+.game-art-object{width:112px;height:112px;border-radius:30px;background:radial-gradient(circle at 30% 18%,#ffffff32,transparent 34%),linear-gradient(145deg,#ffffff13,#07102088 72%);border:1px solid #ffffff25;box-shadow:0 18px 26px #0009,inset 0 2px 3px #ffffff30,inset 0 -12px 18px #0005;backdrop-filter:blur(3px)}
+.game-art-object .game-symbol-emoji{display:block;font-size:61px;line-height:1;filter:drop-shadow(0 5px 2px #0009) drop-shadow(0 12px 10px #0008);transform:translateY(-3px) rotateY(-12deg) rotateX(9deg)}
+.wolf-symbol-3d{display:block;width:104px;height:104px;overflow:visible;filter:drop-shadow(0 8px 7px #000b) drop-shadow(0 0 14px #ffc66a55);transform:perspective(420px) rotateY(-9deg) rotateX(5deg)}
+.game-detail-art>span{display:grid;place-items:center;width:104px;height:104px}
+.game-detail-art .wolf-symbol-3d{width:112px;height:112px}
+.game-detail-art .game-symbol-emoji{font-size:70px;filter:drop-shadow(0 7px 3px #000a) drop-shadow(0 14px 12px #0009);transform:perspective(380px) rotateY(-10deg) rotateX(7deg)}
+.slot-reels{perspective:900px;gap:8px;padding:14px;background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--game-glow) 24%,transparent),#050b18 78%),linear-gradient(145deg,#182943,#060d1d);border-color:color-mix(in srgb,var(--game-glow) 55%,#ffffff22);box-shadow:inset 0 4px 16px #000b,0 12px 24px #0005}
+.slot-reels span{position:relative;isolation:isolate;overflow:hidden;min-height:86px;border:1px solid #ffffff38;border-radius:13px;background:radial-gradient(circle at 28% 17%,#ffffffd9 0,#ffffff30 12%,transparent 35%),linear-gradient(145deg,#53647b,#202d43 48%,#0d1729);color:#fff;font-size:43px;text-shadow:0 2px 1px #fff8,0 5px 4px #000b,0 11px 12px #0009;box-shadow:0 8px 12px #0009,inset 0 2px 3px #ffffff75,inset 0 -8px 13px #0009;transform:translateZ(8px)}
+.slot-reels span:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(125deg,#ffffff30,transparent 35%,transparent 68%,#0005);pointer-events:none}
+.slot-reels span .game-symbol-emoji{display:block;filter:drop-shadow(0 4px 2px #000b) drop-shadow(0 9px 7px #0008);transform:translateY(-2px) rotateY(-8deg) rotateX(7deg)}
+.slot-theme-coyote-jackpot .slot-reels{background:radial-gradient(ellipse at 50% 0%,#c18a3444,#090d18 75%),linear-gradient(145deg,#352719,#0b101b);border-color:#d7a84e99}
+.slot-theme-coyote-jackpot .slot-reels span{background:radial-gradient(circle at 28% 17%,#fff5d6 0,#ffffff35 12%,transparent 35%),linear-gradient(145deg,#85623c,#34261f 52%,#15151a);border-color:#e7c47a88}
+.slot-theme-coyote-jackpot .slot-reels .wolf-symbol-3d{width:65px;height:65px;filter:drop-shadow(0 6px 5px #000c) drop-shadow(0 0 10px #f2bd6b66)}
+.slot-theme-lucky-fruits .slot-reels span{background:radial-gradient(circle at 25% 15%,#fff8e9 0,#ffffff45 13%,transparent 35%),linear-gradient(145deg,#8c284e,#35152f 60%,#140f24);border-color:#f2a0bd88}
+.slot-theme-pharaoh .slot-reels span{background:radial-gradient(circle at 25% 15%,#fff8d9 0,#ffffff40 13%,transparent 35%),linear-gradient(145deg,#a77b32,#46351d 55%,#17233a);border-color:#f1d18a99}
+.slot-theme-space-spin .slot-reels span{background:radial-gradient(circle at 25% 15%,#f3eaff 0,#ffffff40 13%,transparent 35%),linear-gradient(145deg,#56408c,#201c4a 58%,#0b122c);border-color:#bda6ff99}
+.game-art .game-symbol-coyote-jackpot{font-size:61px}
+.game-art .game-symbol-crash{filter:drop-shadow(0 0 12px #ffb28c)}
+.game-art .game-symbol-apple{filter:drop-shadow(0 0 12px #b8ff9b)}
+.game-art .game-symbol-plinko{filter:drop-shadow(0 0 12px #8df5ff)}
+.apple-odds-fruits button{font-size:25px;text-shadow:0 3px 2px #0009,0 8px 8px #0008;filter:drop-shadow(0 4px 4px #0008)}
+@media(max-width:600px){.game-art-object{width:78px;height:78px;border-radius:23px}.game-art-object .game-symbol-emoji{font-size:45px}.wolf-symbol-3d{width:75px;height:75px}.slot-reels span{min-height:66px;font-size:34px}.slot-theme-coyote-jackpot .slot-reels .wolf-symbol-3d{width:52px;height:52px}}
