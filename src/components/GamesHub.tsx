@@ -14,6 +14,7 @@ const games:Game[] = [
   {id:'lucky-fruits',name:'LUCKY FRUITS',category:'slots',tag:'CLASSIC SLOTS',description:'A bright fruit-machine theme with polished reels, rich symbols and a modern arcade finish.',art:'fruits',accent:'pink',mark:'🍒'},
   {id:'pharaoh',name:"PHARAOH'S GOLD",category:'slots',tag:'ADVENTURE SLOTS',description:'An elegant ancient-Egypt inspired slot concept with gold, lapis tones and royal symbols.',art:'pharaoh',accent:'gold',mark:'𓂀'},
   {id:'space-spin',name:'SPACE SPIN',category:'slots',tag:'COSMIC SLOTS',description:'A futuristic slot concept with planets, glowing stars and a deep-space atmosphere.',art:'space',accent:'violet',mark:'🪐'},
+  {id:'coyote-jackpot',name:'COYOTE JACKPOT',category:'slots',tag:'3×3 SLOT',description:'A three-row, three-column coyote-themed slot preview. Practice mode only.',art:'coyote',accent:'gold',mark:'🐺'},
   {id:'roulette',name:'EUROPEAN ROULETTE',category:'casino',tag:'TABLE CLASSIC',description:'A refined single-zero roulette table concept with a clean, readable layout.',art:'roulette',accent:'green',mark:'🎡'},
   {id:'blackjack',name:'BLACKJACK',category:'casino',tag:'CARD TABLE',description:'A classic 21 card-table concept with premium felt, clear cards and a calm table design.',art:'cards',accent:'blue',mark:'♠'},
   {id:'baccarat',name:'BACCARAT',category:'casino',tag:'CARD TABLE',description:'A sophisticated Player-versus-Banker table concept with a minimal casino presentation.',art:'baccarat',accent:'gold',mark:'♦'},
@@ -33,7 +34,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const {language,t}=useLanguage()
   const arabic=language==='ar'
   const translatedGameTag=(id:string)=>{switch(id){case 'crash':case 'plinko':return t('game_tag_instant');case 'apple':return t('game_tag_skill');case 'lucky-fruits':return t('game_tag_classic');case 'pharaoh':return t('game_tag_adventure');case 'space-spin':return t('game_tag_cosmic');case 'roulette':return t('game_tag_table');case 'blackjack':case 'baccarat':return t('game_tag_cards');default:return id}}
-  const translatedGameDescription=(id:string)=>{switch(id){case 'crash':return arabic?'أدخل مبلغ الرهان وابدأ اللعبة. اسحب أرباحك قبل انفجار الطائرة.':'Enter your stake and start. Cash out before the plane crashes.';case 'apple':return t('game_desc_apple');case 'plinko':return t('game_desc_plinko');case 'lucky-fruits':return t('game_desc_fruits');case 'pharaoh':return t('game_desc_pharaoh');case 'space-spin':return t('game_desc_space');case 'roulette':return t('game_desc_roulette');case 'blackjack':return t('game_desc_blackjack');case 'baccarat':return t('game_desc_baccarat');default:return ''}}
+  const translatedGameDescription=(id:string)=>{switch(id){case 'crash':return arabic?'أدخل مبلغ الرهان وابدأ اللعبة. اسحب أرباحك قبل انفجار الطائرة.':'Enter your stake and start. Cash out before the plane crashes.';case 'apple':return t('game_desc_apple');case 'plinko':return t('game_desc_plinko');case 'lucky-fruits':return t('game_desc_fruits');case 'pharaoh':return t('game_desc_pharaoh');case 'space-spin':return t('game_desc_space');case 'coyote-jackpot':return arabic?'آلة حظ بثلاثة صفوف وثلاثة أعمدة. وضع تجريبي فقط.':'A three-row, three-column slot preview. Practice only.';case 'roulette':return t('game_desc_roulette');case 'blackjack':return t('game_desc_blackjack');case 'baccarat':return t('game_desc_baccarat');default:return ''}}
   const labels={all:t('all_games'),games:t('games'),slots:t('slots'),casino:t('casino'),heading:t('arcade_heading'),zone:t('game_zone'),subtitle:t('arcade_subtitle'),explore:t('explore_game'),safety:t('arcade_safety'),practice:t('free_practice'),demo:t('demo_mode'),start:t('start_practice'),next:t('next_step'),stop:t('stop_now'),pick:t('pick_apple'),drop:t('drop_ball'),tryDemo:t('try_demo'),reset:t('reset_practice'),close:t('close')}
   const [category,setCategory]=useState<Category>('all')
   const [selected,setSelected]=useState<Game|null>(null)
@@ -41,6 +42,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const [practiceCount,setPracticeCount]=useState(0)
   const [crashAt,setCrashAt]=useState(0)
   const [multiplier,setMultiplier]=useState(1)
+  const [crashRate,setCrashRate]=useState(0.06)
   const [crashActive,setCrashActive]=useState(false)
   const [crashExploding,setCrashExploding]=useState(false)
   const [crashCountdown,setCrashCountdown]=useState<number|null>(null)
@@ -53,7 +55,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const [appleCashoutKey,setAppleCashoutKey]=useState<string|null>(null)
   const [plinkoSlot,setPlinkoSlot]=useState<number|null>(null)
   const [plinkoDropping,setPlinkoDropping]=useState(false)
-  const [slotSymbols,setSlotSymbols]=useState<string[]>(['🍒','⭐','🍋'])
+  const [slotSymbols,setSlotSymbols]=useState<string[]>(Array(9).fill('🍒'))
   const [slotSpinning,setSlotSpinning]=useState(false)
   const slotTimer=useRef<ReturnType<typeof setTimeout>|null>(null)
   const modalRef=useRef<HTMLElement|null>(null)
@@ -73,7 +75,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   const [realCrashRound,setRealCrashRound]=useState<{id:string;stake:number;startedAt:number;clientAnchor:number;elapsedBase:number}|null>(null)
   const [realCrashCashoutKey,setRealCrashCashoutKey]=useState<string|null>(null)
   const visible=games.filter(game=>category==='all'||game.category===category)
-  const slotSymbolsFor=(id?:string)=>id==='pharaoh'?['𓂀','👑','⚱️']:id==='space-spin'?['🪐','🌟','🚀']:['🍒','⭐','🍋']
+  const slotSymbolsFor=(id?:string)=>Array.from({length:9},(_,i)=>id==='pharaoh'?['𓂀','👑','⚱️'][i%3]:id==='space-spin'?['🪐','🌟','🚀'][i%3]:id==='coyote-jackpot'?['🐺','💎','7️⃣'][i%3]:['🍒','⭐','🍋'][i%3])
   const resetDemo=(gameId=selected?.id)=>{
     if(slotTimer.current)clearTimeout(slotTimer.current);slotTimer.current=null;setSlotSpinning(false)
     setPracticeResult('');setPracticeCount(0);setCrashAt(0);setMultiplier(1)
@@ -135,10 +137,10 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     if(!realCrashRound)return
     const timer=window.setInterval(()=>{
       const elapsed=realCrashRound.elapsedBase+(performance.now()-realCrashRound.clientAnchor)/1000
-      setMultiplier(Math.min(100,Math.floor(Math.exp(Math.max(0,elapsed)*0.06)*100)/100))
+      setMultiplier(Math.min(100,Math.floor(Math.exp(Math.max(0,elapsed)*crashRate)*100)/100))
     },50)
     return()=>window.clearInterval(timer)
-  },[realCrashRound])
+  },[realCrashRound,crashRate])
   useEffect(()=>{
     const client=supabase
     if(selected?.id!=='crash'||!client)return
@@ -152,6 +154,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
         setRealBalance(Number(result.balance_after??0))
         if(result.status==='active'&&result.round_id&&result.started_at&&result.server_now){
           const elapsedBase=Math.max(0,(Date.parse(String(result.server_now))-Date.parse(String(result.started_at)))/1000)
+          const rate=Number(result.curve_rate??0.06);setCrashRate(rate)
           setRealCrashRound({id:String(result.round_id),stake:Number(result.stake??0),startedAt:Date.parse(String(result.started_at)),clientAnchor:performance.now(),elapsedBase})
           setCrashActive(true);setCrashExploding(false);setMultiplier(Math.min(100,Number(result.multiplier??1)))
         }else if(result.status==='crashed'){
@@ -172,20 +175,20 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
   }
   const dropPlinko=()=>{
     if(plinkoDropping)return
-    const slot=Math.floor(Math.random()*10)+1
+    const slot=Math.floor(Math.random()*10)
     setPlinkoDropping(true);setPlinkoSlot(null);setPracticeResult(arabic?'الكرة تهبط عبر المسامير...':'Ball dropping through the pegs...')
-    slotTimer.current=setTimeout(()=>{setPlinkoSlot(slot);setPlinkoDropping(false);setPracticeCount(value=>value+1);setPracticeResult(arabic?`استقرت الكرة في الخانة ${slot} من أصل 10. لا توجد جائزة أو إضافة رصيد.`:`The practice ball landed in slot ${slot} of 10. No prize or balance was awarded.`);slotTimer.current=null},950)
+    slotTimer.current=setTimeout(()=>{setPlinkoSlot(slot);setPlinkoDropping(false);setPracticeCount(value=>value+1);setPracticeResult(arabic?`استقرت الكرة في الخانة ${slot+1} · المضاعف المعروض ${[8,5,3,2,1.5,1.2,1.5,2,3,5][slot]}×. تدريب فقط دون إضافة رصيد.`:`Ball landed in pocket ${slot+1} · displayed demo multiplier ${[8,5,3,2,1.5,1.2,1.5,2,3,5][slot]}×. Practice only; no balance change.`);slotTimer.current=null},950)
   }
   const blackjackTotal=(hand:number[])=>{let total=hand.reduce((sum,value)=>sum+(value===11?1:value),0);if(hand.includes(11)&&total+10<=21)total+=10;return total}
   const blackjackHit=()=>{if(blackjackDone)return;const card=drawCard();const next=[...cardHand,card];setCardHand(next);const total=blackjackTotal(next);if(total>=21){setBlackjackDone(true);setPracticeResult(arabic?`مجموع أوراقك ${total}. ${total>21?'تجاوزت 21!':'وصلت إلى 21.'} انتهت الجولة التدريبية.`:`Your hand totals ${total}. ${total>21?'Bust!':'21 reached.'} Practice round complete.`)}else setPracticeResult(arabic?`أضفت ورقة. مجموعك الآن ${total}.`:`Card drawn. Your total is ${total}.`);setPracticeCount(value=>value+1)}
   const blackjackStand=()=>{if(blackjackDone||cardHand.length===0)return;let dealer=[...dealerHand];while(blackjackTotal(dealer)<17)dealer.push(drawCard());setDealerHand(dealer);setBlackjackDone(true);const player=blackjackTotal(cardHand),banker=blackjackTotal(dealer);const outcome=player>21?'bust':banker>21||player>banker?'win':player===banker?'tie':'lose';setPracticeResult(arabic?`مجموعك ${player} · الموزع ${banker} · ${outcome==='win'?'فزت في التدريب':outcome==='tie'?'تعادل':'انتهت الجولة'}. دون أموال أو جوائز.`:`You ${player} · Dealer ${banker} · ${outcome.toUpperCase()}. Practice only; no money or prizes.`);setPracticeCount(value=>value+1)}
   const spinRoulette=()=>{if(rouletteSpinning)return;const n=Math.floor(Math.random()*37);setRouletteNumber(null);setRouletteSpinning(true);setPracticeResult(arabic?'تدور العجلة...':'Wheel spinning...');slotTimer.current=setTimeout(()=>{setRouletteNumber(n);const color=n===0?'GREEN':rouletteReds.has(n)?'RED':'BLACK';setPracticeResult(arabic?`نتيجة العجلة التدريبية: ${n} · ${color==='GREEN'?'أخضر':color==='RED'?'أحمر':'أسود'}. ليست نتيجة رهان حقيقي.`:`Practice wheel: ${n} · ${color}. No real roulette result.`);setPracticeCount(value=>value+1);setRouletteSpinning(false);slotTimer.current=null},1250)}
-  const spinSlots=()=>{if(!selected||slotSpinning)return;const symbols=selected.id==='lucky-fruits'?['🍒','🍋','🍉','🍇','⭐','7️⃣']:selected.id==='pharaoh'?['𓂀','👑','⚱️','🐪','💎','☀️']:['🪐','🌟','🚀','🌙','💫','👾'];const reels=[choose(symbols),choose(symbols),choose(symbols)];setSlotSpinning(true);setPracticeResult(arabic?'تدور البكرات...':'Reels spinning...');slotTimer.current=setTimeout(()=>{setSlotSymbols(reels);const match=reels.every(s=>s===reels[0]);setPracticeResult(arabic?`نتيجة اللف: ${reels.join('  ')}. ${match?'تطابق رمزي في العرض التجريبي!':'لا يوجد تطابق هذه المرة.'} لا توجد أرباح أو جوائز.`:`Practice spin: ${reels.join('  ')}. ${match?'Three matching symbols!':'No match this time.'} Display-only; no payout.`);setPracticeCount(value=>value+1);setSlotSpinning(false);slotTimer.current=null},850)}
+  const spinSlots=()=>{if(!selected||slotSpinning)return;const symbols=selected.id==='lucky-fruits'?['🍒','🍋','🍉','🍇','⭐','7️⃣']:selected.id==='pharaoh'?['𓂀','👑','⚱️','🐪','💎','☀️']:selected.id==='coyote-jackpot'?['🐺','🌵','⭐','💎','7️⃣','🪙']:['🪐','🌟','🚀','🌙','💫','👾'];const reels=Array.from({length:9},()=>choose(symbols));setSlotSpinning(true);setPracticeResult(arabic?'تدور البكرات...':'Reels spinning...');slotTimer.current=setTimeout(()=>{setSlotSymbols(reels);const match=reels.some((s,i)=>i%3===0&&s===reels[i+1]&&s===reels[i+2]);setPracticeResult(arabic?`نتيجة اللف: ${reels.join('  ')}. ${match?'تطابق رمزي في العرض التجريبي!':'لا يوجد تطابق هذه المرة.'} لا توجد أرباح أو جوائز.`:`Practice spin: ${reels.join('  ')}. ${match?'Three matching symbols!':'No match this time.'} Display-only; no payout.`);setPracticeCount(value=>value+1);setSlotSpinning(false);slotTimer.current=null},850)}
   const runOtherDemo=()=>{
     if(!selected)return
     let result=''
     switch(selected.id){
-      case 'lucky-fruits': case 'pharaoh': case 'space-spin': return spinSlots();
+      case 'lucky-fruits': case 'pharaoh': case 'space-spin': case 'coyote-jackpot': return spinSlots();
       case 'roulette': return spinRoulette();
       case 'blackjack': {const cards=[drawCard(),drawCard()];setCardHand(cards);setDealerHand([drawCard()]);const total=blackjackTotal(cards);const natural=total===21;setBlackjackDone(natural);result=arabic?`بدأت الجولة. مجموع أوراقك ${total}. ${natural?'21! انتهت الجولة تلقائياً.':'اسحب ورقة أو قف.'}`:`New practice hand. Your total is ${total}. ${natural?'21! Round complete.':'Hit or stand.'}`;break}
       case 'baccarat': {const player=[drawCard(),drawCard()],banker=[drawCard(),drawCard()];let pt=baccaratTotal(player),bt=baccaratTotal(banker);if(pt<8&&bt<8){let playerThird:number|undefined;if(pt<=5){playerThird=drawCard();player.push(playerThird);pt=baccaratTotal(player)}const bankerDraw=playerThird===undefined?bt<=5:bt<=2||bt===3&&baccaratValue(playerThird)!==8||bt===4&&baccaratValue(playerThird)>=2&&baccaratValue(playerThird)<=7||bt===5&&baccaratValue(playerThird)>=4&&baccaratValue(playerThird)<=7||bt===6&&(baccaratValue(playerThird)===6||baccaratValue(playerThird)===7);if(bankerDraw){banker.push(drawCard());bt=baccaratTotal(banker)}}setBaccaratHand({player,banker});const winner=pt===bt?'tie':pt>bt?'player':'banker';result=arabic?`اللاعب ${player.map(cardLabel).join('، ')} = ${pt} · المصرف ${banker.map(cardLabel).join('، ')} = ${bt} · ${winner==='tie'?'تعادل':winner==='player'?'فوز اللاعب':'فوز المصرف'}. تدريب فقط.`:`Player ${player.map(cardLabel).join(', ')} = ${pt} · Banker ${banker.map(cardLabel).join(', ')} = ${bt} · ${winner.toUpperCase()}. Practice only.`;break}
@@ -257,8 +260,9 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
       const result=(typeof data==='string'?JSON.parse(data):data) as Record<string,unknown>
       if(!result?.round_id||result.status!=='active')throw new Error(arabic?'تعذر بدء الجولة. تحقق من سجل الألعاب.':'The Crash round did not start. Check game history before retrying.')
       const elapsedBase=Math.max(0,(Date.parse(String(result.server_now))-Date.parse(String(result.started_at)))/1000)
+      const rate=Number(result.curve_rate??0.075);setCrashRate(rate)
       setRealCrashRound({id:String(result.round_id),stake,startedAt:Date.parse(String(result.started_at)),clientAnchor:performance.now(),elapsedBase})
-      setCrashActive(true);setCrashExploding(false);setMultiplier(Math.min(100,Math.floor(Math.exp(elapsedBase*0.06)*100)/100))
+      setCrashActive(true);setCrashExploding(false);setMultiplier(Math.min(100,Math.floor(Math.exp(elapsedBase*rate)*100)/100))
       setRealBalance(Number(result.balance_after??0));setRealRoundKey(crypto.randomUUID())
       requestAnimationFrame(()=>modalRef.current?.scrollTo({top:0,behavior:'smooth'}))
     }catch(error){setRealBetMessage(error instanceof Error?error.message:'Could not start Crash. A retry with the same request key will not charge twice.')}
@@ -374,8 +378,8 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
           <div className="apple-board">{Array.from({length:APPLE_ROWS},(_,row)=>{const rowNumber=row+1;const odds=0.95/Math.pow(0.8,rowNumber);return <div className={"apple-odds-row "+(row<appleLevel?'cleared':row===appleLevel&&realAppleRound?'current':realBetResult?.result==='TRAP_FOUND'&&row===appleLevel?'failed':'')} key={rowNumber}><div className="apple-odds-fruits">{Array.from({length:APPLE_COLUMNS},(_,col)=><button type="button" className={applePicks[row]===col?(realBetResult?.result==='TRAP_FOUND'&&row===appleLevel?'trap':'picked'):''} key={col} onClick={()=>void pickRealApple(col)} disabled={!realAppleRound||row!==appleLevel||realBetBusy||appleDone} aria-label={arabic?'اختر التفاحة':'Pick apple'}>🍏</button>)}</div><strong className="apple-row-multiplier">{odds.toFixed(2)}×</strong></div>})}</div>
           {realAppleRound&&appleLevel>0&&<button type="button" className="apple-cashout-button" onClick={()=>void cashOutRealApple()} disabled={realBetBusy}>{arabic?'اسحب':'CASH OUT'} · {(realAppleRound.stake*realAppleRound.multiplier).toFixed(2)} DZD</button>}
         </div>}
-        {selected.id==='plinko'&&<div className="game-practice-controls"><div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:9},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{Array.from({length:10},(_,i)=><span key={i}>{i+1}</span>)}</div></div></div>}
-        {['lucky-fruits','pharaoh','space-spin'].includes(selected.id)&&<div className={"game-practice-controls slot-theme slot-theme-"+selected.id}><div className="slot-reels" aria-label={selected.name}>{slotSymbols.map((symbol,i)=><span className={slotSpinning?'spinning':''} key={i}>{symbol}</span>)}</div></div>}
+        {selected.id==='plinko'&&<div className="game-practice-controls"><div className="plinko-board"><span className={plinkoDropping?'plinko-ball dropping':'plinko-ball'} aria-hidden="true">●</span><div className="plinko-pegs">{Array.from({length:9},(_,row)=><div className="plinko-peg-row" key={row}>{Array.from({length:row+3},(_,col)=><i key={col}/>)}</div>)}</div><div className="plinko-slots">{[8,5,3,2,1.5,1.2,1.5,2,3,5].map((odds,i)=><span className={plinkoSlot===i?'landed':''} key={i}>{odds}×</span>)}</div></div></div>}
+        {['lucky-fruits','pharaoh','space-spin','coyote-jackpot'].includes(selected.id)&&<div className={"game-practice-controls slot-theme slot-theme-"+selected.id}><div className="slot-reels" aria-label={selected.name}>{slotSymbols.map((symbol,i)=><span className={slotSpinning?'spinning':''} key={i}>{symbol}</span>)}</div></div>}
         {selected.id==='roulette'&&<div className="game-practice-controls"><div className="roulette-preview"><div className={"roulette-wheel "+(rouletteSpinning?'spinning':'')}><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><b>{rouletteNumber===null?'?':rouletteNumber}</b></div><small>{rouletteSpinning?(arabic?'العجلة تدور...':'WHEEL SPINNING'):rouletteNumber===null?(arabic?'جاهز':'READY'):rouletteNumber===0?(arabic?'صفر أخضر':'GREEN ZERO'):rouletteReds.has(rouletteNumber)?(arabic?'أحمر':'RED'):(arabic?'أسود':'BLACK')}</small></div></div>}
         {selected.id==='blackjack'&&<div className="game-practice-controls"><div className="practice-playing-cards"><span>♠</span><span>♥</span></div></div>}
         {selected.id==='baccarat'&&<div className="game-practice-controls"><div className="baccarat-preview"><div><small>{arabic?'اللاعب':'PLAYER'}</small><strong>—</strong></div><div><small>{arabic?'المصرف':'BANKER'}</small><strong>—</strong></div></div></div>}
