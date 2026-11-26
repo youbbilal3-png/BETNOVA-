@@ -317,7 +317,7 @@ export default function GamesHub({initialGameRequest}:{initialGameRequest?:{id:s
     }catch(error){setRealBetMessage(error instanceof Error?error.message:'Cash-out confirmation failed. Retry; the same request key prevents duplicate payout.')}
     finally{setRealBetBusy(false)}
   }
-  const paidTableUnavailable=selected?.id==='blackjack'||selected?.id==='baccarat'
+  const paidTableUnavailable=selected?.id==='blackjack'||selected?.id==='baccarat'||selected?.id==='coyote-jackpot'
   return <section className="games-hub" id="games">
     <div className="games-hub-head">
       <div><div className="games-kicker"><Sparkles size={14}/> BETNOVA ARCADE</div><h2>{labels.heading} <em>{labels.zone}</em></h2><p>{labels.subtitle}</p></div>
