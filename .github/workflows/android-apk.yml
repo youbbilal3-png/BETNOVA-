@@ -8,42 +8,6 @@ on:
         required: false
         default: false
         type: boolean
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'supabase/functions/**'
-      - 'public/**'
-      - 'package.json'
-      - 'vite.config.ts'
-      - 'capacitor.config.ts'
-      - 'google-services.json'
-      - 'deno.json'
-      - 'scripts/**'
-      - 'resources/android/**'
-      - '.gitignore'
-      - '.github/workflows/android-apk.yml'
-  push:
-    branches:
-      - main
-      - feature/android-capacitor-foundation
-      - feature/push-notification-delivery
-      - firebase/android-config
-    paths:
-      - 'src/**'
-      - 'supabase/functions/**'
-      - 'public/**'
-      - 'package.json'
-      - 'vite.config.ts'
-      - 'capacitor.config.ts'
-      - 'google-services.json'
-      - 'deno.json'
-      - 'scripts/**'
-      - 'resources/android/**'
-      - '.gitignore'
-      - '.github/workflows/android-apk.yml'
-
 permissions:
   contents: write
 
