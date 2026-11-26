@@ -662,7 +662,7 @@ export default function App() {
               (market.market_selections ?? []).some((selection: any) => selection.status === 'active' && selection.result_status === 'pending')
           })
           const winnerSelections = openMarkets
-            .filter((market: any) => market.market_key === 'match_result' || market.market_type === 'match_result')
+            .filter((market: any) => ['match_result', 'sport_winner'].includes(String(market.market_key || market.market_type || '').toLowerCase()))
             .flatMap((market: any) => (market.market_selections ?? []).map((selection: any) => ({ market, selection })))
             .filter((item: any) => item.selection.status === 'active' && item.selection.result_status === 'pending')
           const findPick = (names: string[]): MarketPick | null => {
@@ -685,13 +685,13 @@ export default function App() {
             findPick(['draw', 'x']),
             findPick(['away', '2']),
           ]
-          // If a bookmaker has not posted 1X2 for this fixture, still surface
-          // a real, currently open market (prefer O/U 2.5, then BTTS, then DC).
-          // Never fabricate or derive prices.
-          let cardPicks: (MarketPick | null)[] = winnerPicks.every(Boolean) ? winnerPicks : []
+          // Football match cards show only verified 1X2 prices. Never substitute
+          // totals, BTTS, double-chance, or another market into Win 1 / Draw / Win 2.
+          // Other sports retain their existing sport-specific fallback behaviour.
+          let cardPicks: (MarketPick | null)[] = winnerPicks
           let cardLabels = [home?.short_name || home?.name || 'Home', 'Draw', away?.short_name || away?.name || 'Away']
           let cardCaption = t('match_winner')
-          if (!winnerPicks.every(Boolean)) {
+          if (sport !== 'Football' && !winnerPicks.every(Boolean)) {
             const preferredMarkets = [...openMarkets].sort((a: any, b: any) => {
               const rank = (market: any) => {
                 const key = String(market.market_key || market.market_type || '').toLowerCase()
@@ -1103,6 +1103,7 @@ export default function App() {
               {loadingMatches ? <div className="empty-state">{sport} · {t('loading_events')}</div> : matchLoadError ? <div className="empty-state">{t('sports_data_error')}</div> : visibleMatches.length ? visibleMatches.map(match=><article className="match-card" key={match.id} role="button" tabIndex={0} aria-label={`${match.home} vs ${match.away} — ${t("match_details")}`} onClick={() => openOverlay('matchDetails', { betnovaDetailMatch: match })} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openOverlay('matchDetails', { betnovaDetailMatch: match }) } }}>
                 <div className="match-meta"><span className="league-name"><span className="league-country-flag" aria-label={match.country ? `Competition country: ${match.country}` : "International competition"}>{match.countryFlag}</span><span className="league-full-name">{match.league}</span></span><span className="match-time">{eventView === 'results' || match.status === 'finished' ? <span className="match-final-label">{language === 'ar' ? 'انتهت' : 'FULL TIME'}</span> : match.status === 'live' ? <LiveMatchClock liveClock={match.liveClock} liveStatusPhase={match.liveStatusPhase} liveStatusDescription={match.liveStatusDescription} livePeriod={match.livePeriod} liveClockUpdatedAt={match.liveClockUpdatedAt} language={language} now={liveClockNow}/> : <><Clock3 size={13}/>{match.time}</>}</span></div>
                 <div className="match-body"><div className="teams team-matchup"><div className="team team-home"><span className="team-logo-frame">{match.homeLogo ? <img className="team-logo-image" src={match.homeLogo} alt={`${match.home} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.homeLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.home} initials`}>{match.homeMark}</span></span><b title={match.home}>{match.home}</b></div><span className="versus-group"><span className={match.status === 'live' || eventView === 'results' || match.status === 'finished' ? 'match-card-score' : 'versus'}>{match.status === 'live' || eventView === 'results' || match.status === 'finished' ? (match.score ?? '—') : 'VS'}</span></span><div className="team team-away"><span className="team-logo-frame">{match.awayLogo ? <img className="team-logo-image" src={match.awayLogo} alt={`${match.away} club crest`} loading="lazy" onError={event => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.querySelector(".team-logo-fallback")?.classList.add("is-visible") }}/> : null}<span className={match.awayLogo ? "team-logo-fallback" : "team-logo-fallback is-visible"} aria-label={`${match.away} initials`}>{match.awayMark}</span></span><b title={match.away}>{match.away}</b></div></div></div>
+                {sport === 'Football' && <div className="match-card-1x2" aria-label="Match result odds">{[0,1,2].map(i => { const pick = match.winnerPicks[i]; const picked = !!pick && selected.some(item => item.selectionId === pick.selectionId); return <button type="button" key={i} className={picked ? 'match-card-1x2-pick picked' : 'match-card-1x2-pick'} disabled={!pick} aria-pressed={picked} onClick={event => { event.stopPropagation(); if (pick) toggleMarketSelection(match, pick) }}><span>{['Win 1','Draw','Win 2'][i]}</span><b>{pick?.odds ?? '—'}</b></button> })}</div>}
                 <div className="match-footer"><button className="favorite-toggle" onClick={event => { event.stopPropagation(); toggleFavorite(match.id) }}><Star size={13} fill={favoriteIds.includes(String(match.id)) ? 'currentColor' : 'none'}/>{favoriteIds.includes(String(match.id)) ? t('saved') : t('add_favourites')}</button><button type="button" className="details-trigger" onClick={event => { event.stopPropagation(); openOverlay('matchDetails', { betnovaDetailMatch: match, detailSection: 'markets' }) }}>{language === 'ar' ? 'الأسعار' : 'Prices'} <ArrowRight size={13}/></button>{(match.status === 'live' || match.status === 'finished' || eventView === 'results') && typeof match.id === 'string' && <button type="button" className="statistics-trigger" onClick={event => { event.stopPropagation(); openOverlay('matchDetails', { betnovaDetailMatch: match, detailSection: 'stats' }) }}>{language === 'ar' ? 'الإحصائيات' : 'Statistics'} <Activity size={13}/></button>}</div>
               </article>) : <div className="empty-state">{query ? t('empty_search') : sport === 'Football' ? eventView === 'live' ? t('empty_live') : eventView === 'results' ? t('empty_results') : t('empty_football') : t('empty_sport')}</div>}
             </div>
